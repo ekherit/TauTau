@@ -1,0 +1,11 @@
+#include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
+ApplicationMgr.DLLs += {"TauMass"};
+ApplicationMgr.TopAlg += {"TauMass"};
+JPsi.CheckDedx = 1;
+JPsi.CHECK_TOF = 0;
+JPsi.DELTA_X=1.0;
+JPsi.DELTA_Y=1.0;
+JPsi.DELTA_Z=10.0;
+JPsi.USE_IPCUT=1;
+JPsi.IPR=1; 
+JPsi.IPTRACKS=2;
