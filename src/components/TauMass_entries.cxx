@@ -1,9 +1,9 @@
 #include "GaudiKernel/DeclareFactoryEntries.h"
-#include "../JPsi.h"
+#include "../TauMass.h"
 
-DECLARE_ALGORITHM_FACTORY( JPsi )
+DECLARE_ALGORITHM_FACTORY( TauMass )
 
-DECLARE_FACTORY_ENTRIES( JPsi ) {
-  DECLARE_ALGORITHM(JPsi);
+DECLARE_FACTORY_ENTRIES( TauMass ) {
+  DECLARE_ALGORITHM(TauMass);
 }
 
