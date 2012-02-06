@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  JPsi.cxx
+ *       Filename:  TauMass.cxx
  *
  *    Description:  Multihadron event selection for j/psi and psi prime resonance.
  *
@@ -49,7 +49,7 @@ using CLHEP::HepLorentzVector;
 #ifndef ENABLE_BACKWARDS_COMPATIBILITY
 typedef HepGeom::Point3D<double> HepPoint3D;
 #endif
-#include "JPsi.h"
+#include "TauMass.h"
 
 #include <TMatrixDEigen.h>
 
@@ -84,7 +84,7 @@ double Sphericity(TMatrixD & S)
     return 1.5*(v[0]+v[1]);
 }
 
-JPsi::JPsi(const std::string& name, ISvcLocator* pSvcLocator) :
+TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
   declareProperty("CHECK_TOF", CHECK_TOF=0);
@@ -103,7 +103,7 @@ JPsi::JPsi(const std::string& name, ISvcLocator* pSvcLocator) :
 }
 
 
-StatusCode JPsi::initialize(void)
+StatusCode TauMass::initialize(void)
 {
   MsgStream log(msgSvc(), name());
 
@@ -188,6 +188,13 @@ StatusCode JPsi::initialize(void)
       status = mdc_tuple->addItem("ccos", mdc.ccos);
       status = mdc_tuple->addItem("atheta", mdc.atheta);
       status = mdc_tuple->addItem("aphi", mdc.aphi);
+
+      /*  particle identification part */
+      status = mdc_tuple->addIndexedItem ("probe", mdc.ntrack, mdc.probe);
+      status = mdc_tuple->addIndexedItem ("probmu", mdc.ntrack, mdc.probmu);
+      status = mdc_tuple->addIndexedItem ("probpi", mdc.ntrack, mdc.probpi);
+      status = mdc_tuple->addIndexedItem ("probK", mdc.ntrack, mdc.probK);
+      status = mdc_tuple->addIndexedItem ("probp", mdc.ntrack, mdc.probp);
     }
     else
     {
@@ -344,7 +351,7 @@ StatusCode JPsi::initialize(void)
   return StatusCode::SUCCESS;
 }
 
-void JPsi::EMC_t::init(void)
+void TauMass::EMC_t::init(void)
 {
   // emc information init.
   ntrack=0;
@@ -371,7 +378,7 @@ void JPsi::EMC_t::init(void)
   }
 }
 
-StatusCode JPsi::EMC_t::init_tuple(NTuple::Tuple * tuple)
+StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
 {
   StatusCode status;
   status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
@@ -397,7 +404,7 @@ StatusCode JPsi::EMC_t::init_tuple(NTuple::Tuple * tuple)
   return status;
 }
 
-void JPsi::InitData(long nchtrack, long nneutrack)
+void TauMass::InitData(long nchtrack, long nneutrack)
 {
   m_ntrack=nchtrack+nneutrack;
   m_nchtr=nchtrack;
@@ -466,6 +473,13 @@ void JPsi::InitData(long nchtrack, long nneutrack)
     dedx.pi[i]=-1000;
     dedx.K[i]=-1000;
     dedx.p[i]=-1000;
+
+    /* probability part */
+    mdc.probe[i]=-1000;
+    mdc.probmu[i]=-1000;
+    mdc.probpi[i]=-1000;
+    mdc.probK[i]=-1000;
+    mdc.probp[i]=-1000;
   }
 
   emc.init();
@@ -512,7 +526,7 @@ void JPsi::InitData(long nchtrack, long nneutrack)
   }
 }
 
-StatusCode JPsi::execute()
+StatusCode TauMass::execute()
 {
   MsgStream log(msgSvc(), name());
   log << MSG::INFO << "in execute()" << endreq;
@@ -600,6 +614,9 @@ StatusCode JPsi::execute()
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
         S[i][j]=0;
+
+    //particle id 
+    ParticleID *pid = ParticleID::instance();
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri,++idx)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
@@ -669,6 +686,26 @@ StatusCode JPsi::execute()
 
       /* Check muon system information for this track */
       mdc.ismu[i]=(*itTrk)->isMucTrackValid();
+
+      /*  Particle identification game */
+      pid->init();
+ 	    pid->setMethod(pid->methodProbability());
+      pid->setChiMinCut(4);
+
+      pid->setRecTrack(*itTrk);
+      pid->usePidSys(pid->useDedx() | pid->useTof1() | pid->useTof2() | pid->useTofE()); // use PID sub-system
+      pid->identify(pid->onlyElectron() | pid->OnlyMuon()); // seperater Pion/Kaon
+      pid->calculate();
+      if(!(pid->IsPidInfoValid())) continue;
+      RecMdcTrack* mdcTrk = (*itTrk)->mdcTrack();
+      mdc.probe[i] = pid->probElectron();
+      mdc.probmu[i] = pid->probMuon();
+      mdc.probpi[i] = pid->probPion();
+      mdc.probK[i] = pid->probKaon();
+      mdc.probp[i] = pid->probProton();
+
+      // if(pid->probPion() < 0.001 || (pid->probPion() < pid->probKaon())) continue;
+      if(pid->probPion() < 0.001) continue;
 
       /* dEdx information */
       if(prop_check_dedx == 1 && (*itTrk)->isMdcDedxValid())
@@ -862,7 +899,7 @@ StatusCode JPsi::execute()
   return StatusCode::SUCCESS;
 }
 
-StatusCode JPsi::finalize()
+StatusCode TauMass::finalize()
 {
   std::cout << "Event proceed: " << event_proceed << std::endl;
   std::cout << "Event selected: " << event_write << std::endl;

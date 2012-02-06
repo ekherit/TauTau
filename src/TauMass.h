@@ -32,10 +32,10 @@
 
 #include "../share/averager.h"
 
-class JPsi : public Algorithm 
+class TauMass : public Algorithm 
 {
 	public:
-  JPsi(const std::string& name, ISvcLocator* pSvcLocator);
+  TauMass(const std::string& name, ISvcLocator* pSvcLocator);
   StatusCode initialize();
   StatusCode execute();
   StatusCode finalize();  
@@ -95,6 +95,11 @@ class JPsi : public Algorithm
     NTuple::Item<long>   nemc20;// flag for threashold E20
     NTuple::Item<long>   nemc50;// flag for threashold E20
     NTuple::Item<long>   nemc100;// flag for threashold E20
+    NTuple::Item<long>   probe; //probability of electron
+    NTuple::Item<long>   probmu; //probability for track to be muon
+    NTuple::Item<long>   probK; //probability for track to be Kaon
+    NTuple::Item<long>   probpi; //probability for track to be pion
+    NTuple::Item<long>   probp; //probability for track to be proton
   };
 
   /* ElecroMagnetic Calorimeter Information */
