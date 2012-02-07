@@ -34,7 +34,7 @@ def proceed(run, directory, files):
         TEMPLATE_DST_FILES=TEMPLATE_DST_FILES+comma+'"'+name+'"'
     if TEMPLATE_DST_FILES=='': return
     print TEMPLATE_DST_FILES
-    configure('template.txt',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
+    configure('../share/template.cfg',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
 
 psi2s2011 = range(25244,25338);
 jpsi2011 = range(24937,24979);
