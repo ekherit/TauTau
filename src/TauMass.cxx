@@ -693,7 +693,7 @@ StatusCode TauMass::execute()
 
       pid->setRecTrack(*itTrk);
       pid->usePidSys(pid->useDedx() | pid->useTof1() | pid->useTof2() | pid->useTofE()); // use PID sub-system
-      pid->identify(pid->onlyElectron() | pid->OnlyMuon()); // seperater Pion/Kaon
+      pid->identify(pid->onlyElectron() | pid->onlyMuon()); // seperater Pion/Kaon
       pid->calculate();
       if(!(pid->IsPidInfoValid())) continue;
       RecMdcTrack* mdcTrk = (*itTrk)->mdcTrack();
