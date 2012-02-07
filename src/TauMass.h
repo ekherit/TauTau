@@ -30,7 +30,7 @@
 //#include "EventModel/Event.h"
 #include "EventModel/EventHeader.h"
 
-#include "../share/averager.h"
+#include "ibn/averager.h"
 
 class TauMass : public Algorithm 
 {

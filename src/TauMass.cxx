@@ -58,7 +58,6 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #include "VertexFit/Helix.h"
 #include "ParticleID/ParticleID.h"
 
-#include "../share/averager.h"
 
 const double PI_MESON_MASS=0.13957018; //GeV
 
