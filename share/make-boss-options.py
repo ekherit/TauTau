@@ -22,12 +22,12 @@ def configure(source_file_name,  target_file_name,  TEMPLATE_RUN_NUMBER, TEMPLAT
 def configure_pbs_jobs(run):
   filename = str(run)+".sh"
   f = open(filename, 'w')
+  rundir=os.path.abspath(os.curdir)
+  cmtdir=os.path.abspath(os.curdir+"/../cmt/")
   f.write("#!/bin/tcsh\n")
-  f.write("cd  $TAU_BATCH\n")
-  f.write("source $TAU_BATCH/setup.csh\n")
+  f.write("cd "+rundir+"\n")
+  f.write("source "+cmtdir+"/setup.csh\n")
   f.write("boss.exe "+str(run)+".cfg\n")
-  print os.curdir
-  print os.path.abspath(os.curdir)
 
 
 
