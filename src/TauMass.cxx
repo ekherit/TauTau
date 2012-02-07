@@ -696,7 +696,6 @@ StatusCode TauMass::execute()
       pid->identify(pid->onlyElectron() | pid->onlyMuon()); // seperater Pion/Kaon
       pid->calculate();
       if(!(pid->IsPidInfoValid())) continue;
-      RecMdcTrack* mdcTrk = (*itTrk)->mdcTrack();
       mdc.probe[i] = pid->probElectron();
       mdc.probmu[i] = pid->probMuon();
       mdc.probpi[i] = pid->probPion();
