@@ -4,6 +4,6 @@ fi
 . ${CMTROOT}/mgr/setup.sh
 tempfile=`${CMTROOT}/mgr/cmt -quiet build temporary_name`
 if test ! $? = 0 ; then tempfile=/tmp/cmt.$$; fi
-${CMTROOT}/mgr/cmt cleanup -sh -pack=TauMass -version=0.1 -path=/afs/ihep.ac.cn/users/n/nikolaev/batch/6.6.2 $* >${tempfile}; . ${tempfile}
+${CMTROOT}/mgr/cmt cleanup -sh -pack=TauMass -version=TauMass-00-00-01 -path=/afs/ihep.ac.cn/users/n/nikolaev/batch/6.6.2 $* >${tempfile}; . ${tempfile}
 /bin/rm -f ${tempfile}
 

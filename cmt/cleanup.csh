@@ -6,6 +6,6 @@ set tempfile=`${CMTROOT}/mgr/cmt -quiet build temporary_name`
 if $status != 0 then
   set tempfile=/tmp/cmt.$$
 endif
-${CMTROOT}/mgr/cmt cleanup -csh -pack=TauMass -version=0.1 -path=/afs/ihep.ac.cn/users/n/nikolaev/batch/6.6.2 $* >${tempfile}; source ${tempfile}
+${CMTROOT}/mgr/cmt cleanup -csh -pack=TauMass -version=TauMass-00-00-01 -path=/afs/ihep.ac.cn/users/n/nikolaev/batch/6.6.2 $* >${tempfile}; source ${tempfile}
 /bin/rm -f ${tempfile}
 
