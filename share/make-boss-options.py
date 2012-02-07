@@ -19,6 +19,16 @@ def configure(source_file_name,  target_file_name,  TEMPLATE_RUN_NUMBER, TEMPLAT
 	source_file.close()
 	target_file.close()
 
+def configure_pbs_jobs(run):
+  filename = str(run)+".sh"
+  f = open(filename, 'w')
+  f.write("#!/bin/tcsh\n")
+  f.write("cd  $TAU_BATCH\n")
+  f.write("source $TAU_BATCH/setup.csh\n")
+  f.write("boss.exe "+str(run)+".cfg\n")
+
+
+
 def proceed(run, directory, files):
     TEMPLATE_RUN_NUMBER=str(run)
     TARGET_FILE = TEMPLATE_RUN_NUMBER+".cfg"
@@ -35,6 +45,8 @@ def proceed(run, directory, files):
     if TEMPLATE_DST_FILES=='': return
     print TEMPLATE_DST_FILES
     configure('../share/template.cfg',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
+#create qsub files
+    configure_pbs_jobs(run)
 
 psi2s2011 = range(25244,25338);
 jpsi2011 = range(24937,24979);
@@ -43,11 +55,3 @@ tau2011 = range(24984,25244)
 for run in tau2011:
   print "Proceeding run ", run
   os.path.walk("data", proceed, run)
-  #create qsub files
-  filename = str(run)+".sh"
-  f = open(filename, 'w')
-  f.write("#!/bin/tcsh\n")
-  f.write("cd  $TAU_BATCH\n")
-  f.write("source $TAU_BATCH/setup.csh\n")
-  f.write("boss.exe "+str(run)+".cfg\n")
-
