@@ -26,6 +26,8 @@ def configure_pbs_jobs(run):
   f.write("cd  $TAU_BATCH\n")
   f.write("source $TAU_BATCH/setup.csh\n")
   f.write("boss.exe "+str(run)+".cfg\n")
+  print os.curdir
+  print os.path.abspath(os.curdir)
 
 
 
