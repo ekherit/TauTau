@@ -769,6 +769,9 @@ StatusCode TauMass::execute()
       }
     }
 
+    //keep only two good charged tracks
+    if(good_charged_tracks!=2) return StatusCode::SUCCESS;
+
     mdc.ngood_track = good_charged_tracks;
 
     mdc.pt50 = ispt50;
@@ -790,6 +793,9 @@ StatusCode TauMass::execute()
     int track=0; //index for neutral tracks
     emc.Etotal=0;
     emc.ngood_charged_track=good_charged_tracks;
+    /* fill only good tracks */
+    if(good_charged_tracks) 
+
     for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
@@ -819,6 +825,7 @@ StatusCode TauMass::execute()
     m_Etotal = emc.Etotal+mdc.Emdc;
     m_Eemc = emc.Etotal+mdc.Eemc;
     m_time = eventHeader->time();
+
 
     /* now fill the data */
     main_tuple->write();
