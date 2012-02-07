@@ -23,10 +23,10 @@ def configure_pbs_jobs(run):
   filename = str(run)+".sh"
   f = open(filename, 'w')
   rundir=os.path.abspath(os.curdir)
-  cmtdir=os.path.abspath(os.curdir+"/../cmt/")
+  sharedir=os.path.abspath(os.curdir+"/../share/")
   f.write("#!/bin/tcsh\n")
   f.write("cd "+rundir+"\n")
-  f.write("source "+cmtdir+"/setup.csh\n")
+  f.write("source "+sharedir+"/setup.csh\n")
   f.write("boss.exe "+str(run)+".cfg\n")
 
 
