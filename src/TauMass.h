@@ -95,11 +95,12 @@ class TauMass : public Algorithm
     NTuple::Item<long>   nemc20;// flag for threashold E20
     NTuple::Item<long>   nemc50;// flag for threashold E20
     NTuple::Item<long>   nemc100;// flag for threashold E20
-    NTuple::Item<long>   probe; //probability of electron
-    NTuple::Item<long>   probmu; //probability for track to be muon
-    NTuple::Item<long>   probK; //probability for track to be Kaon
-    NTuple::Item<long>   probpi; //probability for track to be pion
-    NTuple::Item<long>   probp; //probability for track to be proton
+    /*  particle identificaiton */
+    NTuple::Array<double>   probe; //probability of electron
+    NTuple::Array<double>   probmu; //probability for track to be muon
+    NTuple::Array<double>   probK; //probability for track to be Kaon
+    NTuple::Array<double>   probpi; //probability for track to be pion
+    NTuple::Array<double>   probp; //probability for track to be proton
   };
 
   /* ElecroMagnetic Calorimeter Information */
