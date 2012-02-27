@@ -572,10 +572,10 @@ StatusCode TauMass::execute()
   head_event_number=event;
   head_run=runNo;
   time_t t=eventHeader->time();
-  //if(event_proceed%1000==0)
-  //{
+  if(event_proceed%1000==0)
+  {
     std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write << std::endl;
-  //}
+  }
   event_proceed++;
 
   /*  Get information about reconstructed events */
