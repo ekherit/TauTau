@@ -572,7 +572,13 @@ StatusCode TauMass::execute()
   head_event_number=event;
   head_run=runNo;
   time_t t=eventHeader->time();
-  if(event_proceed%1000==0)
+  bool isprint=false;
+  if(event_proceed<10) isprint=true;
+  if(10 < event_proceed && event_proceed < 100 && event_proceed % 10 ==0) isprint=true;
+  if(100 < event_proceed && event_proceed < 1000 && event_proceed % 100 ==0) isprint = true;
+  if(1000 < event_proceed && event_proceed < 10000 && event_proceed % 1000 ==0) isprint = true;
+  if(10000 < event_proceed && event_proceed % 10000 ==0) isprint = true;
+  if(isprint)
   {
     std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write << std::endl;
   }
