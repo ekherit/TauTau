@@ -791,6 +791,7 @@ StatusCode TauMass::execute()
         tof.errE[i]  = (*tofTrk)->errenergy();
       }
     }
+    if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
     mdc.ntrack=gidx;
     good_charged_tracks=gidx;
     mdc.ngood_track = gidx;
