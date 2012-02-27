@@ -528,6 +528,7 @@ void TauMass::InitData(long nchtrack, long nneutrack)
 
 void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
 {
+  clog << "Begin calculate_vertex" << endl;
   /*  Reconstruct the vertex */
   Hep3Vector xorigin(0,0,0);
   IVertexDbSvc*  vtxsvc;
@@ -559,6 +560,7 @@ void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
   ro=Rvxy0;
   z=Rvz0;
   phi=Rvphi0;
+  clog << "END calculate_vertex" << endl;
 }
 
 StatusCode TauMass::execute()
@@ -572,10 +574,10 @@ StatusCode TauMass::execute()
   head_event_number=event;
   head_run=runNo;
   time_t t=eventHeader->time();
-  if(event_proceed%1000==0)
-  {
+  //if(event_proceed%1000==0)
+  //{
     std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write << std::endl;
-  }
+  //}
   event_proceed++;
 
   /*  Get information about reconstructed events */
