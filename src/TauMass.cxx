@@ -75,11 +75,13 @@ double Sphericity(TMatrixD & S)
     std::vector<double> v(3);
     for(int i=0;i<3;i++) v[i]=eval[i];
     std::sort(v.begin(), v.end());
+    cout << v[0] << " " << v[1] << " " << v[2] <<endl;
     if(!(v[0]<=v[1] && v[1]<=v[2])) //test the order of eigenvalues
     {
       cerr << "Bad sphericity" << endl;
       exit(1);
     }
+    cout << 1.5*(v[0]+v[1]) <<endl;
     return 1.5*(v[0]+v[1]);
 }
 
@@ -528,7 +530,6 @@ void TauMass::InitData(long nchtrack, long nneutrack)
 
 void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
 {
-  clog << "Begin calculate_vertex" << endl;
   /*  Reconstruct the vertex */
   Hep3Vector xorigin(0,0,0);
   IVertexDbSvc*  vtxsvc;
@@ -560,9 +561,6 @@ void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
   ro=Rvxy0;
   z=Rvz0;
   phi=Rvphi0;
-  clog << "END calculate_vertex" << endl;
-  cerr << "END calculate_vertex" << endl;
-  cout << "END calculate_vertex" << endl;
 }
 
 StatusCode TauMass::execute()
@@ -649,9 +647,6 @@ StatusCode TauMass::execute()
     unsigned gidx=0; //good charged track idx
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
-      cout << "Iterate over good charged tracks" << endl;
-      cerr << "Iterate over good charged tracks" << endl;
-      clog << "Iterate over good charged tracks" << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
       //just check that our selection is ok
       if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
@@ -796,9 +791,6 @@ StatusCode TauMass::execute()
         tof.errE[i]  = (*tofTrk)->errenergy();
       }
     }
-    cout << "After loop" << endl;
-    cerr << "After loop" << endl;
-    clog << "After loop" << endl;
     mdc.ntrack=gidx;
     good_charged_tracks=gidx;
     mdc.ngood_track = gidx;
