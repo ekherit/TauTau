@@ -598,6 +598,7 @@ StatusCode TauMass::execute()
   unsigned good_charged_tracks = 0;
   /************    Multihadron event and BhaBha selection ****************/
   /*  the selection is based on charged tracks */
+  clog << "Before MDC information" << endl;
   if(MIN_CHARGED_TRACKS<=evtRecEvent->totalCharged())
   {
     double p2sum=0;
@@ -816,6 +817,7 @@ StatusCode TauMass::execute()
     int track=0; //index for neutral tracks
     emc.Etotal=0;
     emc.ngood_charged_track=good_charged_tracks;
+    clog << "Before EMC information" << endl;
     for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
