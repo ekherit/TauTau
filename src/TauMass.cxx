@@ -525,6 +525,42 @@ void TauMass::InitData(long nchtrack, long nneutrack)
   }
 }
 
+
+void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
+{
+  /*  Reconstruct the vertex */
+  Hep3Vector xorigin(0,0,0);
+  IVertexDbSvc*  vtxsvc;
+  Gaudi::svcLocator()->service("VertexDbSvc", vtxsvc);
+  if(vtxsvc->isVertexValid())
+  {
+    double* dbv = vtxsvc->PrimaryVertex(); 
+    double*  vv = vtxsvc->SigmaPrimaryVertex();  
+    xorigin.setX(dbv[0]);
+    xorigin.setY(dbv[1]);
+    xorigin.setZ(dbv[2]);
+  }
+  /* Vertex game. copy from rhophi analysis */
+  double phi0=mdcTrk->helix(1);
+  double xv=xorigin.x();
+  double yv=xorigin.y();
+  //double Rxy=(mdc.x[i]-xv)*cos(phi0)+(mdc.y[i]-yv)*sin(phi0);
+  //mdc.r[i]=Rxy;
+  HepVector a = mdcTrk->helix();
+  HepSymMatrix Ea = mdcTrk->err();
+  HepPoint3D point0(0.,0.,0.);   // the initial point for MDC recosntruction
+  HepPoint3D IP(xorigin[0],xorigin[1],xorigin[2]); 
+  VFHelix helixip(point0,a,Ea); 
+  helixip.pivot(IP);
+  HepVector vecipa = helixip.a();
+  double  Rvxy0=fabs(vecipa[0]);  //the nearest distance to IP in xy plane
+  double  Rvz0=vecipa[3];         //the nearest distance to IP in z direction
+  double  Rvphi0=vecipa[1];
+  ro=Rvxy0;
+  z=Rvz0;
+  phi=Rvphi0;
+}
+
 StatusCode TauMass::execute()
 {
   MsgStream log(msgSvc(), name());
@@ -552,18 +588,6 @@ StatusCode TauMass::execute()
   nntr_a.add(evtRecEvent->totalNeutral());
   nttr_a.add(evtRecEvent->totalTracks());
 
-  /*  Reconstruct the vertex */
-  Hep3Vector xorigin(0,0,0);
-  IVertexDbSvc*  vtxsvc;
-  Gaudi::svcLocator()->service("VertexDbSvc", vtxsvc);
-  if(vtxsvc->isVertexValid())
-  {
-    double* dbv = vtxsvc->PrimaryVertex(); 
-    double*  vv = vtxsvc->SigmaPrimaryVertex();  
-    xorigin.setX(dbv[0]);
-    xorigin.setY(dbv[1]);
-    xorigin.setZ(dbv[2]);
-  }
 
   typedef std::multimap <double, unsigned> mmap_t;
   typedef std::pair <double, unsigned> pair_t;
@@ -604,11 +628,11 @@ StatusCode TauMass::execute()
       Emap.insert(pair_t(E,idx));
     }
     /* Two or more charged tracks witch signal in EMC */
-    if(Emap.size()<2) return StatusCode::SUCCESS;
+    if(Emap.size()<2) goto SKIP_CHARGED;
+
 
     //now fill the arrayes using indexes sorted by energy
     mdc.ntrack=Emap.size(); //save number of charged tracks
-    unsigned  idx=0;
     TMatrixD S(3,3); //sphericity tensor
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
@@ -616,7 +640,9 @@ StatusCode TauMass::execute()
 
     //particle id 
     ParticleID *pid = ParticleID::instance();
-    for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri,++idx)
+    //loop over tracks oredered by energy
+    unsigned gidx=0; //good charged track idx
+    for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
       //just check that our selection is ok
@@ -624,45 +650,37 @@ StatusCode TauMass::execute()
       if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
       RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
       RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
-      unsigned i = idx;
-      mdc.p[i]=mdcTrk->p();
-      mdc.pt[i]=mdcTrk->p()*sin(mdcTrk->theta());
+      double rvxy=-9999,rvz=-9999,rvphi=-9999;
+      calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
+      bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
+      bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
+      if(!is_good_track) continue;
+      unsigned i = gidx++; //now fill
+
+      //fill vertex information
+      mdc.rvxy[i]=rvxy;
+      mdc.rvz[i]=rvz;
+      mdc.rvphi[i]=rvphi;
+
+      //fil track information
+      mdc.p[i]     =  mdcTrk->p();
+      mdc.pt[i]    =  mdcTrk->p()*sin(mdcTrk->theta());
+      mdc.px[i]    =  mdcTrk->px();
+      mdc.py[i]    =  mdcTrk->py();
+      mdc.pz[i]    =  mdcTrk->pz();
+      mdc.theta[i] =  mdcTrk->theta();
+      mdc.phi[i]   =  mdcTrk->phi();
+      mdc.q[i]     =  mdcTrk->charge();
+      mdc.x[i]     =  mdcTrk->x();
+      mdc.y[i]     =  mdcTrk->y();
+      mdc.z[i]     =  mdcTrk->z();
+      
+      //fill some information
       ispt50 = ispt50 && mdc.pt[i]>0.05;
       ispt100 = ispt100 && mdc.pt[i]>0.1;
-      mdc.px[i]=mdcTrk->px();
-      mdc.py[i]=mdcTrk->py();
-      mdc.pz[i]=mdcTrk->pz();
-      mdc.theta[i]=mdcTrk->theta();
-      mdc.phi[i]=mdcTrk->phi();
-      mdc.q[i]=mdcTrk->charge();
 
-      mdc.x[i]=mdcTrk->x();
-      mdc.y[i]=mdcTrk->y();
-      mdc.z[i]=mdcTrk->z();
-
-      /* Vertex game. copy from rhophi analysis */
-      double phi0=mdcTrk->helix(1);
-      double xv=xorigin.x();
-      double yv=xorigin.y();
-      double Rxy=(mdc.x[i]-xv)*cos(phi0)+(mdc.y[i]-yv)*sin(phi0);
-      mdc.r[i]=Rxy;
-      HepVector a = mdcTrk->helix();
-      HepSymMatrix Ea = mdcTrk->err();
-      HepPoint3D point0(0.,0.,0.);   // the initial point for MDC recosntruction
-      HepPoint3D IP(xorigin[0],xorigin[1],xorigin[2]); 
-      VFHelix helixip(point0,a,Ea); 
-      helixip.pivot(IP);
-      HepVector vecipa = helixip.a();
-      double  Rvxy0=fabs(vecipa[0]);  //the nearest distance to IP in xy plane
-      double  Rvz0=vecipa[3];         //the nearest distance to IP in z direction
-      double  Rvphi0=vecipa[1];
-      mdc.rvxy[i]=Rvxy0;
-      mdc.rvz[i]=Rvz0;
-      mdc.rvphi[i]=Rvphi0;
       mdc.Emdc+=sqrt(mdc.p[i]*mdc.p[i]+PI_MESON_MASS*PI_MESON_MASS);
 
-      // fill good tracks
-      if(mdc.rvxy[i]<1.0  && fabs(cos(mdc.theta[i]))<0.93) good_charged_tracks++;
 
       /* Calculate sphericity tensor */
       for(int i=0;i<3;i++)
@@ -672,13 +690,15 @@ StatusCode TauMass::execute()
         }
       p2sum+=mdcTrk->p()*mdcTrk->p();
 
-      mdc.E[i]=emcTrk->energy();
-      mdc.dE[i]=emcTrk->dE();
-      mdc.Eemc+=mdc.E[i];
-      mdc.ncrstl[i]=emcTrk->numHits();
-      mdc.status[i]=emcTrk->status();
-      mdc.cellId[i]=emcTrk->cellId();
-      mdc.module[i]=emcTrk->module();
+      // Add EMC information
+      mdc.E[i]     =  emcTrk->energy();
+      mdc.dE[i]    =  emcTrk->dE();
+      mdc.ncrstl[i] = emcTrk->numHits();
+      mdc.status[i] = emcTrk->status();
+      mdc.cellId[i] = emcTrk->cellId();
+      mdc.module[i] = emcTrk->module();
+
+      mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
 
       HepLorentzVector P(mdc.px[i], mdc.py[i], mdc.pz[i], mdc.E[i]);
       mdc.M[i]=P.m();
@@ -692,18 +712,17 @@ StatusCode TauMass::execute()
       pid->setChiMinCut(4);
 
       pid->setRecTrack(*itTrk);
-      pid->usePidSys(pid->useDedx() | pid->useTof1() | pid->useTof2() | pid->useTofE()); // use PID sub-system
-      pid->identify(pid->onlyElectron() | pid->onlyMuon()); // seperater Pion/Kaon
+      pid->usePidSys((pid->useMuc() | pid->useEmc()) | pid->useDedx()); // use PID sub-system
+      pid->identify(pid->onlyMuon() | pid->Electron()); 
       pid->calculate();
-      if(!(pid->IsPidInfoValid())) continue;
-      mdc.probe[i] = pid->probElectron();
-      mdc.probmu[i] = pid->probMuon();
-      mdc.probpi[i] = pid->probPion();
-      mdc.probK[i] = pid->probKaon();
-      mdc.probp[i] = pid->probProton();
-
-      // if(pid->probPion() < 0.001 || (pid->probPion() < pid->probKaon())) continue;
-      if(pid->probPion() < 0.001) continue;
+      if(pid->IsPidInfoValid())
+      {
+        mdc.probe[i] =  pid->probElectron();
+        mdc.probmu[i] = pid->probMuon();
+        mdc.probpi[i] = pid->probPion();
+        mdc.probK[i] =  pid->probKaon();
+        mdc.probp[i] =  pid->probProton();
+      }
 
       /* dEdx information */
       if(prop_check_dedx == 1 && (*itTrk)->isMdcDedxValid())
@@ -726,7 +745,8 @@ StatusCode TauMass::execute()
         dedx.p[i] = dedxTrk->getDedxExpect(4);
         dedx.pid[i]=dedxTrk->particleId();
       }
-      //check tof information
+
+      /* check TOF information */
       mdc.istof[i]=(*itTrk)->isTofTrackValid();
       if(CHECK_TOF && mdc.istof[i])
       {
@@ -768,18 +788,17 @@ StatusCode TauMass::execute()
         tof.errE[i]  = (*tofTrk)->errenergy();
       }
     }
-
-    //keep only two good charged tracks
-    if(good_charged_tracks!=2) return StatusCode::SUCCESS;
-
-    mdc.ngood_track = good_charged_tracks;
+    mdc.ntrack=gidx;
+    good_charged_tracks=gidx;
+    mdc.ngood_track = gidx;
 
     mdc.pt50 = ispt50;
     mdc.pt100 = ispt100;
 
+
+    /* Calculate acolinearity  for two tracks with big enrgies */
     Hep3Vector p0(mdc.px[0], mdc.py[0],mdc.pz[0]);
     Hep3Vector p1(mdc.px[1], mdc.py[1],mdc.pz[1]);
-
     mdc.ccos = p0.dot(p1)/(p0.mag()*p1.mag());
     mdc.atheta = mdc.theta[0]+mdc.theta[1] - M_PI;
     mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
@@ -787,21 +806,19 @@ StatusCode TauMass::execute()
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
         S[i][j]/=p2sum;
+    /* fill sphericity */
     mdc.S = Sphericity(S);
 
+    /* ================================================================================= */
     /*  fill data for neutral tracks */
     int track=0; //index for neutral tracks
     emc.Etotal=0;
-    emc.ngood_charged_track=good_charged_tracks;
-    /* fill only good tracks */
-    if(good_charged_tracks) 
-
+    emc.ngood_charged_track=mdc.ngood_track;
     for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      //if(emcTrk->energy()<EMS_THRESHOLD) continue;
       emc.status[track] = emcTrk->status();
       emc.ncrstl[track] = emcTrk->numHits();
       emc.cellId[track] = emcTrk->cellId();
@@ -836,12 +853,13 @@ StatusCode TauMass::execute()
     event_write++;
   }
   //selection of gamma-gamma events
+SKIP_CHARGED:
   gg.ngood_charged_track = good_charged_tracks;
   if(good_charged_tracks==0)
   {
     //select and sort only good neutral tracks.
     Emap.clear();
-    for(int track = 0; track<evtRecEvent->totalNeutral() && track < MAX_TRACK_NUMBER; track++)
+    for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks() && track < MAX_TRACK_NUMBER; track++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + track;
       if(!(*itTrk)->isEmcShowerValid()) continue;
@@ -850,15 +868,15 @@ StatusCode TauMass::execute()
       Emap.insert(pair_t(E,track));
     }
     //Select more then 1 neutral track
-    if(Emap.size() < 2) return StatusCode::SUCCESS; 
+    if(Emap.size() < 2) goto SKIP_GG;
     gg.ntrack= Emap.size();
-    int idx=0;
     TMatrixD S(3,3); //sphericity tensor
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
         S[i][j]=0;
     double R2sum=0;
     vector < Hep3Vector> R(Emap.size());
+    int idx=0;
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri,++idx)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
@@ -901,6 +919,7 @@ StatusCode TauMass::execute()
     gg_tuple->write();
     gg_event_writed++;
   }
+SKIP_GG:
   return StatusCode::SUCCESS;
 }
 
