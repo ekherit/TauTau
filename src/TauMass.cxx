@@ -75,13 +75,11 @@ double Sphericity(TMatrixD & S)
     std::vector<double> v(3);
     for(int i=0;i<3;i++) v[i]=eval[i];
     std::sort(v.begin(), v.end());
-    cout << v[0] << " " << v[1] << " " << v[2] <<endl;
     if(!(v[0]<=v[1] && v[1]<=v[2])) //test the order of eigenvalues
     {
       cerr << "Bad sphericity" << endl;
       exit(1);
     }
-    cout << 1.5*(v[0]+v[1]) <<endl;
     return 1.5*(v[0]+v[1]);
 }
 
@@ -598,7 +596,6 @@ StatusCode TauMass::execute()
   unsigned good_charged_tracks = 0;
   /************    Multihadron event and BhaBha selection ****************/
   /*  the selection is based on charged tracks */
-  clog << "Before MDC information" << endl;
   if(MIN_CHARGED_TRACKS<=evtRecEvent->totalCharged())
   {
     double p2sum=0;
@@ -811,16 +808,13 @@ StatusCode TauMass::execute()
       for(int j=0;j<3;j++)
         S[i][j]/=p2sum;
     /* fill sphericity */
-    clog << "Before sphericity" << endl;
     mdc.S = Sphericity(S);
-    clog << "After sphericity" << endl;
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
     int track=0; //index for neutral tracks
     emc.Etotal=0;
     emc.ngood_charged_track=good_charged_tracks;
-    clog << "Before EMC information" << endl;
     for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
