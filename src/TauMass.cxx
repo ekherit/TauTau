@@ -713,7 +713,7 @@ StatusCode TauMass::execute()
 
       pid->setRecTrack(*itTrk);
       pid->usePidSys((pid->useMuc() | pid->useEmc()) | pid->useDedx()); // use PID sub-system
-      pid->identify(pid->onlyMuon() | pid->Electron()); 
+      pid->identify(pid->onlyMuon() | pid->onlyElectron()); 
       pid->calculate();
       if(pid->IsPidInfoValid())
       {
@@ -813,7 +813,7 @@ StatusCode TauMass::execute()
     /*  fill data for neutral tracks */
     int track=0; //index for neutral tracks
     emc.Etotal=0;
-    emc.ngood_charged_track=mdc.ngood_track;
+    emc.ngood_charged_track=good_charged_tracks;
     for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
