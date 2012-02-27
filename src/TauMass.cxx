@@ -649,6 +649,9 @@ StatusCode TauMass::execute()
     unsigned gidx=0; //good charged track idx
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
+      cout << "Iterate over good charged tracks" << endl;
+      cerr << "Iterate over good charged tracks" << endl;
+      clog << "Iterate over good charged tracks" << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
       //just check that our selection is ok
       if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
@@ -793,6 +796,9 @@ StatusCode TauMass::execute()
         tof.errE[i]  = (*tofTrk)->errenergy();
       }
     }
+    cout << "After loop" << endl;
+    cerr << "After loop" << endl;
+    clog << "After loop" << endl;
     mdc.ntrack=gidx;
     good_charged_tracks=gidx;
     mdc.ngood_track = gidx;
