@@ -818,7 +818,9 @@ StatusCode TauMass::execute()
       for(int j=0;j<3;j++)
         S[i][j]/=p2sum;
     /* fill sphericity */
+    clog << "Before sphericity" << endl;
     mdc.S = Sphericity(S);
+    clog << "After sphericity" << endl;
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
