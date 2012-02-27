@@ -561,6 +561,8 @@ void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
   z=Rvz0;
   phi=Rvphi0;
   clog << "END calculate_vertex" << endl;
+  cerr << "END calculate_vertex" << endl;
+  cout << "END calculate_vertex" << endl;
 }
 
 StatusCode TauMass::execute()
