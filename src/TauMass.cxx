@@ -112,6 +112,7 @@ StatusCode TauMass::initialize(void)
   log << MSG::INFO << "in initialize()" << endmsg;
   event_proceed=0;
   event_write = 0;
+  mu1_events=0;
   gg_event_writed=0;
 
   StatusCode status;
@@ -635,8 +636,6 @@ StatusCode TauMass::execute()
       if(E>0.1) mdc.nemc100++;
       pmap.insert(pair_t(p,idx));
       Emap.insert(pair_t(E,idx));
-      //cout << "idx=" << idx << " E= " << E << "  ismuc=" << (*itTrk)->isMucTrackValid();
-      //cout << endl;
     }
     /* Two or more charged tracks witch signal in EMC */
     if(Emap.size()<2) goto SKIP_CHARGED;
@@ -718,6 +717,7 @@ StatusCode TauMass::execute()
       bool ismu=(*itTrk)->isMucTrackValid();
       mdc.ismu[i]=ismu;
       //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
+      if(ismu && i==1) mu1_events++;
 
       /*  Particle identification game */
       pid->init();
@@ -947,6 +947,7 @@ StatusCode TauMass::finalize()
   std::cout << "Average number of total tracks: " << nttr_a.average() << ", rms=" << nttr_a.rms() << endl;
   std::cout << "Average number of charged tracks: " << nchtr_a.average() << ", rms=" << nchtr_a.rms() << endl;
   std::cout << "Average number of neutral tracks: " << nntr_a.average() << ", rms=" << nntr_a.rms() << endl;
+  std::cout << "Muon 1 events: " << mu1_events << std::endl;
   head_event_selected=event_write;
   head_ncharged_tracks=nchtr_a.average();
   head_ncharged_tracks_rms=nchtr_a.rms();
