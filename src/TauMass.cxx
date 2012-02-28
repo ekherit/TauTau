@@ -717,7 +717,7 @@ StatusCode TauMass::execute()
 
       /* Check muon system information for this track */
       long ismu=(long)(*itTrk)->isMucTrackValid();
-      mdc.ismu[i]=ismu;
+      mdc.ismu[i]=ismu+1;
       //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
       if(ismu==1 && i==1) mu1_events++;
 
