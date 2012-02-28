@@ -26,8 +26,6 @@
 #include <vector>
 #include <algorithm>
 
-//#include "EventModel/EventModel.h"
-//#include "EventModel/Event.h"
 #include "EventModel/EventHeader.h"
 
 #include "ibn/averager.h"

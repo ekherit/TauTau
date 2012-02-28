@@ -63,7 +63,10 @@ const double PI_MESON_MASS=0.13957018; //GeV
 
 
 const double EMS_THRESHOLD = 0.05; //GeV
-const double MAX_MOMENTUM = 2.5; //GeV
+const double MAX_MOMENTUM  = 2.5; //GeV
+
+const double EMC_ENDCUP_THRESHOLD=0.05;
+const double EMC_BARREL_THRESHOLD=0.025;
 
 inline double sq(double x) { return x*x; }
 
@@ -632,7 +635,9 @@ StatusCode TauMass::execute()
       if(E>0.1) mdc.nemc100++;
       pmap.insert(pair_t(p,idx));
       Emap.insert(pair_t(E,idx));
+      cout << "idx=" << (*itTrk)->isMucTrackValid();
     }
+    cout << endl;
     /* Two or more charged tracks witch signal in EMC */
     if(Emap.size()<2) goto SKIP_CHARGED;
 
@@ -689,10 +694,10 @@ StatusCode TauMass::execute()
 
 
       /* Calculate sphericity tensor */
-      for(int i=0;i<3;i++)
-        for(int j=0;j<3;j++)
+      for(int k=0;k<3;k++)
+        for(int m=0;m<3;m++)
         {
-          S[i][j]+=mdcTrk->p3()[i]*mdcTrk->p3()[j];
+          S[k][m]+=mdcTrk->p3()[k]*mdcTrk->p3()[m];
         }
       p2sum+=mdcTrk->p()*mdcTrk->p();
 
@@ -911,7 +916,7 @@ SKIP_CHARGED:
       double c = fabs(cos(emcTrk->theta()));
       double E = emcTrk->energy();
       //hit barrel with threshold 25 MeV and endcup 
-      if((c < 0.82 && E > 0.025) ||  ( 0.86<c && c <0.92 && E > 0.05)) gg.ngood_track++; 
+      if((c < 0.82 && E > EMC_BARREL_THRESHOLD) ||  ( 0.86<c && c <0.92 && E > EMC_ENDCUP_THRESHOLD)) gg.ngood_track++; 
     }
     //normalize sphericity tenzor
     for(int i=0;i<3;i++)
