@@ -79,8 +79,8 @@ class TauMass : public Algorithm
     NTuple::Array<long> module;
     NTuple::Array<double> E,dE;
     NTuple::Array<double> M;
-    NTuple::Array<long> ismu; //has muon track information
-    NTuple::Array<long> istof; //has tof track information
+    NTuple::Array<double> ismu; //has muon track information
+    NTuple::Array<double> istof; //has tof track information
     /*  Additional section */
     NTuple::Array<double> X, Y, Z; //pivot 
     NTuple::Item<long>   nip; //Track number from interaction point (same condition as for highest track)
