@@ -585,7 +585,7 @@ StatusCode TauMass::execute()
   if(isprint)
   {
     std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write;
-    std::cout << " mu1 = " mu1_events;
+    std::cout << " mu1 = " << mu1_events;
     std::cout << std::endl;
   }
   event_proceed++;
