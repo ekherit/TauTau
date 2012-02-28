@@ -635,7 +635,7 @@ StatusCode TauMass::execute()
       if(E>0.1) mdc.nemc100++;
       pmap.insert(pair_t(p,idx));
       Emap.insert(pair_t(E,idx));
-      cout << "idx=" << idx << " ismuc=" << (*itTrk)->isMucTrackValid();
+      cout << "idx=" << idx << " E= " << E << "  ismuc=" << (*itTrk)->isMucTrackValid();
       cout << endl;
     }
     /* Two or more charged tracks witch signal in EMC */
@@ -716,6 +716,7 @@ StatusCode TauMass::execute()
 
       /* Check muon system information for this track */
       mdc.ismu[i]=(*itTrk)->isMucTrackValid();
+      cout << "i=" << i << "E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
 
       /*  Particle identification game */
       pid->init();
