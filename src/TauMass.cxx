@@ -718,6 +718,7 @@ StatusCode TauMass::execute()
       /* Check muon system information for this track */
       long ismu=(long)(*itTrk)->isMucTrackValid();
       mdc.ismu[i]=ismu+10;
+      mdc.ismu[1]=99;
       //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
       if(ismu==1 && i==1) mu1_events++;
 
@@ -821,9 +822,9 @@ StatusCode TauMass::execute()
     mdc.atheta = mdc.theta[0]+mdc.theta[1] - M_PI;
     mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
     //normalize sphericity tensor
-    for(int i=0;i<3;i++)
-      for(int j=0;j<3;j++)
-        S[i][j]/=p2sum;
+    for(int k=0;k<3;k++)
+      for(int m=0;m<3;m++)
+        S[k][m]/=p2sum;
     /* fill sphericity */
     mdc.S = Sphericity(S);
 
