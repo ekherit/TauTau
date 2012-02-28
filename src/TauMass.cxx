@@ -667,7 +667,7 @@ StatusCode TauMass::execute()
       bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
       bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
       if(!is_good_track) continue;
-      unsigned i = gidx; //now fill
+      int i = gidx; //now fill
 
       //fill vertex information
       mdc.rvxy[i]=rvxy;
