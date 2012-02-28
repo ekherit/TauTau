@@ -584,7 +584,9 @@ StatusCode TauMass::execute()
   if(10000 < event_proceed && event_proceed % 10000 ==0) isprint = true;
   if(isprint)
   {
-    std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write << std::endl;
+    std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write;
+    std::cout << " mu1 = " mu1_events;
+    std::cout << std::endl;
   }
   event_proceed++;
 
@@ -714,7 +716,7 @@ StatusCode TauMass::execute()
       mdc.M[i]=P.m();
 
       /* Check muon system information for this track */
-      bool ismu=(*itTrk)->isMucTrackValid();
+      long ismu=(long)(*itTrk)->isMucTrackValid();
       mdc.ismu[i]=ismu;
       //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
       if(ismu && i==1) mu1_events++;
