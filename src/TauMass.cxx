@@ -653,7 +653,7 @@ StatusCode TauMass::execute()
     //particle id 
     ParticleID *pid = ParticleID::instance();
     //loop over tracks oredered by energy
-    unsigned gidx=0; //good charged track idx
+    int gidx=0; //good charged track idx
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
