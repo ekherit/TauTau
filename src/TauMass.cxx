@@ -635,9 +635,9 @@ StatusCode TauMass::execute()
       if(E>0.1) mdc.nemc100++;
       pmap.insert(pair_t(p,idx));
       Emap.insert(pair_t(E,idx));
-      cout << "idx=" << (*itTrk)->isMucTrackValid();
+      cout << "idx=" << idx << " ismuc=" << (*itTrk)->isMucTrackValid();
+      cout << endl;
     }
-    cout << endl;
     /* Two or more charged tracks witch signal in EMC */
     if(Emap.size()<2) goto SKIP_CHARGED;
 
