@@ -715,8 +715,9 @@ StatusCode TauMass::execute()
       mdc.M[i]=P.m();
 
       /* Check muon system information for this track */
-      mdc.ismu[i]=(*itTrk)->isMucTrackValid();
-      if(i==1 && (*itTrk)->isMucTrackValid()) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
+      bool ismu=(*itTrk)->isMucTrackValid();
+      mdc.ismu[i]=ismu;
+      //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
 
       /*  Particle identification game */
       pid->init();
@@ -802,7 +803,7 @@ StatusCode TauMass::execute()
       gidx++;
     }
     if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
-    cout << "gidx=" << gidx << endl;
+    //cout << "gidx=" << gidx << endl;
     mdc.ntrack=gidx;
     good_charged_tracks=gidx;
     mdc.ngood_track = gidx;
