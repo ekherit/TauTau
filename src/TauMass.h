@@ -73,10 +73,10 @@ class TauMass : public Algorithm
     NTuple::Array<double> q; //charge of the track
     NTuple::Array<long> isemc; //has emc information
     /*  EMC section for this charged track */
-    NTuple::Array<long> ncrstl;
-    NTuple::Array<long> cellId;
-    NTuple::Array<long> status;
-    NTuple::Array<long> module;
+    NTuple::Array<double> ncrstl;
+    NTuple::Array<double> cellId;
+    NTuple::Array<double> status;
+    NTuple::Array<double> module;
     NTuple::Array<double> E,dE;
     NTuple::Array<double> M;
     NTuple::Array<double> ismu; //has muon track information
