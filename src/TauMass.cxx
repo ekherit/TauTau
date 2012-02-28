@@ -666,7 +666,7 @@ StatusCode TauMass::execute()
       bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
       bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
       if(!is_good_track) continue;
-      unsigned i = gidx++; //now fill
+      unsigned i = gidx; //now fill
 
       //fill vertex information
       mdc.rvxy[i]=rvxy;
@@ -716,7 +716,7 @@ StatusCode TauMass::execute()
 
       /* Check muon system information for this track */
       mdc.ismu[i]=(*itTrk)->isMucTrackValid();
-      //if(i==1) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
+      if(i==1 && (*itTrk)->isMucTrackValid()) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
 
       /*  Particle identification game */
       pid->init();
@@ -799,8 +799,10 @@ StatusCode TauMass::execute()
         tof.E[i]  = (*tofTrk)->energy();
         tof.errE[i]  = (*tofTrk)->errenergy();
       }
+      gidx++;
     }
     if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
+    cout << "gidx=" << gidx << endl;
     mdc.ntrack=gidx;
     good_charged_tracks=gidx;
     mdc.ngood_track = gidx;
