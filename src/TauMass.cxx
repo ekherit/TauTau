@@ -170,6 +170,7 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addIndexedItem ("rvxy", mdc.ntrack, mdc.rvxy);
       status = mdc_tuple->addIndexedItem ("rvz", mdc.ntrack, mdc.rvz);
       status = mdc_tuple->addIndexedItem ("rvphi", mdc.ntrack, mdc.rvphi);
+      status = mdc_tuple->addIndexedItem ("ismu", mdc.ntrack, mdc.ismu);
       status = mdc_tuple->addIndexedItem ("q", mdc.ntrack, mdc.q);
       // EMC information for charged tracks
       status = mdc_tuple->addIndexedItem ("isemc", mdc.ntrack, mdc.isemc);
@@ -180,7 +181,6 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addIndexedItem ("status", mdc.ntrack, mdc.status);
       status = mdc_tuple->addIndexedItem ("module", mdc.ntrack, mdc.module);
       status = mdc_tuple->addIndexedItem ("M", mdc.ntrack, mdc.M);
-      status = mdc_tuple->addIndexedItem ("ismu", mdc.ntrack, mdc.ismu);
       status = mdc_tuple->addIndexedItem ("istof", mdc.ntrack, mdc.istof);
       status = mdc_tuple->addIndexedItem ("X", mdc.ntrack, mdc.X);
       status = mdc_tuple->addIndexedItem ("Y", mdc.ntrack, mdc.Y);
