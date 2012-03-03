@@ -824,8 +824,10 @@ StatusCode TauMass::execute()
       mdc.istof[i]=(*itTrk)->isTofTrackValid();
       if(CHECK_TOF && mdc.istof[i])
       {
-        SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
-        SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
+        //SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
+        //SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
+        RecTofTrack * tofTrk = (*itTrk)->tofTrack();
+        
         tof.ntrack=i+1;
         tof.trackID[i]=(*tofTrk)->trackID();
         tof.tofID[i]=(*tofTrk)->tofID();
