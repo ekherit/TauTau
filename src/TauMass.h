@@ -134,6 +134,27 @@ class TauMass : public Algorithm
   NTuple::Tuple * emc_tuple;
   EMC_t emc;
 
+  struct MUC_t
+  {
+    NTuple::Item<long>    ntrack; //number of selected tracks. Some of them dont have muc information
+    NTuple::Array<double>   status; //status status=1: single seed cluster; status=2: splitted from multi-seeds cluster.
+    NTuple::Array<double>   type; //seed mode. 0: ext, 1: emc, 2: muc
+    NTuple::Array<double>   depth; //depth of the track in iron
+    NTuple::Array<double>   chi2; //chi2 of the fit
+    NTuple::Array<double>   ndf; //degree of freedom
+    NTuple::Array<double>   distance; //distance between ext track and fired strip in 1st layer of MUC
+    NTuple::Array<double>   phi; //delta phi between mdc momentum and direction of MUC track
+    void init(void);
+    StatusCode init_tuple(NTuple::Tuple * tuple);
+    int MAX_TRACK_NUMBER;
+  };
+
+  NTuple::Tuple * muc_tuple;
+
+
+
+
+
 
   struct DEDX_t
   {

@@ -407,6 +407,32 @@ StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
   return status;
 }
 
+StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
+{
+  StatusCode status;
+  status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
+  status = tuple->addItem ("ngt", ngood_track, 0, MAX_TRACK_NUMBER); //number of good charged tracks.
+  status = tuple->addItem ("ngct",    ngood_charged_track, 0, MAX_TRACK_NUMBER); //number of good charged tracks
+  status = tuple->addItem ("Etotal", Etotal);
+  status = tuple->addItem ("ccos", ccos);
+  status = tuple->addItem ("S", S); //sphericity
+  status = tuple->addItem ("atheta", atheta);
+  status = tuple->addItem ("aphi", aphi);
+  //arrays
+  status = tuple->addIndexedItem ("module",  ntrack, module );
+  status = tuple->addIndexedItem ("status", ntrack, EMC_t::status ); //name interference of status.
+  status = tuple->addIndexedItem ("ncrstl", ntrack, ncrstl );
+  status = tuple->addIndexedItem ("cellId", ntrack, cellId );
+  status = tuple->addIndexedItem ("x", ntrack, x );
+  status = tuple->addIndexedItem ("y", ntrack, y );
+  status = tuple->addIndexedItem ("z", ntrack, z );
+  status = tuple->addIndexedItem ("E", ntrack, E );
+  status = tuple->addIndexedItem ("dE",ntrack, dE );
+  status = tuple->addIndexedItem ("theta", ntrack, theta );
+  status = tuple->addIndexedItem ("phi", ntrack, phi);
+  return status;
+}
+
 void TauMass::InitData(long nchtrack, long nneutrack)
 {
   m_ntrack=nchtrack+nneutrack;
