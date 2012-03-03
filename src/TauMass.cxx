@@ -824,44 +824,59 @@ StatusCode TauMass::execute()
       mdc.istof[i]=(*itTrk)->isTofTrackValid();
       if(CHECK_TOF && mdc.istof[i])
       {
-        //SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
-        //SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
-        RecTofTrack * tofTrk = (*itTrk)->tofTrack();
-        
-        tof.ntrack=i+1;
-        tof.trackID[i]=(*tofTrk)->trackID();
-        tof.tofID[i]=(*tofTrk)->tofID();
-        tof.tofTrackID[i]=(*tofTrk)->tofTrackID();
-        tof.status[i] = (*tofTrk)->status();
-        tof.path[i]  = (*tofTrk)->path();
-        tof.zrhit[i]  = (*tofTrk)->zrhit();
-        tof.ph[i]  = (*tofTrk)->ph();
-        tof.tof[i]  = (*tofTrk)->tof();
-        tof.errtof[i]  = (*tofTrk)->errtof();
-        tof.beta[i]  = (*tofTrk)->beta();
-        tof.texpe[i]  = (*tofTrk)->texpElectron();
-        tof.texpmu[i]  = (*tofTrk)->texpMuon();
-        tof.texppi[i]  = (*tofTrk)->texpPion();
-        tof.texpK[i]  = (*tofTrk)->texpKaon();
-        tof.texpp[i]  = (*tofTrk)->texpProton();
-        tof.toffsete[i]  = (*tofTrk)->toffsetElectron();
-        tof.toffsetmu[i]  = (*tofTrk)->toffsetMuon();
-        tof.toffsetpi[i]  = (*tofTrk)->toffsetPion();
-        tof.toffsetK[i]  = (*tofTrk)->toffsetKaon();
-        tof.toffsetp[i]  = (*tofTrk)->toffsetProton();
-        tof.toffsetap[i]  = (*tofTrk)->toffsetAntiProton();
-        tof.sigmae[i]  = (*tofTrk)->sigmaElectron();
-        tof.sigmamu[i]  = (*tofTrk)->sigmaMuon();
-        tof.sigmapi[i]  = (*tofTrk)->sigmaPion();
-        tof.sigmaK[i]  = (*tofTrk)->sigmaKaon();
-        tof.sigmap[i]  = (*tofTrk)->sigmaProton();
-        tof.sigmaap[i]  = (*tofTrk)->sigmaAntiProton();
-        tof.t0[i]  = (*tofTrk)->t0();
-        tof.errt0[i]  = (*tofTrk)->errt0();
-        tof.errz[i]  = (*tofTrk)->errz();
-        tof.phi[i]  = (*tofTrk)->phi();
-        tof.E[i]  = (*tofTrk)->energy();
-        tof.errE[i]  = (*tofTrk)->errenergy();
+        SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
+        SmartRefVector<RecTofTrack>::iterator it = tofTrkCol.begin();
+        TofHitStatus *hitst = new TofHitStatus;
+        std::vector<int> tofecount;
+        int goodtofetrk=0;
+        for(it = tofTrk.begin(); it!=tofTrk.end(); it++,goodtofetrk++)
+        {
+          unsigned int st = (*it)->status();
+          hitst->setStatus(st);
+          if(  (hitst->is_barrel()) ) continue;
+          if( !(hitst->is_counter()) ) continue;
+          if( hitst->layer()==1 )  tofecount.push_back(goodtofetrk);
+        }
+        delete hitst;
+        if(tofecount.size()==1) //not tof2 track or more than 1 tracks
+        {
+          it = tofTrk.begin()+tofecount[0];
+
+          tof.ntrack=i+1;
+          tof.trackID[i]=(*tofTrk)->trackID();
+          tof.tofID[i]=(*tofTrk)->tofID();
+          tof.tofTrackID[i]=(*tofTrk)->tofTrackID();
+          tof.status[i] = (*tofTrk)->status();
+          tof.path[i]  = (*tofTrk)->path();
+          tof.zrhit[i]  = (*tofTrk)->zrhit();
+          tof.ph[i]  = (*tofTrk)->ph();
+          tof.tof[i]  = (*tofTrk)->tof();
+          tof.errtof[i]  = (*tofTrk)->errtof();
+          tof.beta[i]  = (*tofTrk)->beta();
+          tof.texpe[i]  = (*tofTrk)->texpElectron();
+          tof.texpmu[i]  = (*tofTrk)->texpMuon();
+          tof.texppi[i]  = (*tofTrk)->texpPion();
+          tof.texpK[i]  = (*tofTrk)->texpKaon();
+          tof.texpp[i]  = (*tofTrk)->texpProton();
+          tof.toffsete[i]  = (*tofTrk)->toffsetElectron();
+          tof.toffsetmu[i]  = (*tofTrk)->toffsetMuon();
+          tof.toffsetpi[i]  = (*tofTrk)->toffsetPion();
+          tof.toffsetK[i]  = (*tofTrk)->toffsetKaon();
+          tof.toffsetp[i]  = (*tofTrk)->toffsetProton();
+          tof.toffsetap[i]  = (*tofTrk)->toffsetAntiProton();
+          tof.sigmae[i]  = (*tofTrk)->sigmaElectron();
+          tof.sigmamu[i]  = (*tofTrk)->sigmaMuon();
+          tof.sigmapi[i]  = (*tofTrk)->sigmaPion();
+          tof.sigmaK[i]  = (*tofTrk)->sigmaKaon();
+          tof.sigmap[i]  = (*tofTrk)->sigmaProton();
+          tof.sigmaap[i]  = (*tofTrk)->sigmaAntiProton();
+          tof.t0[i]  = (*tofTrk)->t0();
+          tof.errt0[i]  = (*tofTrk)->errt0();
+          tof.errz[i]  = (*tofTrk)->errz();
+          tof.phi[i]  = (*tofTrk)->phi();
+          tof.E[i]  = (*tofTrk)->energy();
+          tof.errE[i]  = (*tofTrk)->errenergy();
+        }
       }
       gidx++;
     }
