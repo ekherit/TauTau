@@ -90,6 +90,7 @@ class TauMass : public Algorithm
     NTuple::Item<double> S; //Sphericity
     NTuple::Item<double> ccos; //cos between two high energy tracks.
     NTuple::Item<double> atheta, aphi; //acolinearity 
+    NTuple::Item<double> acompl; //acomplanarity
     NTuple::Item<long>   pt50; //flag for higher 50 MeV pt
     NTuple::Item<long>   pt100;//flag for higher 100 MeV pt.
     NTuple::Item<long>   nemc20;// flag for threashold E20

@@ -193,6 +193,7 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addItem("ccos", mdc.ccos);
       status = mdc_tuple->addItem("atheta", mdc.atheta);
       status = mdc_tuple->addItem("aphi", mdc.aphi);
+      status = mdc_tuple->addItem("acompl", mdc.acompl);
 
       /*  particle identification part */
       status = mdc_tuple->addIndexedItem ("probe", mdc.ntrack, mdc.probe);
@@ -471,6 +472,7 @@ void TauMass::InitData(long nchtrack, long nneutrack)
   mdc.ccos=-1000;
   mdc.atheta=-1000;
   mdc.aphi=-1000;
+  mdc.acompl=-1000;
   mdc.pt50=-1000;
   mdc.pt100=-1000;
   mdc.nemc20=0;
@@ -896,6 +898,7 @@ StatusCode TauMass::execute()
     mdc.ccos = p0.dot(p1)/(p0.mag()*p1.mag());
     mdc.atheta = mdc.theta[0]+mdc.theta[1] - M_PI;
     mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
+    mdc.acompl = (mdc.px[0]*mdc.py[1]-mdc.py[0]*mdc.px[1])/(mdc.p[0]*mdc.p[1]);
     //normalize sphericity tensor
     for(int k=0;k<3;k++)
       for(int m=0;m<3;m++)
