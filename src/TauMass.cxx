@@ -431,7 +431,7 @@ StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
   StatusCode status;
   status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
   //arrays
-  status = tuple->addIndexedItem ("status",  ntrack, status );
+  status = tuple->addIndexedItem ("status",  ntrack, MUC_t::status );
   status = tuple->addIndexedItem ("type", ntrack, type);
   status = tuple->addIndexedItem ("depth", ntrack, depth );
   status = tuple->addIndexedItem ("chi2", ntrack,  chi2 );
