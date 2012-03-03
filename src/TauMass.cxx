@@ -825,13 +825,13 @@ StatusCode TauMass::execute()
       if(CHECK_TOF && mdc.istof[i])
       {
         SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
-        SmartRefVector<RecTofTrack>::iterator it = tofTrkCol.begin();
+        SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
         TofHitStatus *hitst = new TofHitStatus;
         std::vector<int> tofecount;
         int goodtofetrk=0;
-        for(it = tofTrk.begin(); it!=tofTrk.end(); it++,goodtofetrk++)
+        for(tofTrk = tofTrkCol.begin(); tofTrk!=tofTrkCol.end(); tofTrk++,goodtofetrk++)
         {
-          unsigned int st = (*it)->status();
+          unsigned int st = (*tofTrk)->status();
           hitst->setStatus(st);
           if(  (hitst->is_barrel()) ) continue;
           if( !(hitst->is_counter()) ) continue;
@@ -840,7 +840,7 @@ StatusCode TauMass::execute()
         delete hitst;
         if(tofecount.size()==1) //not tof2 track or more than 1 tracks
         {
-          it = tofTrk.begin()+tofecount[0];
+          tofTrk = tofTrkCol.begin()+tofecount[0];
 
           tof.ntrack=i+1;
           tof.trackID[i]=(*tofTrk)->trackID();
