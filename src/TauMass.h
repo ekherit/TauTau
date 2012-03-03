@@ -150,6 +150,8 @@ class TauMass : public Algorithm
     int MAX_TRACK_NUMBER;
   };
 
+  MUC_t muc;
+
   NTuple::Tuple * muc_tuple;
 
 

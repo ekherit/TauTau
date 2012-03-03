@@ -768,7 +768,7 @@ StatusCode TauMass::execute()
       mdc.ismu[i]=(*itTrk)->isMucTrackValid();
       if((*itTrk)->isMucTrackValid() && CHECK_MUC==1)
       {
-        RecMdcTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
+        RecMucTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
         muc.ntrack=i;
         muc.status[i]= mucTrk->status();
         muc.type[i]= mucTrk->type();
