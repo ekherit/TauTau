@@ -39,9 +39,10 @@ class TauMass : public Algorithm
   StatusCode finalize();  
 
 	private:
-  int prop_check_dedx;
 	int USE_IPCUT; //use interection point cut
 	int CHECK_TOF; //use toff.
+  int CHECK_DEDX;
+  int CHECK_MUC;
 	double IPR;
 	int IPTRACKS; //tracks number from interection point
 	int MIN_CHARGED_TRACKS; //minimum charged tracks in selection
@@ -114,10 +115,10 @@ class TauMass : public Algorithm
     NTuple::Item<double> atheta; //theta acolinearity theta_0+theta_1 - pi
     NTuple::Item<double> aphi; //phi aclolinearity  abs(phi_0-phi_1)-pi
     //arrays
-    NTuple::Array<long>   status; //status status=1: single seed cluster; status=2: splitted from multi-seeds cluster.
-    NTuple::Array<long>   ncrstl; //Number of crystals in the shower
-    NTuple::Array<long>   cellId; //Central crystal’s identifier
-    NTuple::Array<long>   module; //module=0: east endcap;  module=1: barrel;  module=2: west endcap.
+    NTuple::Array<double>   status; //status status=1: single seed cluster; status=2: splitted from multi-seeds cluster.
+    NTuple::Array<double>   ncrstl; //Number of crystals in the shower
+    NTuple::Array<double>   cellId; //Central crystal’s identifier
+    NTuple::Array<double>   module; //module=0: east endcap;  module=1: barrel;  module=2: west endcap.
     NTuple::Array<double> x, y, z; //coordinates of claster
     NTuple::Array<double> theta, phi;  //angles
     NTuple::Array<double> E,dE; // energy deposition and error
@@ -182,10 +183,10 @@ class TauMass : public Algorithm
   struct TOF_t
   {
 	  NTuple::Item<long> ntrack; //number of tracks
-	  NTuple::Array<long>  trackID; //track id 
-	  NTuple::Array<long>  tofID; //TOF counter ID
-	  NTuple::Array<long>  tofTrackID; //Cluster (Group of TOF Hits) ID
-	  NTuple::Array<long>  status; //Raw/Readout/Counter/TrackEnd/Layer/Barrel
+	  NTuple::Array<double>  trackID; //track id 
+	  NTuple::Array<double>  tofID; //TOF counter ID
+	  NTuple::Array<double>  tofTrackID; //Cluster (Group of TOF Hits) ID
+	  NTuple::Array<double>  status; //Raw/Readout/Counter/TrackEnd/Layer/Barrel
 	  NTuple::Array<double>  path;   //distance of flight
 	  NTuple::Array<double>  zrhit;  //hit position , for barrel, it is z, for endcap, it is r
 	  NTuple::Array<double>  ph;     //Pulse height (adc) unit: channel

@@ -89,8 +89,9 @@ double Sphericity(TMatrixD & S)
 TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
-  declareProperty("CHECK_TOF", CHECK_TOF=0);
-  declareProperty("CheckDedx", prop_check_dedx = 1);
+  declareProperty("CHECK_TOF", CHECK_TOF=1);
+  declareProperty("CHECK_DEDX", CHECK_DEDX = 1);
+  declareProperty("CHECK_MUC", CHECK_MUC = 1);
   declareProperty("DELTA_X", DELTA_X = 1.0); //cm?
   declareProperty("DELTA_Y", DELTA_Y = 1.0); //cm?
   declareProperty("DELTA_Z", DELTA_Z = 10.0); //cm?
@@ -102,6 +103,7 @@ TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
 
   emc.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
   gg.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
+  muc.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
 }
 
 
@@ -221,6 +223,23 @@ StatusCode TauMass::initialize(void)
       return StatusCode::FAILURE;
     }
   }
+
+  NTuplePtr nt_muc(ntupleSvc(), "FILE1/muc");
+  if(nt_muc) muc_tuple=nt_muc;
+  else
+  {
+    muc_tuple = ntupleSvc()->book("FILE1/muc", CLID_ColumnWiseTuple, "Muon system");
+    if(muc_tuple)
+    {
+      status = muc.init_tuple(muc_tuple);
+    }
+    else
+    {
+      log << MSG::ERROR << "    Cannot book N-tuple:" << long(muc_tuple) << endmsg;
+      return StatusCode::FAILURE;
+    }
+  }
+
   NTuplePtr nt2(ntupleSvc(), "FILE1/dedx");
   if(nt2) dedx_tuple=nt2;
   else
@@ -411,26 +430,30 @@ StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
 {
   StatusCode status;
   status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
-  status = tuple->addItem ("ngt", ngood_track, 0, MAX_TRACK_NUMBER); //number of good charged tracks.
-  status = tuple->addItem ("ngct",    ngood_charged_track, 0, MAX_TRACK_NUMBER); //number of good charged tracks
-  status = tuple->addItem ("Etotal", Etotal);
-  status = tuple->addItem ("ccos", ccos);
-  status = tuple->addItem ("S", S); //sphericity
-  status = tuple->addItem ("atheta", atheta);
-  status = tuple->addItem ("aphi", aphi);
   //arrays
-  status = tuple->addIndexedItem ("module",  ntrack, module );
-  status = tuple->addIndexedItem ("status", ntrack, EMC_t::status ); //name interference of status.
-  status = tuple->addIndexedItem ("ncrstl", ntrack, ncrstl );
-  status = tuple->addIndexedItem ("cellId", ntrack, cellId );
-  status = tuple->addIndexedItem ("x", ntrack, x );
-  status = tuple->addIndexedItem ("y", ntrack, y );
-  status = tuple->addIndexedItem ("z", ntrack, z );
-  status = tuple->addIndexedItem ("E", ntrack, E );
-  status = tuple->addIndexedItem ("dE",ntrack, dE );
-  status = tuple->addIndexedItem ("theta", ntrack, theta );
+  status = tuple->addIndexedItem ("status",  ntrack, status );
+  status = tuple->addIndexedItem ("type", ntrack, type);
+  status = tuple->addIndexedItem ("depth", ntrack, depth );
+  status = tuple->addIndexedItem ("chi2", ntrack,  chi2 );
+  status = tuple->addIndexedItem ("ndf", ntrack, ndf );
+  status = tuple->addIndexedItem ("distance", ntrack, distance );
   status = tuple->addIndexedItem ("phi", ntrack, phi);
   return status;
+}
+
+void TauMass::MUC_t::init(void)
+{
+  // emc information init.
+  ntrack=0;
+  for(int i=0; i<MAX_TRACK_NUMBER; i++) {
+    status[i]=-1000;
+    type[i]=-1000;
+    depth[i]=-1000;
+    chi2[i]=-1000;
+    ndf[i]=-1000;
+    distance[i]=-1000;
+    phi[i] = -1000;
+  }
 }
 
 void TauMass::InitData(long nchtrack, long nneutrack)
@@ -742,10 +765,20 @@ StatusCode TauMass::execute()
       mdc.M[i]=P.m();
 
       /* Check muon system information for this track */
-      double ismu=(double)(*itTrk)->isMucTrackValid();
-      mdc.ismu[i]=ismu;
-      //if(i==1 && ismu) cout << "i=" << i << " E=" << emcTrk->energy() << " muc=" << (*itTrk)->isMucTrackValid() << endl;
-      if(ismu==1 && i==1) mu1_events++;
+      mdc.ismu[i]=(*itTrk)->isMucTrackValid();
+      if((*itTrk)->isMucTrackValid() && CHECK_MUC==1)
+      {
+        RecMdcTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
+        muc.ntrack=i;
+        muc.status[i]= mucTrk->status();
+        muc.type[i]= mucTrk->type();
+        muc.depth[i]= mucTrk->depth();
+        muc.chi2[i]= mucTrk->chi2();
+        muc.ndf[i]= mucTrk->dof();
+        muc.distance[i]= mucTrk->distance();
+        muc.phi[i]= mucTrk->deltaPhi();
+      }
+
 
       /*  Particle identification game */
       pid->init();
@@ -766,7 +799,7 @@ StatusCode TauMass::execute()
       }
 
       /* dEdx information */
-      if(prop_check_dedx == 1 && (*itTrk)->isMdcDedxValid())
+      if(CHECK_DEDX == 1 && (*itTrk)->isMdcDedxValid())
       {
         dedx.ntrack=i+1;
         RecMdcDedx* dedxTrk = (*itTrk)->mdcDedx();
@@ -893,6 +926,7 @@ StatusCode TauMass::execute()
     dedx_tuple->write();
     mdc_tuple->write();
     emc_tuple->write();
+    if(CHECK_MUC) muc_tuple->write();
     if(CHECK_TOF) tof_tuple->write();
     event_write++;
   }
