@@ -650,7 +650,6 @@ StatusCode TauMass::execute()
     //look thru the charged tracks and sort them on energy
     for(unsigned idx = 0; idx < evtRecEvent->totalCharged(); idx++)
     {
-      cout << "thru chraged tracks: " << idx << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
       if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
       if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
