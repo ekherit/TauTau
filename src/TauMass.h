@@ -91,11 +91,6 @@ class TauMass : public Algorithm
     NTuple::Item<double> ccos; //cos between two high energy tracks.
     NTuple::Item<double> atheta, aphi; //acolinearity 
     NTuple::Item<double> acompl; //acomplanarity
-    NTuple::Item<long>   pt50; //flag for higher 50 MeV pt
-    NTuple::Item<long>   pt100;//flag for higher 100 MeV pt.
-    NTuple::Item<long>   nemc20;// flag for threashold E20
-    NTuple::Item<long>   nemc50;// flag for threashold E20
-    NTuple::Item<long>   nemc100;// flag for threashold E20
     /*  particle identificaiton */
     NTuple::Array<double>   probe; //probability of electron
     NTuple::Array<double>   probmu; //probability for track to be muon

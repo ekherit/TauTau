@@ -153,11 +153,6 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addItem ("Emdc", mdc.Emdc);
       status = mdc_tuple->addItem ("Eemc", mdc.Eemc);
       status = mdc_tuple->addItem ("nip", mdc.nip);
-      status = mdc_tuple->addItem ("pt50", mdc.pt50);
-      status = mdc_tuple->addItem ("pt100", mdc.pt100);
-      status = mdc_tuple->addItem ("nemc20", mdc.nemc20);
-      status = mdc_tuple->addItem ("nemc50", mdc.nemc50);
-      status = mdc_tuple->addItem ("nemc100", mdc.nemc100);
       status = mdc_tuple->addIndexedItem ("p", mdc.ntrack, mdc.p);
       status = mdc_tuple->addIndexedItem ("pt", mdc.ntrack, mdc.pt);
       status = mdc_tuple->addIndexedItem ("px", mdc.ntrack, mdc.px);
@@ -474,11 +469,6 @@ void TauMass::InitData(long nchtrack, long nneutrack)
   mdc.atheta=-1000;
   mdc.aphi=-1000;
   mdc.acompl=-1000;
-  mdc.pt50=-1000;
-  mdc.pt100=-1000;
-  mdc.nemc20=0;
-  mdc.nemc50=0;
-  mdc.nemc100=0;
   mdc.ntrack=0;
   mdc.ngood_track=0; //number of good tracks
   for(int i=0;i<MAX_TRACK_NUMBER; i++)
@@ -658,8 +648,6 @@ StatusCode TauMass::execute()
   mmap_t pmap;
   mmap_t Emap;
   unsigned good_charged_tracks = 0;
-  /************    Multihadron event and BhaBha selection ****************/
-  /*  the selection is based on charged tracks */
   if(MIN_CHARGED_TRACKS<=evtRecEvent->totalCharged())
   {
     double p2sum=0;
@@ -670,8 +658,6 @@ StatusCode TauMass::execute()
     /*  loop over charged track */
     //mdc.ntrack=evtRecEvent->totalCharged();
     mdc.ntrack=0;
-    bool ispt50=true;
-    bool ispt100=true;
     
     //look thru the charged tracks and sort them on energy
     for(unsigned idx = 0; idx < evtRecEvent->totalCharged() && idx < MAX_TRACK_NUMBER ; idx++)
@@ -743,10 +729,6 @@ StatusCode TauMass::execute()
       mdc.y[i]     =  mdcTrk->y();
       mdc.z[i]     =  mdcTrk->z();
       
-      //fill some information
-      ispt50 = ispt50 && mdc.pt[i]>0.05;
-      ispt100 = ispt100 && mdc.pt[i]>0.1;
-
       mdc.Emdc+=sqrt(mdc.p[i]*mdc.p[i]+PI_MESON_MASS*PI_MESON_MASS);
 
 
@@ -887,15 +869,10 @@ StatusCode TauMass::execute()
       }
       gidx++;
     }
-    if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
-    //cout << "gidx=" << gidx << endl;
-    mdc.ntrack=gidx;
     good_charged_tracks=gidx;
+    if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
+    mdc.ntrack=gidx;
     mdc.ngood_track = gidx;
-
-    mdc.pt50 = ispt50;
-    mdc.pt100 = ispt100;
-
 
     /* Calculate acolinearity  for two tracks with big enrgies */
     Hep3Vector p0(mdc.px[0], mdc.py[0],mdc.pz[0]);
