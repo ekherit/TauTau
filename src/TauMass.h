@@ -106,7 +106,7 @@ class TauMass : public Algorithm
     NTuple::Item<long>    ngood_track; //number of good neutral tracks.
     NTuple::Item<long>    ngood_charged_track; //number of good charged tracks.
 
-    NTuple::Item<long> S; //sphericity
+    NTuple::Item<double> S; //sphericity
     NTuple::Item<double> ccos; //aclolinearity
     NTuple::Item<double> atheta; //theta acolinearity theta_0+theta_1 - pi
     NTuple::Item<double> aphi; //phi aclolinearity  abs(phi_0-phi_1)-pi

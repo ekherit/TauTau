@@ -86,6 +86,7 @@ double Sphericity(TMatrixD & S)
     return 1.5*(v[0]+v[1]);
 }
 
+
 TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
