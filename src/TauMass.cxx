@@ -72,12 +72,12 @@ inline double sq(double x) { return x*x; }
 
 
 /*  this class is used for calculating sphericity */
-class Sphericity
+class Sphericity2
 {
   TMatrixD S; //sphericity tensor
   double sum2; //sum of squared
   public:
-    Sphericity(void):  S(TMatrixD(3,3))
+    Sphericity2(void):  S(TMatrixD(3,3))
     {
       //clear 
       for(int i=0;i<3;i++)
@@ -1074,7 +1074,7 @@ SKIP_CHARGED:
         S[i][j]=S[i][j]/R2sum;
         cout << "S"<<i<<j<<"="<<S[i][j] << endl;
       }
-    gg.S = Sphericity(S);
+    gg.S = Sphericity2(S);
     cout << Emap.size() << endl;
 
     //calculate colliniarity of two high energy tracks
