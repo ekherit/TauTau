@@ -623,7 +623,9 @@ StatusCode TauMass::execute()
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
 
+  clog << "Before init data"<< endl;
   InitData(evtRecEvent->totalCharged(), evtRecEvent->totalNeutral());
+  clog << "After init .data" << endl;
 
   nchtr_a.add(evtRecEvent->totalCharged());
   nntr_a.add(evtRecEvent->totalNeutral());
