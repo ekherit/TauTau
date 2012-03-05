@@ -118,7 +118,6 @@ class Sphericity2
 
     double operator()(void)
     {
-      norm();
       TMatrixDEigen Stmp(S);
       const TVectorD & eval = Stmp.GetEigenValuesRe();
       std::vector<double> v(3);
@@ -129,7 +128,9 @@ class Sphericity2
         cerr << "Bad sphericity" << endl;
         exit(1);
       }
-      return 1.5*(v[0]+v[1]);
+      double sphericity = 1.5*(v[0]+v[1]);
+      cout << sphericity << endl;
+      return sphericity;
     }
 };
 
@@ -146,7 +147,10 @@ double Sphericity(TMatrixD & S)
       cerr << "Bad sphericity" << endl;
       exit(1);
     }
-    return 1.5*(v[0]+v[1]);
+   // return 1.5*(v[0]+v[1]);
+    double sphericity = 1.5*(v[0]+v[1]);
+    cout << sphericity << endl;
+    return sphericity;
 }
 
 
@@ -957,6 +961,7 @@ StatusCode TauMass::execute()
     for(int k=0;k<3;k++)
       for(int m=0;m<3;m++)
         S[k][m]/=p2sum;
+    SS.norm();
     /* fill sphericity */
     cout << "ngood=" << gidx << endl;
     cout << "Before mdc.S" << endl;
@@ -965,7 +970,7 @@ StatusCode TauMass::execute()
     for(int k=0;k<3;k++)
       for(int m=0;m<3;m++)
       {
-        cout << k<<m << S[k][m] <<  "      " <<  SS.S[k][m] << endl;
+        cout << k<<m << " " << S[k][m] <<  "      " <<  SS.S[k][m] << endl;
       }
 
 
