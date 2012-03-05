@@ -1074,7 +1074,7 @@ SKIP_CHARGED:
         S[i][j]=S[i][j]/R2sum;
         cout << "S"<<i<<j<<"="<<S[i][j] << endl;
       }
-    gg.S = Sphericity2(S);
+    gg.S = Sphericity(S);
     cout << Emap.size() << endl;
 
     //calculate colliniarity of two high energy tracks
