@@ -904,6 +904,25 @@ StatusCode TauMass::execute()
     m_time = eventHeader->time();
 
 
+    //оставим два трека только для электронов и мюонов
+    if(emc.ntrack>0) goto SKIP_CHARGED;
+    if(mdc.ntrack<2 || mdc.ntrack>2) goto SKIP_CHARGED;
+
+    vector <bool> ise(2);
+    vector <bool> ismu(2);
+    for(int i=0;i<ise.size();++i)
+    { 
+      double evp = mdc.E[i] /mdc.p[i];
+      ise[i] = mdc.ismu[i] == 0 && evp > 0.9 && evp < 1.05;
+      ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.15 && mdc.E[i]<0.25;
+    }
+    bool charge = (mdc.q[0]*mdc.q[1]) <  0;
+    bool kinem = mdc.p[0] < 1.5 && mdc.p[1] << 1.5;
+    bool tau_sig  = ( (ise[0] && ismu[1]) || (ise[1] && ismu[0]) ) && charge && kinem;
+    bool bhabha_sig = ( (ise[0] && ise[1]) || (ismu[0] && ismu[1])) && charge;
+
+    if(!tau_sig && !bhabha_sig) goto SKIP_CHARGED;  
+
     /* now fill the data */
     main_tuple->write();
     dedx_tuple->write();
