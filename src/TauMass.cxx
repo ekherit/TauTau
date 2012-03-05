@@ -964,7 +964,7 @@ SKIP_CHARGED:
       Emap.insert(pair_t(E,track));
     }
     //Select exactly two good photons
-    if(Emap.size() < 2 || 2 < Emap.size()) goto SKIP_GG;
+    if(Emap.size() < 2) goto SKIP_GG;
     if(MAX_TRACK_NUMBER < Emap.size()) goto SKIP_GG;
     gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
@@ -996,10 +996,19 @@ SKIP_CHARGED:
     SS.norm();
     gg.S = SS();
 
+
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
     gg.atheta = gg.theta[0]+gg.theta[1] - M_PI;
     gg.aphi = fabs(gg.phi[0]-gg.phi[1]) - M_PI;
+
+    bool acol = fabs(gg.atheta) < 0.05 && -0.06 < gg.aphi && gg.aphi<0.02;
+    bool barrel = fabs(cos(gg.theta[0])) < 0.8 && fabs(cos(gg.theta[1])) < 0.8;
+    bool highE = gg.E[0] > 0.8*1.4 && gg.E[1] > 0.8*1.4  && gg.E[0] < 1.2*1.9 && gg.E[1] < 1.2*1.9;
+
+    bool isgg =  gg.ngood_track==2 && acol && barrel && highE;
+    if(!isgg) goto SKIP_GG;
+
     gg_tuple->write();
     gg_event_writed++;
   }
