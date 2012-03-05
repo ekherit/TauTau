@@ -958,7 +958,7 @@ StatusCode TauMass::execute()
     for(int k=0;k<3;k++)
       for(int m=0;m<3;m++)
       {
-        cout << k<<m << S[k][m] <<  "      " <<  SS.S[i][m] << endl;
+        cout << k<<m << S[k][m] <<  "      " <<  SS.S[k][m] << endl;
       }
 
 
