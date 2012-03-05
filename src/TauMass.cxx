@@ -101,7 +101,10 @@ class Sphericity2
     {
       for(int k=0;k<3;k++)
         for(int m=0;m<3;m++)
+        {
           S[k][m]+=p[k]*p[m];
+          cout << k << m << " " << S[k][m] << endl;
+        }
       sum2+=p.mag2();
       cout << "sum2=" << sum2 << endl;
     }
@@ -804,6 +807,7 @@ StatusCode TauMass::execute()
         for(int m=0;m<3;m++)
         {
           S[k][m]+=mdcTrk->p3()[k]*mdcTrk->p3()[m];
+          cout << k << m << " " << S[k][m] << endl;
         }
       cout << mdcTrk->p()*mdcTrk->p() << " " << mdcTrk->p3().mag2() << endl;
       p2sum+=mdcTrk->p()*mdcTrk->p();
