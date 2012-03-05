@@ -83,7 +83,7 @@ TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("IPR", IPR=1); //Interaction point cut distance.
   declareProperty("IPTRACKS", IPTRACKS=2); //number of tracks from interection point
   declareProperty("MIN_CHARGED_TRACKS", MIN_CHARGED_TRACKS=2); //minimum number of charged tracks in selection
-  declareProperty("MAX_TRACK_NUMBER", MAX_TRACK_NUMBER=50); //maximum number of charged tracks
+  declareProperty("MAX_TRACK_NUMBER", MAX_TRACK_NUMBER=4); //maximum number of charged tracks
 
   emc.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
   gg.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
@@ -98,7 +98,8 @@ StatusCode TauMass::initialize(void)
   log << MSG::INFO << "in initialize()" << endmsg;
   event_proceed=0;
   event_write = 0;
-  mu1_events=0;
+  tau_events=0;
+  bhabha_events=0;
   gg_event_writed=0;
 
   StatusCode status;
@@ -610,8 +611,10 @@ StatusCode TauMass::execute()
   if(10000 <= event_proceed && event_proceed % 10000 ==0) isprint = true;
   if(isprint)
   {
-    std::cout << "proceed event: " << event_proceed << " selected events: "<< event_write;
-    std::cout << " mu1 = " << mu1_events;
+    std::cout << "proceed event: " << event_proceed;
+    std::cout << "  tau: " << tau_events;
+    std::cout << "  bhabha: " << bhabha_events;
+    std::cout << "  gg: " << gg_event_writed;
     std::cout << std::endl;
   }
   event_proceed++;
@@ -632,314 +635,323 @@ StatusCode TauMass::execute()
   mmap_t pmap;
   mmap_t Emap;
   unsigned good_charged_tracks = 0;
-  if(MIN_CHARGED_TRACKS<=evtRecEvent->totalCharged())
+
+  if(evtRecEvent->totalCharged() < MIN_CHARGED_TRACKS) goto SKIP_CHARGED;
+  double  hP[2]={0,0}; //to save maximum momentum
+  Hep3Vector hPp[2];//Two high momentum
+  double  hE[2]={0, 0};
+  Hep3Vector hEp[2];//Two high momentum
+  /*  loop over charged track */
+  //mdc.ntrack=evtRecEvent->totalCharged();
+  mdc.ntrack=0;
+
+  //look thru the charged tracks and sort them on energy
+  for(unsigned idx = 0; idx < evtRecEvent->totalCharged(); idx++)
   {
-    double  hP[2]={0,0}; //to save maximum momentum
-    Hep3Vector hPp[2];//Two high momentum
-    double  hE[2]={0, 0};
-    Hep3Vector hEp[2];//Two high momentum
-    /*  loop over charged track */
-    //mdc.ntrack=evtRecEvent->totalCharged();
-    mdc.ntrack=0;
-    
-    //look thru the charged tracks and sort them on energy
-    for(unsigned idx = 0; idx < evtRecEvent->totalCharged() && idx < MAX_TRACK_NUMBER ; idx++)
-    {
-      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
-      if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
-      if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-      RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
-      RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
+    EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
+    if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
+    if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+    RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
+    RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
 
-      double rvxy=-9999,rvz=-9999,rvphi=-9999;
-      calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
-      bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
-      bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
-      if(!is_good_track) continue;
-      double E = emcTrk->energy();
-      double p = mdcTrk->p();
-      pmap.insert(pair_t(p,idx));
-      Emap.insert(pair_t(E,idx));
-    }
-    /* Two or more charged tracks witch signal in EMC */
-    // save only 2,3,4 charged tracks
-    // 4th track is to test systematics
-    good_charged_tracks=Emap.size();
-    if(Emap.size()<2 || 4<Emap.size()) goto SKIP_CHARGED;
-
-    //now fill the arrayes using indexes sorted by energy
-    mdc.ntrack=Emap.size(); //save number of good charged tracks
-
-    Sphericity S;
-
-    //particle id 
-    ParticleID *pid = ParticleID::instance();
-    //loop over tracks oredered by energy
-    int gidx=0; //good charged track idx
-    for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
-    {
-      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
-      //just check that our selection is ok
-      if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
-      if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-      RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
-      RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
-      double rvxy=-9999,rvz=-9999,rvphi=-9999;
-      calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
-      //select good tracks before
-      //bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
-      //bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
-      //if(!is_good_track) continue;
-      int i = gidx; //now fill
-
-      //fill vertex information
-      mdc.rvxy[i]=rvxy;
-      mdc.rvz[i]=rvz;
-      mdc.rvphi[i]=rvphi;
-
-      //fil track information
-      mdc.p[i]     =  mdcTrk->p();
-      mdc.pt[i]    =  mdcTrk->p()*sin(mdcTrk->theta());
-      mdc.px[i]    =  mdcTrk->px();
-      mdc.py[i]    =  mdcTrk->py();
-      mdc.pz[i]    =  mdcTrk->pz();
-      mdc.theta[i] =  mdcTrk->theta();
-      mdc.phi[i]   =  mdcTrk->phi();
-      mdc.q[i]     =  mdcTrk->charge();
-      mdc.x[i]     =  mdcTrk->x();
-      mdc.y[i]     =  mdcTrk->y();
-      mdc.z[i]     =  mdcTrk->z();
-      
-      mdc.Emdc+=sqrt(mdc.p[i]*mdc.p[i]+PI_MESON_MASS*PI_MESON_MASS);
-
-
-      /* Calculate sphericity tensor */
-      S.add(mdcTrk->p3());
-
-      // Add EMC information
-      mdc.E[i]     =  emcTrk->energy();
-      mdc.dE[i]    =  emcTrk->dE();
-      mdc.ncrstl[i] = emcTrk->numHits();
-      mdc.status[i] = emcTrk->status();
-      mdc.cellId[i] = emcTrk->cellId();
-      mdc.module[i] = emcTrk->module();
-
-      mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
-
-      HepLorentzVector P(mdc.px[i], mdc.py[i], mdc.pz[i], mdc.E[i]);
-      mdc.M[i]=P.m();
-
-      /* Check muon system information for this track */
-      mdc.ismu[i]=(*itTrk)->isMucTrackValid();
-      if((*itTrk)->isMucTrackValid() && CHECK_MUC==1)
-      {
-        RecMucTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
-        muc.ntrack=i;
-        muc.status[i]= mucTrk->status();
-        muc.type[i]= mucTrk->type();
-        muc.depth[i]= mucTrk->depth();
-        muc.chi2[i]= mucTrk->chi2();
-        muc.ndf[i]= mucTrk->dof();
-        muc.distance[i]= mucTrk->distance();
-        muc.phi[i]= mucTrk->deltaPhi();
-      }
-
-
-      /*  Particle identification game */
-      pid->init();
- 	    pid->setMethod(pid->methodProbability());
-      pid->setChiMinCut(4);
-
-      pid->setRecTrack(*itTrk);
-      pid->usePidSys((pid->useMuc() | pid->useEmc()) | pid->useDedx()); // use PID sub-system
-      pid->identify(pid->onlyMuon() | pid->onlyElectron()); 
-      pid->calculate();
-      if(pid->IsPidInfoValid())
-      {
-        mdc.probe[i] =  pid->probElectron();
-        mdc.probmu[i] = pid->probMuon();
-        mdc.probpi[i] = pid->probPion();
-        mdc.probK[i] =  pid->probKaon();
-        mdc.probp[i] =  pid->probProton();
-      }
-
-      /* dEdx information */
-      if(CHECK_DEDX == 1 && (*itTrk)->isMdcDedxValid())
-      {
-        dedx.ntrack=i+1;
-        RecMdcDedx* dedxTrk = (*itTrk)->mdcDedx();
-        dedx.chie[i] = dedxTrk->chiE();
-        dedx.chimu[i] = dedxTrk->chiMu();
-        dedx.chipi[i] = dedxTrk->chiPi();
-        dedx.chik[i] = dedxTrk->chiK();
-        dedx.chip[i] = dedxTrk->chiP();
-        dedx.ghit[i] = dedxTrk->numGoodHits();
-        dedx.thit[i] = dedxTrk->numTotalHits();
-        dedx.probPH[i] = dedxTrk->probPH();
-        dedx.normPH[i] = dedxTrk->normPH();
-        dedx.e[i] = dedxTrk->getDedxExpect(0);
-        dedx.mu[i] = dedxTrk->getDedxExpect(1);
-        dedx.pi[i] = dedxTrk->getDedxExpect(2);
-        dedx.K[i] = dedxTrk->getDedxExpect(3);
-        dedx.p[i] = dedxTrk->getDedxExpect(4);
-        dedx.pid[i]=dedxTrk->particleId();
-      }
-
-      /* check TOF information */
-      mdc.istof[i]=(*itTrk)->isTofTrackValid();
-      if(CHECK_TOF && mdc.istof[i])
-      {
-        SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
-        SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
-        TofHitStatus *hitst = new TofHitStatus;
-        std::vector<int> tofecount;
-        int goodtofetrk=0;
-        for(tofTrk = tofTrkCol.begin(); tofTrk!=tofTrkCol.end(); tofTrk++,goodtofetrk++)
-        {
-          unsigned int st = (*tofTrk)->status();
-          hitst->setStatus(st);
-          //if(  (hitst->is_barrel()) ) continue;
-          //if( !(hitst->is_counter()) ) continue;
-          if( hitst->layer()==1 )  tofecount.push_back(goodtofetrk);
-        }
-        delete hitst;
-        if(tofecount.size()==1) //not tof2 track or more than 1 tracks
-        {
-          tofTrk = tofTrkCol.begin()+tofecount[0];
-
-          tof.ntrack=i+1;
-          tof.trackID[i]=(*tofTrk)->trackID();
-          tof.tofID[i]=(*tofTrk)->tofID();
-          tof.tofTrackID[i]=(*tofTrk)->tofTrackID();
-          tof.status[i] = (*tofTrk)->status();
-          tof.path[i]  = (*tofTrk)->path();
-          tof.zrhit[i]  = (*tofTrk)->zrhit();
-          tof.ph[i]  = (*tofTrk)->ph();
-          tof.tof[i]  = (*tofTrk)->tof();
-          tof.errtof[i]  = (*tofTrk)->errtof();
-          tof.beta[i]  = (*tofTrk)->beta();
-          tof.texpe[i]  = (*tofTrk)->texpElectron();
-          tof.texpmu[i]  = (*tofTrk)->texpMuon();
-          tof.texppi[i]  = (*tofTrk)->texpPion();
-          tof.texpK[i]  = (*tofTrk)->texpKaon();
-          tof.texpp[i]  = (*tofTrk)->texpProton();
-          tof.toffsete[i]  = (*tofTrk)->toffsetElectron();
-          tof.toffsetmu[i]  = (*tofTrk)->toffsetMuon();
-          tof.toffsetpi[i]  = (*tofTrk)->toffsetPion();
-          tof.toffsetK[i]  = (*tofTrk)->toffsetKaon();
-          tof.toffsetp[i]  = (*tofTrk)->toffsetProton();
-          tof.toffsetap[i]  = (*tofTrk)->toffsetAntiProton();
-          tof.sigmae[i]  = (*tofTrk)->sigmaElectron();
-          tof.sigmamu[i]  = (*tofTrk)->sigmaMuon();
-          tof.sigmapi[i]  = (*tofTrk)->sigmaPion();
-          tof.sigmaK[i]  = (*tofTrk)->sigmaKaon();
-          tof.sigmap[i]  = (*tofTrk)->sigmaProton();
-          tof.sigmaap[i]  = (*tofTrk)->sigmaAntiProton();
-          tof.t0[i]  = (*tofTrk)->t0();
-          tof.errt0[i]  = (*tofTrk)->errt0();
-          tof.errz[i]  = (*tofTrk)->errz();
-          tof.phi[i]  = (*tofTrk)->phi();
-          tof.E[i]  = (*tofTrk)->energy();
-          tof.errE[i]  = (*tofTrk)->errenergy();
-        }
-      }
-      gidx++;
-    }
-    mdc.ntrack=gidx;
-    mdc.ngood_track = gidx;
-
-    /* Calculate acolinearity  for two tracks with big enrgies */
-    Hep3Vector p0(mdc.px[0], mdc.py[0],mdc.pz[0]);
-    Hep3Vector p1(mdc.px[1], mdc.py[1],mdc.pz[1]);
-    mdc.ccos = p0.dot(p1)/(p0.mag()*p1.mag());
-    mdc.atheta = mdc.theta[0]+mdc.theta[1] - M_PI;
-    mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
-    mdc.acompl = (mdc.px[0]*mdc.py[1]-mdc.py[0]*mdc.px[1])/(mdc.p[0]*mdc.p[1]);
-    //normalize sphericity tensor
-    S.norm();
-    /* fill sphericity */
-    mdc.S = S();
-
-
-    /* ================================================================================= */
-    /*  fill data for neutral tracks */
-    int track=0; //index for neutral tracks
-    emc.Etotal=0;
-    emc.ngood_charged_track=good_charged_tracks;
-    for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks() && track<MAX_TRACK_NUMBER; idx++)
-    {
-      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
-      if(!(*itTrk)->isEmcShowerValid()) continue;
-      RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      double c =  fabs(cos(emcTrk->theta())); //abs cos theta
-      double E  =  emcTrk->energy();
-
-      bool barrel = c <= 0.8;
-      bool endcup = (0.86 <=c) && (c <=0.92);
-
-      if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
-      //save only good photons.
-      emc.status[track] = emcTrk->status();
-      emc.ncrstl[track] = emcTrk->numHits();
-      emc.cellId[track] = emcTrk->cellId();
-      emc.module[track] = emcTrk->module();
-      emc.x[track] = emcTrk->x();
-      emc.y[track] = emcTrk->y();
-      emc.z[track] = emcTrk->z();
-      emc.phi[track] = emcTrk->phi();
-      emc.theta[track] = emcTrk->theta();
-      emc.E[track]  =  emcTrk->energy();
-      emc.dE[track] =  emcTrk->dE();
-      emc.Etotal+=emcTrk->energy();
-      track++;
-    }
-    emc.ntrack=track;
-
-
-    m_nchtr=evtRecEvent->totalCharged();
-    m_nneutr=evtRecEvent->totalNeutral();
-    m_ntrack=evtRecEvent->totalCharged()+evtRecEvent->totalNeutral();
-    m_Etotal = emc.Etotal+mdc.Emdc;
-    m_Eemc = emc.Etotal+mdc.Eemc;
-    m_time = eventHeader->time();
-
-
-    //оставим два трека только для электронов и мюонов
-    if(emc.ntrack>0) goto SKIP_CHARGED;
-    if(mdc.ntrack<2 || mdc.ntrack>2) goto SKIP_CHARGED;
-
-    vector <bool> ise(2);
-    vector <bool> ismu(2);
-    for(int i=0;i<ise.size();++i)
-    { 
-      double evp = mdc.E[i] /mdc.p[i];
-      ise[i] = mdc.ismu[i] == 0 && evp > 0.9 && evp < 1.05;
-      ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.15 && mdc.E[i]<0.25;
-    }
-    bool charge = (mdc.q[0]*mdc.q[1]) <  0;
-    bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
-    bool tau_sig  = ( (ise[0] && ismu[1]) || (ise[1] && ismu[0]) ) && charge && kinem;
-    bool bhabha_sig = ( (ise[0] && ise[1]) || (ismu[0] && ismu[1])) && charge;
-
-    if(!tau_sig && !bhabha_sig) goto SKIP_CHARGED;  
-
-    /* now fill the data */
-    main_tuple->write();
-    dedx_tuple->write();
-    mdc_tuple->write();
-    emc_tuple->write();
-    if(CHECK_MUC) muc_tuple->write();
-    if(CHECK_TOF) tof_tuple->write();
-    event_write++;
+    double rvxy=-9999,rvz=-9999,rvphi=-9999;
+    calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
+    bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
+    bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
+    if(!is_good_track) continue;
+    double E = emcTrk->energy();
+    double p = mdcTrk->p();
+    pmap.insert(pair_t(p,idx));
+    Emap.insert(pair_t(E,idx));
   }
-  //selection of gamma-gamma events
+  /* Two or more charged tracks witch signal in EMC */
+  // save only 2,3,4 charged tracks
+  // 4th track is to test systematics
+  good_charged_tracks=Emap.size();
+  if(Emap.size()<MIN_CHARGED_TRACKS || MAX_TRACK_NUMBER < Emap.size()) goto SKIP_CHARGED;
+
+  //now fill the arrayes using indexes sorted by energy
+  mdc.ntrack=Emap.size(); //save number of good charged tracks
+
+  Sphericity S;
+
+  //particle id 
+  ParticleID *pid = ParticleID::instance();
+  //loop over tracks oredered by energy
+  int gidx=0; //good charged track idx
+  for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
+  {
+    EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
+    //just check that our selection is ok
+    if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
+    if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+    RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
+    RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
+    double rvxy=-9999,rvz=-9999,rvphi=-9999;
+    calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
+    //select good tracks before
+    //bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
+    //bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
+    //if(!is_good_track) continue;
+    int i = gidx; //now fill
+
+    //fill vertex information
+    mdc.rvxy[i]=rvxy;
+    mdc.rvz[i]=rvz;
+    mdc.rvphi[i]=rvphi;
+
+    //fil track information
+    mdc.p[i]     =  mdcTrk->p();
+    mdc.pt[i]    =  mdcTrk->p()*sin(mdcTrk->theta());
+    mdc.px[i]    =  mdcTrk->px();
+    mdc.py[i]    =  mdcTrk->py();
+    mdc.pz[i]    =  mdcTrk->pz();
+    mdc.theta[i] =  mdcTrk->theta();
+    mdc.phi[i]   =  mdcTrk->phi();
+    mdc.q[i]     =  mdcTrk->charge();
+    mdc.x[i]     =  mdcTrk->x();
+    mdc.y[i]     =  mdcTrk->y();
+    mdc.z[i]     =  mdcTrk->z();
+
+    mdc.Emdc+=sqrt(mdc.p[i]*mdc.p[i]+PI_MESON_MASS*PI_MESON_MASS);
+
+
+    /* Calculate sphericity tensor */
+    S.add(mdcTrk->p3());
+
+    // Add EMC information
+    mdc.E[i]     =  emcTrk->energy();
+    mdc.dE[i]    =  emcTrk->dE();
+    mdc.ncrstl[i] = emcTrk->numHits();
+    mdc.status[i] = emcTrk->status();
+    mdc.cellId[i] = emcTrk->cellId();
+    mdc.module[i] = emcTrk->module();
+
+    mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
+
+    HepLorentzVector P(mdc.px[i], mdc.py[i], mdc.pz[i], mdc.E[i]);
+    mdc.M[i]=P.m();
+
+    /* Check muon system information for this track */
+    mdc.ismu[i]=(*itTrk)->isMucTrackValid();
+    if((*itTrk)->isMucTrackValid() && CHECK_MUC==1)
+    {
+      RecMucTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
+      muc.ntrack=i;
+      muc.status[i]= mucTrk->status();
+      muc.type[i]= mucTrk->type();
+      muc.depth[i]= mucTrk->depth();
+      muc.chi2[i]= mucTrk->chi2();
+      muc.ndf[i]= mucTrk->dof();
+      muc.distance[i]= mucTrk->distance();
+      muc.phi[i]= mucTrk->deltaPhi();
+    }
+
+
+    /*  Particle identification game */
+    pid->init();
+    pid->setMethod(pid->methodProbability());
+    pid->setChiMinCut(4);
+
+    pid->setRecTrack(*itTrk);
+    pid->usePidSys((pid->useMuc() | pid->useEmc()) | pid->useDedx()); // use PID sub-system
+    pid->identify(pid->onlyMuon() | pid->onlyElectron()); 
+    pid->calculate();
+    if(pid->IsPidInfoValid())
+    {
+      mdc.probe[i] =  pid->probElectron();
+      mdc.probmu[i] = pid->probMuon();
+      mdc.probpi[i] = pid->probPion();
+      mdc.probK[i] =  pid->probKaon();
+      mdc.probp[i] =  pid->probProton();
+    }
+
+    /* dEdx information */
+    if(CHECK_DEDX == 1 && (*itTrk)->isMdcDedxValid())
+    {
+      dedx.ntrack=i+1;
+      RecMdcDedx* dedxTrk = (*itTrk)->mdcDedx();
+      dedx.chie[i] = dedxTrk->chiE();
+      dedx.chimu[i] = dedxTrk->chiMu();
+      dedx.chipi[i] = dedxTrk->chiPi();
+      dedx.chik[i] = dedxTrk->chiK();
+      dedx.chip[i] = dedxTrk->chiP();
+      dedx.ghit[i] = dedxTrk->numGoodHits();
+      dedx.thit[i] = dedxTrk->numTotalHits();
+      dedx.probPH[i] = dedxTrk->probPH();
+      dedx.normPH[i] = dedxTrk->normPH();
+      dedx.e[i] = dedxTrk->getDedxExpect(0);
+      dedx.mu[i] = dedxTrk->getDedxExpect(1);
+      dedx.pi[i] = dedxTrk->getDedxExpect(2);
+      dedx.K[i] = dedxTrk->getDedxExpect(3);
+      dedx.p[i] = dedxTrk->getDedxExpect(4);
+      dedx.pid[i]=dedxTrk->particleId();
+    }
+
+    /* check TOF information */
+    mdc.istof[i]=(*itTrk)->isTofTrackValid();
+    if(CHECK_TOF && mdc.istof[i])
+    {
+      SmartRefVector<RecTofTrack> tofTrkCol = (*itTrk)->tofTrack();
+      SmartRefVector<RecTofTrack>::iterator tofTrk = tofTrkCol.begin();
+      TofHitStatus *hitst = new TofHitStatus;
+      std::vector<int> tofecount;
+      int goodtofetrk=0;
+      for(tofTrk = tofTrkCol.begin(); tofTrk!=tofTrkCol.end(); tofTrk++,goodtofetrk++)
+      {
+        unsigned int st = (*tofTrk)->status();
+        hitst->setStatus(st);
+        //if(  (hitst->is_barrel()) ) continue;
+        //if( !(hitst->is_counter()) ) continue;
+        if( hitst->layer()==1 )  tofecount.push_back(goodtofetrk);
+      }
+      delete hitst;
+      if(tofecount.size()==1) //not tof2 track or more than 1 tracks
+      {
+        tofTrk = tofTrkCol.begin()+tofecount[0];
+
+        tof.ntrack=i+1;
+        tof.trackID[i]=(*tofTrk)->trackID();
+        tof.tofID[i]=(*tofTrk)->tofID();
+        tof.tofTrackID[i]=(*tofTrk)->tofTrackID();
+        tof.status[i] = (*tofTrk)->status();
+        tof.path[i]  = (*tofTrk)->path();
+        tof.zrhit[i]  = (*tofTrk)->zrhit();
+        tof.ph[i]  = (*tofTrk)->ph();
+        tof.tof[i]  = (*tofTrk)->tof();
+        tof.errtof[i]  = (*tofTrk)->errtof();
+        tof.beta[i]  = (*tofTrk)->beta();
+        tof.texpe[i]  = (*tofTrk)->texpElectron();
+        tof.texpmu[i]  = (*tofTrk)->texpMuon();
+        tof.texppi[i]  = (*tofTrk)->texpPion();
+        tof.texpK[i]  = (*tofTrk)->texpKaon();
+        tof.texpp[i]  = (*tofTrk)->texpProton();
+        tof.toffsete[i]  = (*tofTrk)->toffsetElectron();
+        tof.toffsetmu[i]  = (*tofTrk)->toffsetMuon();
+        tof.toffsetpi[i]  = (*tofTrk)->toffsetPion();
+        tof.toffsetK[i]  = (*tofTrk)->toffsetKaon();
+        tof.toffsetp[i]  = (*tofTrk)->toffsetProton();
+        tof.toffsetap[i]  = (*tofTrk)->toffsetAntiProton();
+        tof.sigmae[i]  = (*tofTrk)->sigmaElectron();
+        tof.sigmamu[i]  = (*tofTrk)->sigmaMuon();
+        tof.sigmapi[i]  = (*tofTrk)->sigmaPion();
+        tof.sigmaK[i]  = (*tofTrk)->sigmaKaon();
+        tof.sigmap[i]  = (*tofTrk)->sigmaProton();
+        tof.sigmaap[i]  = (*tofTrk)->sigmaAntiProton();
+        tof.t0[i]  = (*tofTrk)->t0();
+        tof.errt0[i]  = (*tofTrk)->errt0();
+        tof.errz[i]  = (*tofTrk)->errz();
+        tof.phi[i]  = (*tofTrk)->phi();
+        tof.E[i]  = (*tofTrk)->energy();
+        tof.errE[i]  = (*tofTrk)->errenergy();
+      }
+    }
+    gidx++;
+  }
+  mdc.ntrack=gidx;
+  mdc.ngood_track = gidx;
+
+  /* Calculate acolinearity  for two tracks with big enrgies */
+  Hep3Vector p0(mdc.px[0], mdc.py[0],mdc.pz[0]);
+  Hep3Vector p1(mdc.px[1], mdc.py[1],mdc.pz[1]);
+  mdc.ccos = p0.dot(p1)/(p0.mag()*p1.mag());
+  mdc.atheta = mdc.theta[0]+mdc.theta[1] - M_PI;
+  mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
+  mdc.acompl = (mdc.px[0]*mdc.py[1]-mdc.py[0]*mdc.px[1])/(mdc.p[0]*mdc.p[1]);
+  //normalize sphericity tensor
+  S.norm();
+  /* fill sphericity */
+  mdc.S = S();
+
+
+  /* ================================================================================= */
+  /*  fill data for neutral tracks */
+  int track=0; //index for neutral tracks
+  emc.Etotal=0;
+  emc.ngood_charged_track=good_charged_tracks;
+  Emap.clear();
+  pmap.clear();
+  //calculate good tracks
+  for(int idx = evtRecEvent->totalCharged(); idx<evtRecEvent->totalTracks(); idx++)
+  {
+    EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
+    if(!(*itTrk)->isEmcShowerValid()) continue;
+    RecEmcShower *emcTrk = (*itTrk)->emcShower();
+    double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+    double E  =  emcTrk->energy();
+    bool barrel = c <= 0.8;
+    bool endcup = (0.86 <=c) && (c <=0.92);
+    if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
+    Emap.insert(pair_t(E,idx));
+  }
+  if(Emap.size()>0) goto SKIP_CHARGED;  //no good neutral tracks
+  int gnidx=0; //good neutrack track idx
+  for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri, ++gnidx)
+  {
+    EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
+    RecEmcShower *emcTrk = (*itTrk)->emcShower();
+    emc.status[gnidx] = emcTrk->status();
+    emc.ncrstl[gnidx] = emcTrk->numHits();
+    emc.cellId[gnidx] = emcTrk->cellId();
+    emc.module[gnidx] = emcTrk->module();
+    emc.x[gnidx] = emcTrk->x();
+    emc.y[gnidx] = emcTrk->y();
+    emc.z[gnidx] = emcTrk->z();
+    emc.phi[gnidx] = emcTrk->phi();
+    emc.theta[gnidx] = emcTrk->theta();
+    emc.E[gnidx]  =  emcTrk->energy();
+    emc.dE[gnidx] =  emcTrk->dE();
+    emc.Etotal+=emcTrk->energy();
+  }
+  emc.ntrack=gnidx;
+
+
+  m_nchtr=evtRecEvent->totalCharged();
+  m_nneutr=evtRecEvent->totalNeutral();
+  m_ntrack=evtRecEvent->totalCharged()+evtRecEvent->totalNeutral();
+  m_Etotal = emc.Etotal+mdc.Emdc;
+  m_Eemc = emc.Etotal+mdc.Eemc;
+  m_time = eventHeader->time();
+
+
+  //оставим два трека только для электронов и мюонов
+  if(emc.ntrack>0) goto SKIP_CHARGED;
+  if(mdc.ntrack<2 || mdc.ntrack>2) goto SKIP_CHARGED;
+
+  vector <bool> ise(2);
+  vector <bool> ismu(2);
+  for(int i=0;i<ise.size();++i)
+  { 
+    double evp = mdc.E[i] /mdc.p[i];
+    ise[i] = mdc.ismu[i] == 0 && evp > 0.9 && evp < 1.05;
+    ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.15 && mdc.E[i]<0.25;
+  }
+  bool charge = (mdc.q[0]*mdc.q[1]) <  0;
+  bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
+  bool tau_sig  = ( (ise[0] && ismu[1]) || (ise[1] && ismu[0]) ) && charge && kinem;
+  bool bhabha_sig = ( (ise[0] && ise[1]) || (ismu[0] && ismu[1])) && charge;
+  if(bhabha_sig) bhabha_events++;
+  if(tau_sig) tau_events++;
+
+  if(!tau_sig) goto SKIP_CHARGED;  
+
+  /* now fill the data */
+  main_tuple->write();
+  dedx_tuple->write();
+  mdc_tuple->write();
+  emc_tuple->write();
+  if(CHECK_MUC) muc_tuple->write();
+  if(CHECK_TOF) tof_tuple->write();
+  event_write++;
+
+//selection of gamma-gamma events
 SKIP_CHARGED:
   gg.ngood_charged_track = good_charged_tracks;
   if(good_charged_tracks==0)
   {
     //select and sort only good neutral tracks.
     Emap.clear();
-    for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks() && track < MAX_TRACK_NUMBER; track++)
+    for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks(); track++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + track;
       if(!(*itTrk)->isEmcShowerValid()) continue;
@@ -999,11 +1011,13 @@ StatusCode TauMass::finalize()
 {
   std::cout << "Event proceed: " << event_proceed << std::endl;
   std::cout << "Event selected: " << event_write << std::endl;
+  std::cout << "Tau candidates: " << tau_events << endl;
+  std::cout << "Bhabha candidates: " << bhabha_events << endl;
+  std::cout << "Gamma-Gamma candidates: " << gg_event_writed << endl;
   std::cout << "Selection efficiency: " << event_write/double(event_proceed) << std::endl;
   std::cout << "Average number of total tracks: " << nttr_a.average() << ", rms=" << nttr_a.rms() << endl;
   std::cout << "Average number of charged tracks: " << nchtr_a.average() << ", rms=" << nchtr_a.rms() << endl;
   std::cout << "Average number of neutral tracks: " << nntr_a.average() << ", rms=" << nntr_a.rms() << endl;
-  std::cout << "Muon 1 events: " << mu1_events << std::endl;
   head_event_selected=event_write;
   head_ncharged_tracks=nchtr_a.average();
   head_ncharged_tracks_rms=nchtr_a.rms();
