@@ -969,8 +969,8 @@ SKIP_CHARGED:
       if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
       Emap.insert(pair_t(E,track));
     }
-    //Select more then 1 neutral track
-    if(Emap.size() < 2) goto SKIP_GG;
+    //Select exactly two good photons
+    if(Emap.size() < 2 || 2 < Emap.size()) goto SKIP_GG;
     gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
     Sphericity SS;
