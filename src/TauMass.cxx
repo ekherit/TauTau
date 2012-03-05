@@ -1007,10 +1007,14 @@ SKIP_CHARGED:
     //normalize sphericity tenzor
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
+      {
         S[i][j]=S[i][j]/R2sum;
-    cout <<"before S spher" << endl;
+        cout << "S"<<i<<j<<"="<<S[i][j] << endl;
+      }
+    cout <<"before gg.S spher" << endl;
     gg.S = Sphericity(S);
     cout<< "Afetr gg.S = " << gg.S << endl;
+    cout << Emap.size() << endl;
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
