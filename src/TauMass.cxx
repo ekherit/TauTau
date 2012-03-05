@@ -74,10 +74,10 @@ inline double sq(double x) { return x*x; }
 /*  this class is used for calculating sphericity */
 class Sphericity
 {
-    TMatrixD S(3,3); //sphericity tensor
-    double sum2; //sum of squared
+  TMatrixD S; //sphericity tensor
+  double sum2; //sum of squared
   public:
-    Sphericity(void)
+    Sphericity(void):  S(TMatrixD(3,3))
     {
       //clear 
       for(int i=0;i<3;i++)
@@ -97,7 +97,7 @@ class Sphericity
       sum2+=x*x+y*y+z*z;
     }
 
-    void add(const Hep3Vector & p);
+    void add(const Hep3Vector & p)
     {
       for(int k=0;k<3;k++)
         for(int m=0;m<3;m++)
