@@ -951,7 +951,7 @@ StatusCode TauMass::execute()
     cout << "ngood=" << gidx << endl;
     cout << "Before mdc.S" << endl;
     mdc.S = Sphericity(S);
-    cout << "After S" << mdc.S <<  "   S2=" << SS() <<  " dS=" << (mdc.S - SS())/SS()  << endl;
+    cout << "After S" << Sphericity(S) <<  "   S2=" << SS() <<  " dS=" << (Sphericity(S) - SS())/SS()  << endl;
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
