@@ -633,7 +633,7 @@ StatusCode TauMass::execute()
   typedef std::multimap <double, unsigned> mmap_t;
   typedef std::pair <double, unsigned> pair_t;
   mmap_t pmap;
-  mmap_t Emap;
+  mmap_t Emap; //multi map to sort good tracks by energy order
   unsigned good_charged_tracks = 0;
 
   if(evtRecEvent->totalCharged()  >= MIN_CHARGED_TRACKS)
@@ -669,6 +669,7 @@ StatusCode TauMass::execute()
     // save only 2,3,4 charged tracks
     // 4th track is to test systematics
     good_charged_tracks=Emap.size();
+    clog << "good charged=" << Emap.size() << " maximum allowed " << MAX_TRACK_NUMBER << endl;
     if(Emap.size()<MIN_CHARGED_TRACKS || MAX_TRACK_NUMBER < Emap.size()) goto SKIP_CHARGED;
 
     //now fill the arrayes using indexes sorted by energy
@@ -683,9 +684,6 @@ StatusCode TauMass::execute()
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
-      //just check that our selection is ok
-      if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
-      if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
       RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
       RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
       double rvxy=-9999,rvz=-9999,rvphi=-9999;
@@ -885,7 +883,7 @@ StatusCode TauMass::execute()
       if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
       Emap.insert(pair_t(E,idx));
     }
-    if(Emap.size()>0) goto SKIP_CHARGED;  //no good neutral tracks
+    if(Emap.size()>0 && MAX_TRACK_NUMBER < Emap.size()) goto SKIP_CHARGED;  //no good neutral tracks
     int gnidx=0; //good neutrack track idx
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri, ++gnidx)
     {
@@ -945,7 +943,6 @@ StatusCode TauMass::execute()
     if(CHECK_TOF) tof_tuple->write();
     event_write++;
   }
-
 //selection of gamma-gamma events
 SKIP_CHARGED:
   gg.ngood_charged_track = good_charged_tracks;
