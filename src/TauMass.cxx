@@ -611,10 +611,10 @@ StatusCode TauMass::execute()
   if(10000 <= event_proceed && event_proceed % 10000 ==0) isprint = true;
   if(isprint)
   {
-    std::cout << "proceed event: " << event_proceed;
-    std::cout << "  tau: " << tau_events;
-    std::cout << "  bhabha: " << bhabha_events;
-    std::cout << "  gg: " << gg_event_writed;
+    std::cout << "proceed event: " << setw(15) << event_proceed;
+    std::cout << "  tau-mu:" << setw(15) << tau_events;
+    std::cout << "  ee:" << setw(15) << bhabha_events;
+    std::cout << "  gg:" << setw(15) << gg_event_writed;
     std::cout << std::endl;
   }
   event_proceed++;
