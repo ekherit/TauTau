@@ -625,7 +625,7 @@ StatusCode TauMass::execute()
 
   clog << "Before init data"<< endl;
   InitData(evtRecEvent->totalCharged(), evtRecEvent->totalNeutral());
-  clog << "After init .data" << endl;
+  clog << "After init data" << endl;
 
   nchtr_a.add(evtRecEvent->totalCharged());
   nntr_a.add(evtRecEvent->totalNeutral());
@@ -637,6 +637,7 @@ StatusCode TauMass::execute()
   mmap_t pmap;
   mmap_t Emap; //multi map to sort good tracks by energy order
   unsigned good_charged_tracks = 0;
+
 
   if(evtRecEvent->totalCharged()  >= MIN_CHARGED_TRACKS)
   {
@@ -949,12 +950,14 @@ StatusCode TauMass::execute()
 //selection of gamma-gamma events
 SKIP_CHARGED:
   gg.ngood_charged_track = good_charged_tracks;
+  clog << "select good neutral tracks" << endl;
   if(good_charged_tracks==0)
   {
     //select and sort only good neutral tracks.
     Emap.clear();
     for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks(); track++)
     {
+      clog << "look thru neutral " << idx << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + track;
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
