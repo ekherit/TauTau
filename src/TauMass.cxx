@@ -752,7 +752,7 @@ StatusCode TauMass::execute()
       for(int j=0;j<3;j++)
         S[i][j]=0;
 
-    Sphericity SS;
+    Sphericity2 SS;
 
     //particle id 
     ParticleID *pid = ParticleID::instance();
