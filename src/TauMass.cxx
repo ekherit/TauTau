@@ -989,7 +989,8 @@ SKIP_CHARGED:
       }
     SS.norm();
     gg.S = Sphericity2(S);
-    cout << "gg.S = " << gg.S << " " <<  SS() << (gg.S-SS())/SS() << endl;
+    double Stmp = SS();
+    cout << "gg.S = " << gg.S << " Snew=" <<  Stmp << " dS=" << (gg.S-Stmp)/Stmp << endl;
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
