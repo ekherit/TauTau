@@ -50,8 +50,8 @@ using CLHEP::HepLorentzVector;
 typedef HepGeom::Point3D<double> HepPoint3D;
 #endif
 #include "TauMass.h"
+#include "Sphericity.h"
 
-#include <TMatrixDEigen.h>
 
 #include "VertexFit/KinematicFit.h"
 #include "VertexFit/VertexFit.h"
@@ -69,90 +69,6 @@ const double EMC_ENDCUP_THRESHOLD=0.05;
 const double EMC_BARREL_THRESHOLD=0.025;
 
 inline double sq(double x) { return x*x; }
-
-
-/*  this class is used for calculating sphericity */
-class Sphericity2
-{
-  double sum2; //sum of squared
-  public:
-  TMatrixD S; //sphericity tensor
-    Sphericity2(void):  S(TMatrixD(3,3))
-    {
-      //clear 
-      for(int i=0;i<3;i++)
-        for(int j=0;j<3;j++)
-          S[i][j]=0;
-      sum2=0;
-    };
-    void add(double x, double y, double z)
-    {
-      std::vector <double> p(3);
-      p[0] = x;
-      p[1] = y;
-      p[2] = z;
-      for(int k=0;k<3;k++)
-        for(int m=0;m<3;m++)
-          S[k][m]+=p[k]*p[m];
-      sum2+=x*x+y*y+z*z;
-    }
-
-    void add(const Hep3Vector & p)
-    {
-      for(int k=0;k<3;k++)
-        for(int m=0;m<3;m++)
-        {
-          S[k][m]+=p[k]*p[m];
-          cout << k << m << " " << S[k][m] << endl;
-        }
-      sum2+=p.mag2();
-      cout << "sum2=" << sum2 << endl;
-    }
-
-    void norm(void)
-    {
-      for(int k=0;k<3;k++)
-        for(int m=0;m<3;m++)
-          S[k][m]/=sum2;
-    }
-
-    double operator()(void)
-    {
-      TMatrixDEigen Stmp(S);
-      const TVectorD & eval = Stmp.GetEigenValuesRe();
-      std::vector<double> v(3);
-      for(int i=0;i<3;i++) v[i]=eval[i];
-      std::sort(v.begin(), v.end());
-      if(!(v[0]<=v[1] && v[1]<=v[2])) //test the order of eigenvalues
-      {
-        cerr << "Bad sphericity" << endl;
-        exit(1);
-      }
-      double sphericity = 1.5*(v[0]+v[1]);
-      cout << sphericity << endl;
-      return sphericity;
-    }
-};
-
-
-double Sphericity(TMatrixD & S)
-{
-    TMatrixDEigen Stmp(S);
-    const TVectorD & eval = Stmp.GetEigenValuesRe();
-    std::vector<double> v(3);
-    for(int i=0;i<3;i++) v[i]=eval[i];
-    std::sort(v.begin(), v.end());
-    if(!(v[0]<=v[1] && v[1]<=v[2])) //test the order of eigenvalues
-    {
-      cerr << "Bad sphericity" << endl;
-      exit(1);
-    }
-   // return 1.5*(v[0]+v[1]);
-    double sphericity = 1.5*(v[0]+v[1]);
-    cout << sphericity << endl;
-    return sphericity;
-}
-
 
 TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
@@ -718,7 +634,6 @@ StatusCode TauMass::execute()
   unsigned good_charged_tracks = 0;
   if(MIN_CHARGED_TRACKS<=evtRecEvent->totalCharged())
   {
-    double p2sum=0;
     double  hP[2]={0,0}; //to save maximum momentum
     Hep3Vector hPp[2];//Two high momentum
     double  hE[2]={0, 0};
@@ -755,12 +670,8 @@ StatusCode TauMass::execute()
 
     //now fill the arrayes using indexes sorted by energy
     mdc.ntrack=Emap.size(); //save number of good charged tracks
-    TMatrixD S(3,3); //sphericity tensor
-    for(int i=0;i<3;i++)
-      for(int j=0;j<3;j++)
-        S[i][j]=0;
 
-    Sphericity2 SS;
+    Sphericity S;
 
 
 
@@ -807,16 +718,7 @@ StatusCode TauMass::execute()
 
 
       /* Calculate sphericity tensor */
-      for(int k=0;k<3;k++)
-        for(int m=0;m<3;m++)
-        {
-          S[k][m]+=mdcTrk->p3()[k]*mdcTrk->p3()[m];
-          cout << k << m << " " << S[k][m] << endl;
-        }
-      cout << mdcTrk->p()*mdcTrk->p() << " " << mdcTrk->p3().mag2() << endl;
-      p2sum+=mdcTrk->p()*mdcTrk->p();
-      cout << "p2sum=" << p2sum << endl;
-      SS.add(mdcTrk->p3());
+      S.add(mdcTrk->p3());
 
       // Add EMC information
       mdc.E[i]     =  emcTrk->energy();
@@ -958,20 +860,10 @@ StatusCode TauMass::execute()
     mdc.aphi =  fabs(mdc.phi[0]-mdc.phi[1]) - M_PI;
     mdc.acompl = (mdc.px[0]*mdc.py[1]-mdc.py[0]*mdc.px[1])/(mdc.p[0]*mdc.p[1]);
     //normalize sphericity tensor
-    for(int k=0;k<3;k++)
-      for(int m=0;m<3;m++)
-        S[k][m]/=p2sum;
-    SS.norm();
+    S.norm();
     /* fill sphericity */
-    cout << "ngood=" << gidx << endl;
-    cout << "Before mdc.S" << endl;
-    mdc.S = Sphericity(S);
-    cout << "After S" << Sphericity(S) <<  "   S2=" << SS() <<  " dS=" << (Sphericity(S) - SS())/SS()  << endl;
-    for(int k=0;k<3;k++)
-      for(int m=0;m<3;m++)
-      {
-        cout << k<<m << " " << S[k][m] <<  "      " <<  SS.S[k][m] << endl;
-      }
+    mdc.S = S();
+    cout << "mdc.S" << mdc.S << endl;
 
 
     /* ================================================================================= */
@@ -1050,6 +942,7 @@ SKIP_CHARGED:
     if(Emap.size() < 2) goto SKIP_GG;
     gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
+    Sphericity SS;
     TMatrixD S(3,3); //sphericity tensor
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
@@ -1080,6 +973,7 @@ SKIP_CHARGED:
         for(int j=0;j<3;j++)
           S[i][j]+=(R[idx][i]*R[idx][j]);
       R2sum+=R[idx].mag2();
+      SS.add(R[idx]);
       idx++;
       ////calculate good tracks.
       //double c = fabs(cos(emcTrk->theta()));
@@ -1093,7 +987,9 @@ SKIP_CHARGED:
       {
         S[i][j]=S[i][j]/R2sum;
       }
-    gg.S = Sphericity(S);
+    SS.norm();
+    gg.S = Sphericity2(S);
+    cout << "gg.S = " << gg.S << " " <<  SS() << (gg.S-SS())/SS() << endl;
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
