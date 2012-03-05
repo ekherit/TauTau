@@ -71,6 +71,65 @@ const double EMC_BARREL_THRESHOLD=0.025;
 inline double sq(double x) { return x*x; }
 
 
+/*  this class is used for calculating sphericity */
+class Sphericity
+{
+    TMatrixD S(3,3); //sphericity tensor
+    double sum2; //sum of squared
+  public:
+    Sphericity(void)
+    {
+      //clear 
+      for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++)
+          S[i][j]=0;
+      sum2=0;
+    };
+    void add(double x, double y, double z)
+    {
+      std::vector <double> p(3);
+      p[0] = x;
+      p[1] = y;
+      p[2] = z;
+      for(int k=0;k<3;k++)
+        for(int m=0;m<3;m++)
+          S[k][m]+=p[k]*p[m];
+      sum2+=x*x+y*y+z*z;
+    }
+
+    void add(const Hep3Vector & p);
+    {
+      for(int k=0;k<3;k++)
+        for(int m=0;m<3;m++)
+          S[k][m]+=p[k]*p[m];
+      sum2+=p.mag2();
+    }
+
+    void norm(void)
+    {
+      for(int k=0;k<3;k++)
+        for(int m=0;m<3;m++)
+          S[k][m]/=sum2;
+    }
+
+    double operator(void)
+    {
+      norm();
+      TMatrixDEigen Stmp(S);
+      const TVectorD & eval = Stmp.GetEigenValuesRe();
+      std::vector<double> v(3);
+      for(int i=0;i<3;i++) v[i]=eval[i];
+      std::sort(v.begin(), v.end());
+      if(!(v[0]<=v[1] && v[1]<=v[2])) //test the order of eigenvalues
+      {
+        cerr << "Bad sphericity" << endl;
+        exit(1);
+      }
+      return 1.5*(v[0]+v[1]);
+    }
+};
+
+
 double Sphericity(TMatrixD & S)
 {
     TMatrixDEigen Stmp(S);
@@ -693,6 +752,8 @@ StatusCode TauMass::execute()
       for(int j=0;j<3;j++)
         S[i][j]=0;
 
+    Sphericity SS;
+
     //particle id 
     ParticleID *pid = ParticleID::instance();
     //loop over tracks oredered by energy
@@ -741,6 +802,7 @@ StatusCode TauMass::execute()
           S[k][m]+=mdcTrk->p3()[k]*mdcTrk->p3()[m];
         }
       p2sum+=mdcTrk->p()*mdcTrk->p();
+      SS.add(mdcTrk->p3());
 
       // Add EMC information
       mdc.E[i]     =  emcTrk->energy();
@@ -889,7 +951,7 @@ StatusCode TauMass::execute()
     cout << "ngood=" << gidx << endl;
     cout << "Before mdc.S" << endl;
     mdc.S = Sphericity(S);
-    cout << "After S" << mdc.S << endl;
+    cout << "After S" << mdc.S <<  "   S2=" << SS() <<  " dS=" << (mdc.S - SS())/SS()  << endl;
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
@@ -1012,9 +1074,7 @@ SKIP_CHARGED:
         S[i][j]=S[i][j]/R2sum;
         cout << "S"<<i<<j<<"="<<S[i][j] << endl;
       }
-    cout <<"before gg.S spher" << endl;
     gg.S = Sphericity(S);
-    cout<< "Afetr gg.S = " << gg.S << endl;
     cout << Emap.size() << endl;
 
     //calculate colliniarity of two high energy tracks
