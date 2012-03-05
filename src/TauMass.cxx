@@ -623,9 +623,7 @@ StatusCode TauMass::execute()
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
 
-  clog << "Before init data"<< endl;
   InitData(evtRecEvent->totalCharged(), evtRecEvent->totalNeutral());
-  clog << "After init data" << endl;
 
   nchtr_a.add(evtRecEvent->totalCharged());
   nntr_a.add(evtRecEvent->totalNeutral());
@@ -673,7 +671,6 @@ StatusCode TauMass::execute()
     // save only 2,3,4 charged tracks
     // 4th track is to test systematics
     good_charged_tracks=Emap.size();
-    clog << "good charged=" << Emap.size() << " maximum allowed " << MAX_TRACK_NUMBER << endl;
     if(Emap.size()<MIN_CHARGED_TRACKS || MAX_TRACK_NUMBER < Emap.size()) goto SKIP_CHARGED;
 
     //now fill the arrayes using indexes sorted by energy
@@ -950,14 +947,12 @@ StatusCode TauMass::execute()
 //selection of gamma-gamma events
 SKIP_CHARGED:
   gg.ngood_charged_track = good_charged_tracks;
-  clog << "select good neutral tracks" << endl;
   if(good_charged_tracks==0)
   {
     //select and sort only good neutral tracks.
     Emap.clear();
     for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks(); track++)
     {
-      clog << "look thru neutral " << track << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + track;
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
@@ -971,6 +966,7 @@ SKIP_CHARGED:
     }
     //Select exactly two good photons
     if(Emap.size() < 2 || 2 < Emap.size()) goto SKIP_GG;
+    if(MAX_TRACK_NUMBER < Emap.size()) goto SKIP_GG;
     gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
     Sphericity SS;
