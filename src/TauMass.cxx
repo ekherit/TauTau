@@ -955,10 +955,16 @@ SKIP_CHARGED:
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
       double E = emcTrk->energy();
+      double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+      bool barrel = c <= 0.8;
+      bool endcup = (0.86 <=c) && (c <=0.92);
+      //save only good photons
+      if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
       Emap.insert(pair_t(E,track));
     }
     //Select more then 1 neutral track
     if(Emap.size() < 2) goto SKIP_GG;
+    gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
     TMatrixD S(3,3); //sphericity tensor
     for(int i=0;i<3;i++)
@@ -972,12 +978,6 @@ SKIP_CHARGED:
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
       assert((*itTrk)->isEmcShowerValid()); //check that EMS data is present
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      double c =  fabs(cos(emcTrk->theta())); //abs cos theta
-      double E  =  emcTrk->energy();
-      bool barrel = c <= 0.8;
-      bool endcup = (0.86 <=c) && (c <=0.92);
-      if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
-      //save only good photons
       gg.x[idx] = emcTrk->x();
       gg.y[idx] = emcTrk->y();
       gg.z[idx] = emcTrk->z();
@@ -992,12 +992,12 @@ SKIP_CHARGED:
       gg.Etotal+=gg.E[idx];
       /* Calculate sphericity tensor */
       R[idx] = Hep3Vector(emcTrk->x(),emcTrk->y(),emcTrk->z());
+      cout << "R="<< R[idx][0] << "," << R[idx][1] << ","<< R[idx][2] << endl;
       for(int i=0;i<3;i++)
         for(int j=0;j<3;j++)
           S[i][j]+=(R[idx][i]*R[idx][j]);
       R2sum+=R[idx].mag2();
       idx++;
-      gg.ngood_track=idx;
       ////calculate good tracks.
       //double c = fabs(cos(emcTrk->theta()));
       //double E = emcTrk->energy();
