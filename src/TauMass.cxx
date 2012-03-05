@@ -686,7 +686,7 @@ StatusCode TauMass::execute()
 
 
     //now fill the arrayes using indexes sorted by energy
-    mdc.ntrack=Emap.size(); //save number of charged tracks
+    mdc.ntrack=Emap.size(); //save number of good charged tracks
     TMatrixD S(3,3); //sphericity tensor
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
@@ -1008,7 +1008,9 @@ SKIP_CHARGED:
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
         S[i][j]=S[i][j]/R2sum;
+    cout <<"before S spher" << endl;
     gg.S = Sphericity(S);
+    cout<< "Afetr gg.S = " << gg.S << endl;
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
