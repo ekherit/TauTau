@@ -446,7 +446,8 @@ void TauMass::MUC_t::init(void)
 {
   // emc information init.
   ntrack=0;
-  for(int i=0; i<MAX_TRACK_NUMBER; i++) {
+  for(int i=0; i<MAX_TRACK_NUMBER; i++)
+  {
     status[i]=-1000;
     type[i]=-1000;
     depth[i]=-1000;
@@ -680,18 +681,21 @@ StatusCode TauMass::execute()
       if(!(*itTrk)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
       RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
       RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
+
+      double rvxy=-9999,rvz=-9999,rvphi=-9999;
+      calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
+      bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
+      bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
+      if(!is_good_track) continue;
       double E = emcTrk->energy();
       double p = mdcTrk->p();
-      //if(E<EMS_THRESHOLD) continue;  //EMC threshold is 50 MeV.
-      //if(p>MAX_MOMENTUM) continue; //supress wrong momentum measurement  and cosmic background
-      if(E>0.02) mdc.nemc20++;
-      if(E>0.05) mdc.nemc50++;
-      if(E>0.1) mdc.nemc100++;
       pmap.insert(pair_t(p,idx));
       Emap.insert(pair_t(E,idx));
     }
     /* Two or more charged tracks witch signal in EMC */
-    if(Emap.size()<2) goto SKIP_CHARGED;
+    // save only 2,3,4 charged tracks
+    // 4th track is to test systematics
+    if(Emap.size()<2 || 4<Emap.size()) goto SKIP_CHARGED;
 
 
     //now fill the arrayes using indexes sorted by energy
@@ -715,9 +719,10 @@ StatusCode TauMass::execute()
       RecEmcShower *emcTrk = (*itTrk)->emcShower(); //Electro Magnet Calorimeer
       double rvxy=-9999,rvz=-9999,rvphi=-9999;
       calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
-      bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
-      bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
-      if(!is_good_track) continue;
+      //select good tracks before
+      //bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<1.0;  //tracks begin near interaction point
+      //bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
+      //if(!is_good_track) continue;
       int i = gidx; //now fill
 
       //fill vertex information
@@ -835,8 +840,8 @@ StatusCode TauMass::execute()
         {
           unsigned int st = (*tofTrk)->status();
           hitst->setStatus(st);
-          if(  (hitst->is_barrel()) ) continue;
-          if( !(hitst->is_counter()) ) continue;
+          //if(  (hitst->is_barrel()) ) continue;
+          //if( !(hitst->is_counter()) ) continue;
           if( hitst->layer()==1 )  tofecount.push_back(goodtofetrk);
         }
         delete hitst;
@@ -916,6 +921,14 @@ StatusCode TauMass::execute()
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + idx;
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
+      double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+      double E  =  emcTrk->energy();
+
+      bool barrel = c <= 0.8;
+      bool endcup = (0.86 <=c) && (c <=0.92);
+
+      if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
+      //save only good photons.
       emc.status[track] = emcTrk->status();
       emc.ncrstl[track] = emcTrk->numHits();
       emc.cellId[track] = emcTrk->cellId();
@@ -923,8 +936,8 @@ StatusCode TauMass::execute()
       emc.x[track] = emcTrk->x();
       emc.y[track] = emcTrk->y();
       emc.z[track] = emcTrk->z();
-      emc.theta[track] = emcTrk->theta();
       emc.phi[track] = emcTrk->phi();
+      emc.theta[track] = emcTrk->theta();
       emc.E[track]  =  emcTrk->energy();
       emc.dE[track] =  emcTrk->dE();
       emc.Etotal+=emcTrk->energy();
@@ -975,11 +988,17 @@ SKIP_CHARGED:
     double R2sum=0;
     vector < Hep3Vector> R(Emap.size());
     int idx=0;
-    for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri,++idx)
+    for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + ri->second;
       assert((*itTrk)->isEmcShowerValid()); //check that EMS data is present
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
+      double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+      double E  =  emcTrk->energy();
+      bool barrel = c <= 0.8;
+      bool endcup = (0.86 <=c) && (c <=0.92);
+      if( (E<EMC_BARREL_THRESHOLD && barrel) || (E<EMC_ENDCUP_THRESHOLD && endcup) ) continue; 
+      //save only good photons
       gg.x[idx] = emcTrk->x();
       gg.y[idx] = emcTrk->y();
       gg.z[idx] = emcTrk->z();
@@ -998,11 +1017,13 @@ SKIP_CHARGED:
         for(int j=0;j<3;j++)
           S[i][j]+=(R[idx][i]*R[idx][j]);
       R2sum+=R[idx].mag2();
-      //calculate good tracks.
-      double c = fabs(cos(emcTrk->theta()));
-      double E = emcTrk->energy();
-      //hit barrel with threshold 25 MeV and endcup 
-      if((c < 0.82 && E > EMC_BARREL_THRESHOLD) ||  ( 0.86<c && c <0.92 && E > EMC_ENDCUP_THRESHOLD)) gg.ngood_track++; 
+      idx++;
+      gg.ngood_track=idx;
+      ////calculate good tracks.
+      //double c = fabs(cos(emcTrk->theta()));
+      //double E = emcTrk->energy();
+      ////hit barrel with threshold 25 MeV and endcup 
+      //if((c < 0.82 && E > EMC_BARREL_THRESHOLD) ||  ( 0.86<c && c <0.92 && E > EMC_ENDCUP_THRESHOLD)) gg.ngood_track++; 
     }
     //normalize sphericity tenzor
     for(int i=0;i<3;i++)
