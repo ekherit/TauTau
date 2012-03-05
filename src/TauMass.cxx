@@ -74,9 +74,9 @@ inline double sq(double x) { return x*x; }
 /*  this class is used for calculating sphericity */
 class Sphericity2
 {
-  TMatrixD S; //sphericity tensor
   double sum2; //sum of squared
   public:
+  TMatrixD S; //sphericity tensor
     Sphericity2(void):  S(TMatrixD(3,3))
     {
       //clear 
@@ -754,6 +754,9 @@ StatusCode TauMass::execute()
 
     Sphericity2 SS;
 
+
+
+
     //particle id 
     ParticleID *pid = ParticleID::instance();
     //loop over tracks oredered by energy
@@ -952,6 +955,12 @@ StatusCode TauMass::execute()
     cout << "Before mdc.S" << endl;
     mdc.S = Sphericity(S);
     cout << "After S" << Sphericity(S) <<  "   S2=" << SS() <<  " dS=" << (Sphericity(S) - SS())/SS()  << endl;
+    for(int k=0;k<3;k++)
+      for(int m=0;m<3;m++)
+      {
+        cout << k<<m << S[k][m] <<  "      " <<  SS.S[i][m] << endl;
+      }
+
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
@@ -1055,7 +1064,6 @@ SKIP_CHARGED:
       gg.Etotal+=gg.E[idx];
       /* Calculate sphericity tensor */
       R[idx] = Hep3Vector(emcTrk->x(),emcTrk->y(),emcTrk->z());
-      cout << "R="<< R[idx][0] << "," << R[idx][1] << ","<< R[idx][2] << endl;
       for(int i=0;i<3;i++)
         for(int j=0;j<3;j++)
           S[i][j]+=(R[idx][i]*R[idx][j]);
@@ -1072,10 +1080,8 @@ SKIP_CHARGED:
       for(int j=0;j<3;j++)
       {
         S[i][j]=S[i][j]/R2sum;
-        cout << "S"<<i<<j<<"="<<S[i][j] << endl;
       }
     gg.S = Sphericity(S);
-    cout << Emap.size() << endl;
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
