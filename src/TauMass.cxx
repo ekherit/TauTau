@@ -103,6 +103,7 @@ class Sphericity2
         for(int m=0;m<3;m++)
           S[k][m]+=p[k]*p[m];
       sum2+=p.mag2();
+      cout << "sum2=" << sum2 << endl;
     }
 
     void norm(void)
@@ -804,7 +805,9 @@ StatusCode TauMass::execute()
         {
           S[k][m]+=mdcTrk->p3()[k]*mdcTrk->p3()[m];
         }
+      cout << mdcTrk->p()*mdcTrk->p() << " " << mdcTrk->p3().mag2() << endl;
       p2sum+=mdcTrk->p()*mdcTrk->p();
+      cout << "p2sum=" << p2sum << endl;
       SS.add(mdcTrk->p3());
 
       // Add EMC information
