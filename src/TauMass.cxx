@@ -923,8 +923,9 @@ StatusCode TauMass::execute()
     { 
       double evp = mdc.E[i] /mdc.p[i];
       //ise[i] = mdc.ismu[i] == 0 && evp > 0.9 && evp < 1.05;
-      ise[i] =  evp > 0.9 && evp < 1.05;
-      ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.15 && mdc.E[i]<0.25;
+      ise[i] =  evp > 0.8 && evp < 1.2;
+      //ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.1 && mdc.E[i]<0.4;
+      ismu[i] =  mdc.E[i] > 0.1 && mdc.E[i]<0.4;
     }
     bool charge = (mdc.q[0]*mdc.q[1]) <  0;
     bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
