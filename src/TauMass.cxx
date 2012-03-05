@@ -932,7 +932,7 @@ StatusCode TauMass::execute()
     if(bhabha_sig) bhabha_events++;
     if(tau_sig) tau_events++;
 
-    if(!tau_sig) goto SKIP_CHARGED;  
+    if(!tau_sig || !bhabha_sig) goto SKIP_CHARGED;  
 
     /* now fill the data */
     main_tuple->write();
