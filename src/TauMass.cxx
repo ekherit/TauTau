@@ -957,7 +957,7 @@ SKIP_CHARGED:
     Emap.clear();
     for(int track = evtRecEvent->totalCharged(); track < evtRecEvent->totalTracks(); track++)
     {
-      clog << "look thru neutral " << idx << endl;
+      clog << "look thru neutral " << track << endl;
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + track;
       if(!(*itTrk)->isEmcShowerValid()) continue;
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
