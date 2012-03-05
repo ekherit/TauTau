@@ -917,7 +917,7 @@ StatusCode TauMass::execute()
       ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.15 && mdc.E[i]<0.25;
     }
     bool charge = (mdc.q[0]*mdc.q[1]) <  0;
-    bool kinem = mdc.p[0] < 1.5 && mdc.p[1] << 1.5;
+    bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
     bool tau_sig  = ( (ise[0] && ismu[1]) || (ise[1] && ismu[0]) ) && charge && kinem;
     bool bhabha_sig = ( (ise[0] && ise[1]) || (ismu[0] && ismu[1])) && charge;
 
