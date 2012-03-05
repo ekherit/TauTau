@@ -681,6 +681,7 @@ StatusCode TauMass::execute()
     /* Two or more charged tracks witch signal in EMC */
     // save only 2,3,4 charged tracks
     // 4th track is to test systematics
+    good_charged_tracks=Emap.size();
     if(Emap.size()<2 || 4<Emap.size()) goto SKIP_CHARGED;
 
 
@@ -869,8 +870,6 @@ StatusCode TauMass::execute()
       }
       gidx++;
     }
-    good_charged_tracks=gidx;
-    if(gidx<2) goto SKIP_CHARGED; //two small amount of good charged tracks.
     mdc.ntrack=gidx;
     mdc.ngood_track = gidx;
 
@@ -886,7 +885,10 @@ StatusCode TauMass::execute()
       for(int m=0;m<3;m++)
         S[k][m]/=p2sum;
     /* fill sphericity */
+    cout << "ngood=" << gidx << endl;
+    cout << "Before mdc.S" << endl;
     mdc.S = Sphericity(S);
+    cout << "After S" << mdc.S << endl;
 
     /* ================================================================================= */
     /*  fill data for neutral tracks */
