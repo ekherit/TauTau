@@ -112,7 +112,7 @@ class Sphericity
           S[k][m]/=sum2;
     }
 
-    double operator(void)
+    double operator()(void)
     {
       norm();
       TMatrixDEigen Stmp(S);
