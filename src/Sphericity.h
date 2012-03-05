@@ -78,7 +78,6 @@ class Sphericity
         exit(1);
       }
       double sphericity = 1.5*(v[0]+v[1]);
-      cout << sphericity << endl;
       return sphericity;
     }
 };
@@ -95,7 +94,6 @@ double Sphericity2(TMatrixD & S)
     exit(1);
   }
   double sphericity = 1.5*(v[0]+v[1]);
-  cout << sphericity << endl;
   return sphericity;
 }
 #endif

@@ -667,14 +667,10 @@ StatusCode TauMass::execute()
     good_charged_tracks=Emap.size();
     if(Emap.size()<2 || 4<Emap.size()) goto SKIP_CHARGED;
 
-
     //now fill the arrayes using indexes sorted by energy
     mdc.ntrack=Emap.size(); //save number of good charged tracks
 
     Sphericity S;
-
-
-
 
     //particle id 
     ParticleID *pid = ParticleID::instance();
@@ -863,7 +859,6 @@ StatusCode TauMass::execute()
     S.norm();
     /* fill sphericity */
     mdc.S = S();
-    cout << "mdc.S" << mdc.S << endl;
 
 
     /* ================================================================================= */
@@ -943,11 +938,6 @@ SKIP_CHARGED:
     gg.ngood_track=Emap.size();
     gg.ntrack= Emap.size();
     Sphericity SS;
-    TMatrixD S(3,3); //sphericity tensor
-    for(int i=0;i<3;i++)
-      for(int j=0;j<3;j++)
-        S[i][j]=0;
-    double R2sum=0;
     vector < Hep3Vector> R(Emap.size());
     int idx=0;
     for(mmap_t::reverse_iterator ri=Emap.rbegin(); ri!=Emap.rend(); ++ri)
@@ -969,28 +959,11 @@ SKIP_CHARGED:
       gg.Etotal+=gg.E[idx];
       /* Calculate sphericity tensor */
       R[idx] = Hep3Vector(emcTrk->x(),emcTrk->y(),emcTrk->z());
-      for(int i=0;i<3;i++)
-        for(int j=0;j<3;j++)
-          S[i][j]+=(R[idx][i]*R[idx][j]);
-      R2sum+=R[idx].mag2();
       SS.add(R[idx]);
       idx++;
-      ////calculate good tracks.
-      //double c = fabs(cos(emcTrk->theta()));
-      //double E = emcTrk->energy();
-      ////hit barrel with threshold 25 MeV and endcup 
-      //if((c < 0.82 && E > EMC_BARREL_THRESHOLD) ||  ( 0.86<c && c <0.92 && E > EMC_ENDCUP_THRESHOLD)) gg.ngood_track++; 
     }
-    //normalize sphericity tenzor
-    for(int i=0;i<3;i++)
-      for(int j=0;j<3;j++)
-      {
-        S[i][j]=S[i][j]/R2sum;
-      }
     SS.norm();
-    gg.S = Sphericity2(S);
-    double Stmp = SS();
-    cout << "gg.S = " << gg.S << " Snew=" <<  Stmp << " dS=" << (gg.S-Stmp)/Stmp << endl;
+    gg.S = SS();
 
     //calculate colliniarity of two high energy tracks
     gg.ccos = R[0].dot(R[1])/(R[0].mag()*R[1].mag());
