@@ -81,6 +81,7 @@ class TauMass : public Algorithm
     NTuple::Array<double> status;
     NTuple::Array<double> module;
     NTuple::Array<double> E,dE;
+    NTuple::Array<double> temc; // Time of central crystal in the shower.
     NTuple::Array<double> M;
     NTuple::Array<double> ismu; //has muon track information
     NTuple::Array<double> istof; //has tof track information
@@ -120,7 +121,9 @@ class TauMass : public Algorithm
     NTuple::Array<double> x, y, z; //coordinates of claster
     NTuple::Array<double> theta, phi;  //angles
     NTuple::Array<double> E,dE; // energy deposition and error
+    NTuple::Array<double> t; //Time of central crystal in the shower.
     NTuple::Item<double>  Etotal;
+    NTuple::Item<double>  Eall;
 
     void init(void);
     StatusCode init_tuple(NTuple::Tuple * tuple);

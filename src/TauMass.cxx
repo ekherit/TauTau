@@ -158,6 +158,7 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addIndexedItem ("isemc", mdc.ntrack, mdc.isemc);
       status = mdc_tuple->addIndexedItem ("E", mdc.ntrack, mdc.E);
       status = mdc_tuple->addIndexedItem ("dE", mdc.ntrack, mdc.dE);
+      status = mdc_tuple->addIndexedItem ("temc", mdc.temc, mdc.temc);
       status = mdc_tuple->addIndexedItem ("ncrstl", mdc.ntrack, mdc.ncrstl);
       status = mdc_tuple->addIndexedItem ("cellId", mdc.ntrack, mdc.cellId);
       status = mdc_tuple->addIndexedItem ("status", mdc.ntrack, mdc.status);
@@ -378,7 +379,9 @@ void TauMass::EMC_t::init(void)
     z[i]=-1000;
     theta[i]=-1000;
     phi[i]=-1000;
+    t[i]=-10000;
   }
+  Eall = -1000;
 }
 
 StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
@@ -392,6 +395,7 @@ StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
   status = tuple->addItem ("S", S); //sphericity
   status = tuple->addItem ("atheta", atheta);
   status = tuple->addItem ("aphi", aphi);
+  status = tuple->addItem ("Eall", Eall);
   //arrays
   status = tuple->addIndexedItem ("module",  ntrack, module );
   status = tuple->addIndexedItem ("status", ntrack, EMC_t::status ); //name interference of status.
@@ -404,6 +408,7 @@ StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
   status = tuple->addIndexedItem ("dE",ntrack, dE );
   status = tuple->addIndexedItem ("theta", ntrack, theta );
   status = tuple->addIndexedItem ("phi", ntrack, phi);
+  status = tuple->addIndexedItem ("t", ntrack, t);
   return status;
 }
 
@@ -474,6 +479,7 @@ void TauMass::InitData(long nchtrack, long nneutrack)
     mdc.phi[i]=-1000;
     mdc.q[i]=-1000;
     mdc.isemc[i]=-1000;
+    mdc.temc[i]=-1000;
     mdc.ncrstl[i]=-1000;
     mdc.cellId[i]=-1000;
     mdc.status[i]=-1000;
@@ -725,6 +731,7 @@ StatusCode TauMass::execute()
       mdc.status[i] = emcTrk->status();
       mdc.cellId[i] = emcTrk->cellId();
       mdc.module[i] = emcTrk->module();
+      mdc.temc[i] = emcTrk->getTime();
 
       mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
 
@@ -802,10 +809,10 @@ StatusCode TauMass::execute()
           hitst->setStatus(st);
           //if(  (hitst->is_barrel()) ) continue;
           //if( !(hitst->is_counter()) ) continue;
-          if( hitst->layer()==1 )  tofecount.push_back(goodtofetrk);
+          tofecount.push_back(goodtofetrk);
         }
         delete hitst;
-        if(tofecount.size()==1) //not tof2 track or more than 1 tracks
+        if(tofecount.size()>0) //not tof2 track or more than 1 tracks
         {
           tofTrk = tofTrkCol.begin()+tofecount[0];
 
@@ -900,8 +907,10 @@ StatusCode TauMass::execute()
       emc.theta[gnidx] = emcTrk->theta();
       emc.E[gnidx]  =  emcTrk->energy();
       emc.dE[gnidx] =  emcTrk->dE();
+      emc.t[gnidx] = emcTrk->getTime();
       emc.Etotal+=emcTrk->energy();
     }
+    emc.Eall = emcTrk->getEAll();
     emc.ntrack=gnidx;
 
 
@@ -925,7 +934,7 @@ StatusCode TauMass::execute()
       //ise[i] = mdc.ismu[i] == 0 && evp > 0.9 && evp < 1.05;
       ise[i] =  evp > 0.8 && evp < 1.2;
       //ismu[i] = mdc.ismu[i] == 1 && mdc.E[i] > 0.1 && mdc.E[i]<0.4;
-      ismu[i] =  mdc.E[i] > 0.1 && mdc.E[i]<0.4;
+      ismu[i] =  mdc.E[i] > 0.1 && mdc.E[i]<0.4 && evp < 0.8;
     }
     bool charge = (mdc.q[0]*mdc.q[1]) <  0;
     bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
