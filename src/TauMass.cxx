@@ -381,7 +381,6 @@ void TauMass::EMC_t::init(void)
     phi[i]=-1000;
     t[i]=-10000;
   }
-  Eall = -1000;
 }
 
 StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
@@ -395,7 +394,6 @@ StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
   status = tuple->addItem ("S", S); //sphericity
   status = tuple->addItem ("atheta", atheta);
   status = tuple->addItem ("aphi", aphi);
-  status = tuple->addItem ("Eall", Eall);
   //arrays
   status = tuple->addIndexedItem ("module",  ntrack, module );
   status = tuple->addIndexedItem ("status", ntrack, EMC_t::status ); //name interference of status.
@@ -731,7 +729,7 @@ StatusCode TauMass::execute()
       mdc.status[i] = emcTrk->status();
       mdc.cellId[i] = emcTrk->cellId();
       mdc.module[i] = emcTrk->module();
-      //mdc.temc[i] = emcTrk->getTime();
+      mdc.temc[i] = emcTrk->time();
 
       mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
 
@@ -908,10 +906,8 @@ StatusCode TauMass::execute()
       emc.E[gnidx]  =  emcTrk->energy();
       emc.dE[gnidx] =  emcTrk->dE();
       emc.Etotal+=emcTrk->energy();
-      //RecEmcHit * emcHit = (*itTrk)->emcHit();
       emc.t[gnidx] = emcTrk->time();
     }
-    //emc.Eall = emcTrk->getEAll();
     emc.ntrack=gnidx;
 
 

@@ -123,8 +123,6 @@ class TauMass : public Algorithm
     NTuple::Array<double> E,dE; // energy deposition and error
     NTuple::Array<double> t; //Time of central crystal in the shower.
     NTuple::Item<double>  Etotal;
-    NTuple::Item<double>  Eall;
-
     void init(void);
     StatusCode init_tuple(NTuple::Tuple * tuple);
     int MAX_TRACK_NUMBER;
