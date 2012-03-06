@@ -731,7 +731,7 @@ StatusCode TauMass::execute()
       mdc.status[i] = emcTrk->status();
       mdc.cellId[i] = emcTrk->cellId();
       mdc.module[i] = emcTrk->module();
-      mdc.temc[i] = emcTrk->getTime();
+      //mdc.temc[i] = emcTrk->getTime();
 
       mdc.Eemc+=mdc.E[i]; //Accumulate energy deposition
 
@@ -907,10 +907,11 @@ StatusCode TauMass::execute()
       emc.theta[gnidx] = emcTrk->theta();
       emc.E[gnidx]  =  emcTrk->energy();
       emc.dE[gnidx] =  emcTrk->dE();
-      emc.t[gnidx] = emcTrk->getTime();
       emc.Etotal+=emcTrk->energy();
+      RecEmcHit * emcHit = (*itTrk)->emcHit();
+      emc.t[gnidx] = emcHit->getTime();
     }
-    emc.Eall = emcTrk->getEAll();
+    //emc.Eall = emcTrk->getEAll();
     emc.ntrack=gnidx;
 
 
