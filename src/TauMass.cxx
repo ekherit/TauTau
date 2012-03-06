@@ -678,7 +678,9 @@ StatusCode TauMass::execute()
 
     //now fill the arrayes using indexes sorted by energy
     mdc.ntrack=Emap.size(); //save number of good charged tracks
-
+    muc.ntrack=Emap.size();
+    dedx.ntrack=Emap.size();
+    tof.ntrack=Emap.size();
     Sphericity S;
 
     //particle id 
@@ -741,7 +743,6 @@ StatusCode TauMass::execute()
       if((*itTrk)->isMucTrackValid() && CHECK_MUC==1)
       {
         RecMucTrack *mucTrk = (*itTrk)->mucTrack();  //main drift chambe
-        muc.ntrack=i;
         muc.status[i]= mucTrk->status();
         muc.type[i]= mucTrk->type();
         muc.depth[i]= mucTrk->depth();
@@ -773,7 +774,6 @@ StatusCode TauMass::execute()
       /* dEdx information */
       if(CHECK_DEDX == 1 && (*itTrk)->isMdcDedxValid())
       {
-        dedx.ntrack=i+1;
         RecMdcDedx* dedxTrk = (*itTrk)->mdcDedx();
         dedx.chie[i] = dedxTrk->chiE();
         dedx.chimu[i] = dedxTrk->chiMu();
@@ -814,7 +814,6 @@ StatusCode TauMass::execute()
         {
           tofTrk = tofTrkCol.begin()+tofecount[0];
 
-          tof.ntrack=i+1;
           tof.trackID[i]=(*tofTrk)->trackID();
           tof.tofID[i]=(*tofTrk)->tofID();
           tof.tofTrackID[i]=(*tofTrk)->tofTrackID();
@@ -945,9 +944,9 @@ StatusCode TauMass::execute()
 
     /* now fill the data */
     main_tuple->write();
-    dedx_tuple->write();
     mdc_tuple->write();
     emc_tuple->write();
+    if(CHECK_DEDX) dedx_tuple->write();
     if(CHECK_MUC) muc_tuple->write();
     if(CHECK_TOF) tof_tuple->write();
     event_write++;
