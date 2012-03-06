@@ -908,8 +908,8 @@ StatusCode TauMass::execute()
       emc.E[gnidx]  =  emcTrk->energy();
       emc.dE[gnidx] =  emcTrk->dE();
       emc.Etotal+=emcTrk->energy();
-      RecEmcHit * emcHit = (*itTrk)->emcHit();
-      emc.t[gnidx] = emcHit->getTime();
+      //RecEmcHit * emcHit = (*itTrk)->emcHit();
+      emc.t[gnidx] = emcTrk->getTime();
     }
     //emc.Eall = emcTrk->getEAll();
     emc.ntrack=gnidx;
