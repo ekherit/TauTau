@@ -158,7 +158,7 @@ StatusCode TauMass::initialize(void)
       status = mdc_tuple->addIndexedItem ("isemc", mdc.ntrack, mdc.isemc);
       status = mdc_tuple->addIndexedItem ("E", mdc.ntrack, mdc.E);
       status = mdc_tuple->addIndexedItem ("dE", mdc.ntrack, mdc.dE);
-      status = mdc_tuple->addIndexedItem ("temc", mdc.temc, mdc.temc);
+      status = mdc_tuple->addIndexedItem ("temc", mdc.ntrack, mdc.temc);
       status = mdc_tuple->addIndexedItem ("ncrstl", mdc.ntrack, mdc.ncrstl);
       status = mdc_tuple->addIndexedItem ("cellId", mdc.ntrack, mdc.cellId);
       status = mdc_tuple->addIndexedItem ("status", mdc.ntrack, mdc.status);
