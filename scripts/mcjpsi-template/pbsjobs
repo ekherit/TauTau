@@ -1,0 +1,27 @@
+#!/bin/tcsh
+#PBS -N TEMPLATE_NAME
+#PBS -o TEMPLATE_NAME.log
+#PBS -j oe
+#PBS -q TEMPLATE_PBS_QUEUE
+source /ihepbatch/bes/nikolaev/bin/boss655
+#setenv exe '/afs/ihep.ac.cn/bes3/offline/Boss/6.5.5/InstallArea/i386_linux26/bin/boss.exe' 
+setenv exe 'boss.exe' 
+
+set JOB_NAME=TEMPLATE_NAME
+cd $BATCH2/mc/$JOB_NAME
+set SIM_OPTS=$JOB_NAME"_sim.cfg"
+set REC_OPTS=$JOB_NAME"_rec.cfg"
+set ANA_OPTS=$JOB_NAME"_ana.cfg"
+set LOG=$JOB_NAME.out
+set ERR_LOG=$JOB_NAME.err
+
+if ( -f $LOG ) then
+  mv $LOG $LOG"_bak" 
+endif
+if ( -f $ERR_LOG ) then
+   mv $ERR_LOG $ERR_LOG"_bak" 
+endif
+
+((time $exe $SIM_OPTS) >> $LOG) >& $ERR_LOG
+((time $exe $REC_OPTS) >> $LOG) >& $ERR_LOG
+((time $exe $ANA_OPTS) >> $LOG) >& $ERR_LOG
