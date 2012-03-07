@@ -9,3 +9,4 @@ TauMass.DELTA_Z=10.0;
 TauMass.USE_IPCUT=1;
 TauMass.IPR=1; 
 TauMass.IPTRACKS=2;
+TauMass.STRICT_TAU_CUT=0;
