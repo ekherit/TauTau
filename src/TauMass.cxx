@@ -84,6 +84,7 @@ TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("IPTRACKS", IPTRACKS=2); //number of tracks from interection point
   declareProperty("MIN_CHARGED_TRACKS", MIN_CHARGED_TRACKS=2); //minimum number of charged tracks in selection
   declareProperty("MAX_TRACK_NUMBER", MAX_TRACK_NUMBER=4); //maximum number of charged tracks
+  declareProperty("STRICT_TAU_CUT", STRICT_TAU_CUT=1); //maximum number of charged tracks
 
   emc.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
   gg.MAX_TRACK_NUMBER = MAX_TRACK_NUMBER;
@@ -940,7 +941,7 @@ StatusCode TauMass::execute()
     if(tau_sig) tau_events++;
 
     //if(!tau_sig && !bhabha_sig) goto SKIP_CHARGED;  
-    if(!tau_sig) goto SKIP_CHARGED;  
+    if(!tau_sig && STRICT_TAU_CUT == 0) goto SKIP_CHARGED;  
 
     /* now fill the data */
     main_tuple->write();

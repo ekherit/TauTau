@@ -39,6 +39,7 @@ class TauMass : public Algorithm
   StatusCode finalize();  
 
 	private:
+  int STRICT_TAU_CUT;
 	int USE_IPCUT; //use interection point cut
 	int CHECK_TOF; //use toff.
   int CHECK_DEDX;

@@ -11,7 +11,12 @@ EVENT_NUMBER=1
 JOB_NAME="test"
 #PBS_QUEUE="publicq@torqsrv"
 PBS_QUEUE="besq@torqsrv"
-ENERGY_SPREAD=1.12
+ENERGY_SPREAD=1.1
+
+rundir=os.path.abspath(os.curdir)
+scriptdir=os.path.abspath(os.curdir+"/../scripts/")
+templatedir=scriptdir+"/mcjpsi-template"
+
 
 def configure(source_file_name,  target_file_name,  JOB_NAME,  ENERGY,  RANDOM_SEED,  EVENT_NUMBER,  RUN_NUMBER):
 #Open source template files with simulation configuration
@@ -32,7 +37,7 @@ def configure(source_file_name,  target_file_name,  JOB_NAME,  ENERGY,  RANDOM_S
 def do_mc(energy,  event_number,  job_number,  run_number):
 	random_seed=int(energy*100)/10+job_number
 	name="mcpsip_"+str(energy)+"_"+str(job_number)
-	template_dir="/bes3fs/groups/tauqcd/tauqcdgroup/nikolaev/mc/mcpsip-template"
+	template_dir="../"
 	work_dir = name
 	if os.path.exists(work_dir):
 		print "Directory "+work_dir+" exist! Do nothing!!"
@@ -54,10 +59,18 @@ def do_mc(energy,  event_number,  job_number,  run_number):
 	configure(template_dir+"/pbsjobs", work_dir+"/pbsjobs", JOB_NAME, ENERGY, RANDOM_SEED, EVENT_NUMBER,  RUN_NUMBER)
 
 	print "Starting the "+PBS_QUEUE+" job " + name
-	os.system("qsub "+work_dir+"/pbsjobs")
+	#os.system("qsub "+work_dir+"/pbsjobs")
 #end of do_mc function
+
+def copy_template(sdir, tdir, prefix)
+  os.copy(sdir+"/template_sim.cfg", tdir+"/"+prefix+"_sim.cfg")
+  os.copy(sdir+"/template_rec.cfg", tdir+"/"+prefix+"_rec.cfg")
+  os.copy(sdir+"/template_ana.cfg", tdir+"/"+prefix+"_ana.cfg")
 
 N=50000
 jobs = 20
-for job in range(1,jobs+1):
-	do_mc(1777, N, job,  "-20334, -20335, -20339, -20336")
+#for job in range(1,jobs+1):
+#	do_mc(1777, N, job,  "-20334, -20335, -20339, -20336")
+print rundir
+print scriptdir
+print templatedir
