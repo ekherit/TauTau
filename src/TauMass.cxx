@@ -858,16 +858,12 @@ StatusCode TauMass::execute()
       }
       gidx++;
 
-      if(mcParticleCol.size()!=0)
+      for(mcParticleCol::iterator p->mcParticleCol.begin(); p!=mcParticleCol.end(); ++p)
       {
-        for(int mcp=0; mcp<mcParticleCol.size(); mcp++)
-        {
-          McParticle & p=mcParticleCol[mcp];
-          int mc_track_id = p.trackIndex();
-          int pid = p.particleProperty();
-          McParticle mother = p.mother();
-          cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p.mother <<endl;
-        }
+        int mc_track_id = p->trackIndex();
+        int pid = p->particleProperty();
+        McParticle mother = p->mother();
+        cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
       }
     }
     mdc.ntrack=gidx;
