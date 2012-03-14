@@ -865,7 +865,8 @@ StatusCode TauMass::execute()
         int pid = p->particleProperty();
         //Event::McParticle mother = p->mother();
         //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
-        cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
+        if(mdcTrk->trackId()==mc_track_id)
+          cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
       }
     }
     mdc.ntrack=gidx;
