@@ -860,10 +860,11 @@ StatusCode TauMass::execute()
 
       for(Event::McParticleCol::iterator p=mcParticleCol->begin(); p!=mcParticleCol->end(); ++p)
       {
-        int mc_track_id = p->trackIndex();
-        int pid = p->particleProperty();
-        McParticle mother = p->mother();
-        cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
+        McParticle &part = *p;
+        //int mc_track_id = p->trackIndex();
+        //int pid = p->particleProperty();
+        //McParticle mother = p->mother();
+        //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
       }
     }
     mdc.ntrack=gidx;
