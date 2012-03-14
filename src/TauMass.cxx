@@ -627,7 +627,7 @@ StatusCode TauMass::execute()
   /*  Get information about reconstructed events */
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
-  SmartDataPtr<MCParticleVector> mcParticleCol(eventSvc(), "Event/McParticles");
+  //SmartDataPtr<MCParticleVector> mcParticleCol(eventSvc(), "Event/McParticles");
 
   InitData(evtRecEvent->totalCharged(), evtRecEvent->totalNeutral());
 
@@ -853,17 +853,17 @@ StatusCode TauMass::execute()
       }
       gidx++;
 
-      if(mcParticleCol.size()!=0)
-      {
-        for(int mcp=0; mcp<mcParticleCol.size(); mcp++)
-        {
-          McParticle & p=mcParticleCol[mcp];
-          int mc_track_id = p.trackIndex();
-          int pid = p.particleProperty();
-          McParticle mother = p.mother();
-          cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p.mother <<endl;
-        }
-      }
+      //if(mcParticleCol.size()!=0)
+      //{
+      //  for(int mcp=0; mcp<mcParticleCol.size(); mcp++)
+      //  {
+      //    McParticle & p=mcParticleCol[mcp];
+      //    int mc_track_id = p.trackIndex();
+      //    int pid = p.particleProperty();
+      //    McParticle mother = p.mother();
+      //    cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p.mother <<endl;
+      //  }
+      //}
     }
     mdc.ntrack=gidx;
     mdc.ngood_track = gidx;
