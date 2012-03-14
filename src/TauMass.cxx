@@ -34,6 +34,8 @@
 #include "DstEvent/TofHitStatus.h"
 #include "EventModel/EventHeader.h"
 
+#include "McTruth/McParticle.h"
+
 #include "TMath.h"
 #include "GaudiKernel/INTupleSvc.h"
 #include "GaudiKernel/NTuple.h"
