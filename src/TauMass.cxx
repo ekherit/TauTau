@@ -858,7 +858,7 @@ StatusCode TauMass::execute()
       }
       gidx++;
 
-      for(McParticleCol::iterator p->mcParticleCol.begin(); p!=mcParticleCol.end(); ++p)
+      for(Event::McParticleCol::iterator p->mcParticleCol.begin(); p!=mcParticleCol.end(); ++p)
       {
         int mc_track_id = p->trackIndex();
         int pid = p->particleProperty();
