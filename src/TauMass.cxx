@@ -629,8 +629,9 @@ StatusCode TauMass::execute()
   /*  Get information about reconstructed events */
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
+  SmartDataPtr<McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
   //SmartDataPtr<MCParticleVector> mcParticleCol(eventSvc(), "Event/McParticles");
-  SmartRefVector<McParticle> mcParticleCol(eventSvc(), "Event/McParticles");
+  //SmartRefVector<McParticle> mcParticleCol(eventSvc(), "Event/McParticles");
 
 
   InitData(evtRecEvent->totalCharged(), evtRecEvent->totalNeutral());
