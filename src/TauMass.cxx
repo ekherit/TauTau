@@ -863,10 +863,17 @@ StatusCode TauMass::execute()
         Event::McParticle * p = *ip;
         int mc_track_id = p->trackIndex();
         int pid = p->particleProperty();
+        HepLorentzVector P4 = p->initialFourMomentum();
+        Hep3Vector P3 = P4.vect();
+        Hep3Vector dP = P3 - mdcTrk->p3();
+
         //Event::McParticle mother = p->mother();
         //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
-        if(mdcTrk->trackId()==mc_track_id)
+        //if(mdcTrk->trackId()==mc_track_id)
+        if(dP.mag()<0.1)
+        {
           cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
+        }
       }
     }
     mdc.ntrack=gidx;
