@@ -78,6 +78,8 @@ TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("CHECK_TOF", CHECK_TOF=1);
   declareProperty("CHECK_DEDX", CHECK_DEDX = 1);
   declareProperty("CHECK_MUC", CHECK_MUC = 1);
+  declareProperty("CHECK_MC", CHECK_MC = 1);
+  declareProperty("MC_DP", MC_DP = 0.01);
   declareProperty("DELTA_X", DELTA_X = 1.0); //cm?
   declareProperty("DELTA_Y", DELTA_Y = 1.0); //cm?
   declareProperty("DELTA_Z", DELTA_Z = 10.0); //cm?
@@ -254,6 +256,15 @@ StatusCode TauMass::initialize(void)
       log << MSG::ERROR << "    Cannot book N-tuple:" << long(dedx_tuple) << endmsg;
       return StatusCode::FAILURE;
     }
+  }
+
+  if(CHECK_MC)
+  {
+    NTuplePtr nt_mc(ntupleSvc(), "FILE1/mc");
+    if(nt_mc) 
+      mc.tuple=nt_mc;
+    else 
+      status = mc.init_tuple(ntupleSvc()->book("FILE1/mc", CLID_ColumnWiseTuple, "Monte Carlo information"), MAX_TRACK_NUMBER);
   }
 
   if(CHECK_TOF)
@@ -442,6 +453,37 @@ void TauMass::MUC_t::init(void)
     distance[i]=-1000;
     phi[i] = -1000;
   }
+}
+
+void TauMass::MC_t::init(int N)
+{
+  // emc information init.
+  ntrack=0;
+  for(int i=0; i<N; i++)
+  {
+    E[i]=0;
+    p[i]=0;
+    id[i]=0;
+  }
+}
+
+StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
+{
+  tuple = tpl;
+  StatusCode status;
+  if(tuple)
+  {
+    status = tuple->addItem ("ntrack", ntrack, 0, NMAX);
+    status = tuple->addIndexedItem ("E",  ntrack, E);
+    status = tuple->addIndexedItem ("p",  ntrack, p);
+    status = tuple->addIndexedItem ("id",  ntrack, id);
+  }
+  else 
+  {
+    log << MSG::ERROR << "    Cannot book N-tuple for MC:" << long(tuple) << endmsg;
+    return StatusCode::FAILURE;
+  }
+  return status;
 }
 
 void TauMass::InitData(long nchtrack, long nneutrack)
@@ -858,26 +900,29 @@ StatusCode TauMass::execute()
       }
       gidx++;
 
-      for(Event::McParticleCol::iterator ip=mcParticleCol->begin(); ip!=mcParticleCol->end(); ++ip)
+      if(CHECK_MC)
       {
-        Event::McParticle * p = *ip;
-        int mc_track_id = p->trackIndex();
-        int pid = p->particleProperty();
-        HepLorentzVector P4 = p->initialFourMomentum();
-        Hep3Vector P3 = P4.vect();
-        Hep3Vector dP = P3 - mdcTrk->p3();
-
-        //Event::McParticle mother = p->mother();
-        //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
-        //if(mdcTrk->trackId()==mc_track_id)
-        if(dP.mag()<0.01)
+        for(Event::McParticleCol::iterator ip=mcParticleCol->begin(); ip!=mcParticleCol->end(); ++ip)
         {
-          cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
+          Event::McParticle * p = *ip;
+          int mc_track_id = p->trackIndex();
+          int pid = p->particleProperty();
+          HepLorentzVector P4 = p->initialFourMomentum();
+          Hep3Vector P3 = P4.vect();
+          Hep3Vector dP = P3 - mdcTrk->p3();
+          if(dP.mag()<MC_DP)
+          {
+            mc.p[i] = p3;
+            mc.E[i] = P4.e;
+            mc.id[i] = pid;
+            //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
+          }
         }
       }
     }
     mdc.ntrack=gidx;
     mdc.ngood_track = gidx;
+    if(CHECK_MC) mc.ntrack=gidx;
 
     /* Calculate acolinearity  for two tracks with big enrgies */
     Hep3Vector p0(mdc.px[0], mdc.py[0],mdc.pz[0]);

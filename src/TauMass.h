@@ -44,6 +44,8 @@ class TauMass : public Algorithm
 	int CHECK_TOF; //use toff.
   int CHECK_DEDX;
   int CHECK_MUC;
+  int CHECK_MC;
+  double MC_DP; //momentum difference to identify particles
 	double IPR;
 	int IPTRACKS; //tracks number from interection point
 	int MIN_CHARGED_TRACKS; //minimum charged tracks in selection
@@ -162,7 +164,7 @@ class TauMass : public Algorithm
   struct DEDX_t
   {
 	  NTuple::Item<long> ntrack;
-	  NTuple::Array<long>   pid; //particle id (dedx)
+	  NTuple::Array<double>   pid; //particle id (dedx)
 	  NTuple::Array<double> chie; //chi2_dEdx for electron
 	  NTuple::Array<double> chimu;//chi2_dEdx for muon
 	  NTuple::Array<double> chipi;//chi2_dEdx pion
@@ -235,6 +237,20 @@ class TauMass : public Algorithm
 
   NTuple::Tuple * tof_tuple;
   TOF_t tof;
+
+  /*  Monte Carlo Information */
+  struct MC_t
+  {
+	  NTuple::Item<long> ntrack; //number of tracks
+	  NTuple::Array<double>  id; //particle pdg number
+    NTuple::Array<Hep3Vector> p; //momentum
+    NTuple::Array<double> E; //Energy
+    NTuple::Tuple * tuple;
+    void init(int max_track_number);
+    void init_tuple(NTuple::Tuple *);
+  };
+
+  MC_t mc;
 
   void InitData(long number_charged_track, long number_neutral_track);
 
