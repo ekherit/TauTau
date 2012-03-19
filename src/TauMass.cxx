@@ -922,9 +922,9 @@ StatusCode TauMass::execute()
           Hep3Vector dP = P3 - mdcTrk->p3();
           if(dP.mag()<MC_DP)
           {
-            mc.px[i] = P3.px();
-            mc.py[i] = P3.py();
-            mc.pz[i] = P3.pz();
+            mc.px[i] = P3.x();
+            mc.py[i] = P3.y();
+            mc.pz[i] = P3.z();
             mc.p[i] = P3.mag();
             mc.E[i] = P4.e();
             mc.id[i] = pid;
