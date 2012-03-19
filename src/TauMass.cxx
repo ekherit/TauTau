@@ -912,7 +912,7 @@ StatusCode TauMass::execute()
           Hep3Vector dP = P3 - mdcTrk->p3();
           if(dP.mag()<MC_DP)
           {
-            mc.p[i] = p3;
+            mc.p[i] = P3;
             mc.E[i] = P4.e;
             mc.id[i] = pid;
             //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
