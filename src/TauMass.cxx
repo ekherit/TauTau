@@ -1018,9 +1018,11 @@ StatusCode TauMass::execute()
     bool charge = (mdc.q[0]*mdc.q[1]) <  0;
     bool kinem = mdc.p[0] < 1.5 && mdc.p[1] < 1.5;
     bool tau_sig  = ( (ise[0] && ismu[1]) || (ise[1] && ismu[0]) ) && charge && kinem;
-    bool bhabha_sig = ( (ise[0] && ise[1]) || (ismu[0] && ismu[1])) && charge;
+    bool bhabha_sig = ( (ise[0] && ise[1]) ) && charge;
     if(bhabha_sig) bhabha_events++;
     if(tau_sig) tau_events++;
+
+    if(!charge) goto SKIP_CHARGED;
 
     //if(!tau_sig && !bhabha_sig) goto SKIP_CHARGED;  
     //if(!tau_sig && STRICT_TAU_CUT == 1) goto SKIP_CHARGED;  
