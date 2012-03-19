@@ -870,7 +870,7 @@ StatusCode TauMass::execute()
         //Event::McParticle mother = p->mother();
         //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid << " mother=" << p->mother.particleProperty() <<endl;
         //if(mdcTrk->trackId()==mc_track_id)
-        if(dP.mag()<0.1)
+        if(dP.mag()<0.01)
         {
           cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;
         }
