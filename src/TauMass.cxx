@@ -472,7 +472,10 @@ void TauMass::MC_t::init(void)
   for(int i=0; i<MAX_TRACK_NUMBER; i++)
   {
     E[i]=0;
-    p[i]=0;
+    px[i]=-1000;
+    py[i]=-1000;
+    pz[i]=-1000;
+    p[i]=-1000;
     id[i]=0;
   }
 }
@@ -485,6 +488,9 @@ StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
   status = tuple->addItem ("ntrack", ntrack, 0, NMAX);
   status = tuple->addIndexedItem ("E",  ntrack, E);
   status = tuple->addIndexedItem ("p",  ntrack, p);
+  status = tuple->addIndexedItem ("px",  ntrack, px);
+  status = tuple->addIndexedItem ("py",  ntrack, py);
+  status = tuple->addIndexedItem ("pz",  ntrack, pz);
   status = tuple->addIndexedItem ("id",  ntrack, id);
   return status;
 }
@@ -916,7 +922,10 @@ StatusCode TauMass::execute()
           Hep3Vector dP = P3 - mdcTrk->p3();
           if(dP.mag()<MC_DP)
           {
-            mc.p[i] = P3;
+            mc.px[i] = P3.px();
+            mc.py[i] = P3.py();
+            mc.pz[i] = P3.pz();
+            mc.p[i] = P3.mag();
             mc.E[i] = P4.e();
             mc.id[i] = pid;
             //cout << "mc track=" << mdcTrk->trackId() <<   " mc track=" << mc_track_id << " pid=" << pid <<endl;

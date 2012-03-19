@@ -243,7 +243,10 @@ class TauMass : public Algorithm
   {
 	  NTuple::Item<long> ntrack; //number of tracks
 	  NTuple::Array<double>  id; //particle pdg number
-    NTuple::Array<Hep3Vector> p; //momentum
+    NTuple::Array<double> px; //momentum
+    NTuple::Array<double> py; //momentum
+    NTuple::Array<double> pz; //momentum
+    NTuple::Array<double> p; //momentum
     NTuple::Array<double> E; //Energy
     NTuple::Tuple * tuple;
     void init(void);
