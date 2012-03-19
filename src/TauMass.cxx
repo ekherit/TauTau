@@ -1024,7 +1024,7 @@ StatusCode TauMass::execute()
 
     //if(!tau_sig && !bhabha_sig) goto SKIP_CHARGED;  
     //if(!tau_sig && STRICT_TAU_CUT == 1) goto SKIP_CHARGED;  
-    if(! (ise[0] || ise[1] ) && STRICT_TAU_CUT == 1) goto SKIP_CHARGED;  
+    if(! (ise[0] || ise[1] || ismu[0] || ismu[1]) && STRICT_TAU_CUT == 1) goto SKIP_CHARGED;  
 
     /* now fill the data */
     main_tuple->write();
