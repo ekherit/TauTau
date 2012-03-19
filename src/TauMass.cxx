@@ -1033,6 +1033,7 @@ StatusCode TauMass::execute()
     if(CHECK_DEDX) dedx_tuple->write();
     if(CHECK_MUC) muc_tuple->write();
     if(CHECK_TOF) tof_tuple->write();
+    if(CHECK_MC) mc.tuple->write();
     event_write++;
   }
 //selection of gamma-gamma events
