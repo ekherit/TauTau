@@ -246,8 +246,9 @@ class TauMass : public Algorithm
     NTuple::Array<Hep3Vector> p; //momentum
     NTuple::Array<double> E; //Energy
     NTuple::Tuple * tuple;
-    void init(int max_track_number);
-    void init_tuple(NTuple::Tuple *);
+    void init(void);
+    void init_tuple(NTuple::Tuple *, int max_track_number);
+    int MAX_TRACK_NUMBER;
   };
 
   MC_t mc;

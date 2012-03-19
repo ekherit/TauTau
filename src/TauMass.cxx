@@ -455,11 +455,11 @@ void TauMass::MUC_t::init(void)
   }
 }
 
-void TauMass::MC_t::init(int N)
+void TauMass::MC_t::init(void)
 {
   // emc information init.
   ntrack=0;
-  for(int i=0; i<N; i++)
+  for(int i=0; i<MAX_TRACK_NUMBER; i++)
   {
     E[i]=0;
     p[i]=0;
@@ -469,6 +469,7 @@ void TauMass::MC_t::init(int N)
 
 StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
 {
+  MAX_TRACK_NUMBER = NMAX;
   tuple = tpl;
   StatusCode status;
   if(tuple)
@@ -603,6 +604,7 @@ void TauMass::InitData(long nchtrack, long nneutrack)
       tof.errE[i]  =-1000;
     }
   }
+  if(CHECK_MC) mc.init();
 }
 
 
