@@ -482,18 +482,10 @@ StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
   MAX_TRACK_NUMBER = NMAX;
   tuple = tpl;
   StatusCode status;
-  if(tuple)
-  {
-    status = tuple->addItem ("ntrack", ntrack, 0, NMAX);
-    status = tuple->addIndexedItem ("E",  ntrack, E);
-    status = tuple->addIndexedItem ("p",  ntrack, p);
-    status = tuple->addIndexedItem ("id",  ntrack, id);
-  }
-  else 
-  {
-    log << MSG::ERROR << "    Cannot book N-tuple for MC:" << long(tuple) << endmsg;
-    return StatusCode::FAILURE;
-  }
+  status = tuple->addItem ("ntrack", ntrack, 0, NMAX);
+  status = tuple->addIndexedItem ("E",  ntrack, E);
+  status = tuple->addIndexedItem ("p",  ntrack, p);
+  status = tuple->addIndexedItem ("id",  ntrack, id);
   return status;
 }
 
