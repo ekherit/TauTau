@@ -260,11 +260,21 @@ StatusCode TauMass::initialize(void)
 
   if(CHECK_MC)
   {
-    NTuplePtr nt_mc(ntupleSvc(), "FILE1/mc");
-    if(nt_mc) 
-      mc.tuple=nt_mc;
-    else 
-      status = mc.init_tuple(ntupleSvc()->book("FILE1/mc", CLID_ColumnWiseTuple, "Monte Carlo information"), MAX_TRACK_NUMBER);
+    NTuplePtr nt(ntupleSvc(), "FILE1/mc");
+    if(nt) mc.tuple=nt;
+    else
+    {
+      mc.tuple = ntupleSvc()->book("FILE1/mc", CLID_ColumnWiseTuple, "Monte Carlo information");
+      if(mc.tuple)
+      {
+        status = mc.init_tuple(mc.tuple, MAX_TRACK_NUMBER);
+      }
+      else
+      {
+        log << MSG::ERROR << "    Cannot book N-tuple:" << long(mc.tuple) << endmsg;
+        return StatusCode::FAILURE;
+      }
+    }
   }
 
   if(CHECK_TOF)
