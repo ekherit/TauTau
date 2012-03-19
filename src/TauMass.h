@@ -247,7 +247,7 @@ class TauMass : public Algorithm
     NTuple::Array<double> E; //Energy
     NTuple::Tuple * tuple;
     void init(void);
-    void init_tuple(NTuple::Tuple *, int max_track_number);
+    StatusCode init_tuple(NTuple::Tuple *, int max_track_number);
     int MAX_TRACK_NUMBER;
   };
 
