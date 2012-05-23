@@ -919,7 +919,7 @@ StatusCode TauMass::execute()
           int pid = p->particleProperty();
           HepLorentzVector P4 = p->initialFourMomentum();
           Hep3Vector P3 = P4.vect();
-          double angle = P3(mdcTrk->p3());
+          double angle = P3.angle(mdcTrk->p3());
 //          Hep3Vector dP = P3 - mdcTrk->p3();
           if(angle<MC_DP)
           {
