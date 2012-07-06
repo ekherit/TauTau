@@ -731,7 +731,7 @@ StatusCode TauMass::execute()
 
       double rvxy=-9999,rvz=-9999,rvphi=-9999;
       calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
-      bool is_fromIP = fabs(rvz)<10 && fabs(rvxy)<2.0;  //tracks begin near interaction point
+      bool is_fromIP = fabs(rvz)<20 && fabs(rvxy)<2.0;  //tracks begin near interaction point
       bool is_good_track = is_fromIP && fabs(cos(mdcTrk->theta()))<0.93; //track is good
       if(!is_good_track) continue;
       double E = emcTrk->energy();
