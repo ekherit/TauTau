@@ -446,6 +446,11 @@ StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
   status = tuple->addIndexedItem ("ndf", ntrack, ndf );
   status = tuple->addIndexedItem ("distance", ntrack, distance );
   status = tuple->addIndexedItem ("phi", ntrack, phi);
+  status = tuple->addIndexedItem ("nhit", ntrack, nhit);
+  status = tuple->addIndexedItem ("nlayer", ntrack, nlayer);
+  status = tuple->addIndexedItem ("nhit_max", ntrack, nhit_max);
+  status = tuple->addIndexedItem ("brlast", ntrack, brlast);
+  status = tuple->addIndexedItem ("eclast", ntrack, eclast);
   return status;
 }
 
@@ -462,6 +467,11 @@ void TauMass::MUC_t::init(void)
     ndf[i]=-1000;
     distance[i]=-1000;
     phi[i] = -1000;
+    nhit[i] = -1000;
+    nlayer[i] = -1000;
+    nhit_max[i] = -1000;
+    brlast[i] = -1000;
+    eclast[i] = -1000;
   }
 }
 
@@ -809,8 +819,12 @@ StatusCode TauMass::execute()
         muc.ndf[i]= mucTrk->dof();
         muc.distance[i]= mucTrk->distance();
         muc.phi[i]= mucTrk->deltaPhi();
+        muc.nhit[i] = mucTrk->numHits();
+        muc.nlayer[i] = mucTrk->numLayers();
+        muc.nhit_max[i] = mucTrk->maxHitsInLayer();
+        muc.brlast[i] = mucTrk->brLastLayer();
+        muc.eclast[i] = mucTrk->ecLastLayer();
       }
-
 
       /*  Particle identification game */
       pid->init();

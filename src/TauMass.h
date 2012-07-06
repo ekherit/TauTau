@@ -147,6 +147,11 @@ class TauMass : public Algorithm
     NTuple::Array<double>   ndf; //degree of freedom
     NTuple::Array<double>   distance; //distance between ext track and fired strip in 1st layer of MUC
     NTuple::Array<double>   phi; //delta phi between mdc momentum and direction of MUC track
+    NTuple::Array<double>   nhit; //number of hits
+    NTuple::Array<double>   nlayer; //number of hits
+    NTuple::Array<double>   nhitmax; //max number of hits in layer
+    NTuple::Array<double>   brlast; //last layer in barrel
+    NTuple::Array<double>   eclast; //last layer in end cup
     void init(void);
     StatusCode init_tuple(NTuple::Tuple * tuple);
     int MAX_TRACK_NUMBER;
