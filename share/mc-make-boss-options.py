@@ -41,15 +41,22 @@ def proceed(run, directory, files):
     TEMPLATE_RUN_NUMBER=str(run)
     TARGET_FILE = TEMPLATE_RUN_NUMBER+".cfg"
     r = ".+_"+str(run)+".dst"
+    #r = str(run)+".dst"
+    rskip = ".*old"
     flist = []
     TEMPLATE_DST_FILES=''
     for f in files:
-      if re.match(r,f):
-        name = os.path.join(directory, f);
-        flist.append(name)
-        if TEMPLATE_DST_FILES=='': comma=''
-        else: comma=',\n'
-        TEMPLATE_DST_FILES=TEMPLATE_DST_FILES+comma+'"'+name+'"'
+      if not re.match(rskip,directory) :
+        print "directory=",directory
+        if re.match(r,f)  :
+          #if  not re.match(rold,f) :
+          print "AHAHA",os.abspath(f);
+          name = os.path.join(directory, f);
+          if re.match(rold, f) : print name
+          flist.append(name)
+          if TEMPLATE_DST_FILES=='': comma=''
+          else: comma=',\n'
+          TEMPLATE_DST_FILES=TEMPLATE_DST_FILES+comma+'"'+name+'"'
     if TEMPLATE_DST_FILES=='': return
     print TEMPLATE_DST_FILES
     configure(TAUMASSROOT+'/share/template.cfg',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
