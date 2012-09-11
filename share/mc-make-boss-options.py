@@ -1,4 +1,4 @@
-#i!/usr/bin/python
+#!/usr/bin/python
 import os
 import string
 import sys
@@ -41,13 +41,11 @@ def proceed(run, directory, files):
     TEMPLATE_RUN_NUMBER=str(run)
     TARGET_FILE = TEMPLATE_RUN_NUMBER+".cfg"
     r = ".+_"+str(run)+".dst"
-    oldr = "old"
     flist = []
     TEMPLATE_DST_FILES=''
     for f in files:
-			if re.match(oldr, f) :  print oldr
       if re.match(r,f):
-        name = os.path.join(directory, f)
+        name = os.path.join(directory, f);
         flist.append(name)
         if TEMPLATE_DST_FILES=='': comma=''
         else: comma=',\n'
