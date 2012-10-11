@@ -47,12 +47,8 @@ def proceed(run, directory, files):
     TEMPLATE_DST_FILES=''
     for f in files:
       if not re.match(rskip,directory) :
-        print "directory=",directory
         if re.match(r,f)  :
-          #if  not re.match(rold,f) :
-          print "AHAHA",os.abspath(f);
           name = os.path.join(directory, f);
-          if re.match(rold, f) : print name
           flist.append(name)
           if TEMPLATE_DST_FILES=='': comma=''
           else: comma=',\n'
