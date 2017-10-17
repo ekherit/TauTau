@@ -30,10 +30,10 @@
 
 #include "ibn/averager.h"
 
-class TauMass : public Algorithm 
+class TauTau : public Algorithm 
 {
 	public:
-  TauMass(const std::string& name, ISvcLocator* pSvcLocator);
+  TauTau(const std::string& name, ISvcLocator* pSvcLocator);
   StatusCode initialize();
   StatusCode execute();
   StatusCode finalize();  

@@ -1,4 +1,4 @@
-package TauMass
+package TauTau
 author Ivan Nikolaev <I.B.Nikolaev@inp.nsk.su>
 
 use BesPolicy BesPolicy-*

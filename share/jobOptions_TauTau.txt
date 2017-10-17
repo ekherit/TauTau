@@ -1,5 +1,5 @@
-ApplicationMgr.DLLs += {"TauMass"};
-ApplicationMgr.TopAlg += {"TauMass"};
+ApplicationMgr.DLLs += {"TauTau"};
+ApplicationMgr.TopAlg += {"TauTau"};
 TauMass.CHECK_TOF = 1;
 TauMass.CHECK_DEDX = 1;
 TauMass.CHECK_MUC = 1;

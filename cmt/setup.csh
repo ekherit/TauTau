@@ -22,6 +22,7 @@ if ( $status != 0 ) then
   set cmtsetupstatus=2
 endif
 /bin/rm -f ${cmtTauTautempfile}
+setenv LD_LIBRARY_PATH $TAUTAUROOT/x86_64-slc6-gcc46-opt:$LD_LIBRARY_PATH
 unset cmtTauTautempfile
 exit $cmtsetupstatus
 

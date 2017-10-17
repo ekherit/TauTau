@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  TauMass.cxx
+ *       Filename:  TauTau.cxx
  *
  *    Description:  Multihadron event selection for j/psi and psi prime resonance.
  *
@@ -51,7 +51,7 @@ using CLHEP::HepLorentzVector;
 #ifndef ENABLE_BACKWARDS_COMPATIBILITY
 typedef HepGeom::Point3D<double> HepPoint3D;
 #endif
-#include "TauMass.h"
+#include "TauTau.h"
 #include "Sphericity.h"
 
 
@@ -72,7 +72,7 @@ const double EMC_BARREL_THRESHOLD=0.025;
 
 inline double sq(double x) { return x*x; }
 
-TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
+TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
   declareProperty("CHECK_TOF", CHECK_TOF=1);
@@ -96,7 +96,7 @@ TauMass::TauMass(const std::string& name, ISvcLocator* pSvcLocator) :
 }
 
 
-StatusCode TauMass::initialize(void)
+StatusCode TauTau::initialize(void)
 {
   MsgStream log(msgSvc(), name());
 
@@ -379,7 +379,7 @@ StatusCode TauMass::initialize(void)
   return StatusCode::SUCCESS;
 }
 
-void TauMass::EMC_t::init(void)
+void TauTau::EMC_t::init(void)
 {
   // emc information init.
   ntrack=0;
@@ -407,7 +407,7 @@ void TauMass::EMC_t::init(void)
   }
 }
 
-StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
+StatusCode TauTau::EMC_t::init_tuple(NTuple::Tuple * tuple)
 {
   StatusCode status;
   status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
@@ -434,7 +434,7 @@ StatusCode TauMass::EMC_t::init_tuple(NTuple::Tuple * tuple)
   return status;
 }
 
-StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
+StatusCode TauTau::MUC_t::init_tuple(NTuple::Tuple * tuple)
 {
   StatusCode status;
   status = tuple->addItem ("ntrack", ntrack, 0, MAX_TRACK_NUMBER);
@@ -454,7 +454,7 @@ StatusCode TauMass::MUC_t::init_tuple(NTuple::Tuple * tuple)
   return status;
 }
 
-void TauMass::MUC_t::init(void)
+void TauTau::MUC_t::init(void)
 {
   // emc information init.
   ntrack=0;
@@ -475,7 +475,7 @@ void TauMass::MUC_t::init(void)
   }
 }
 
-void TauMass::MC_t::init(void)
+void TauTau::MC_t::init(void)
 {
   // emc information init.
   ntrack=0;
@@ -490,7 +490,7 @@ void TauMass::MC_t::init(void)
   }
 }
 
-StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
+StatusCode TauTau::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
 {
   MAX_TRACK_NUMBER = NMAX;
   tuple = tpl;
@@ -505,7 +505,7 @@ StatusCode TauMass::MC_t::init_tuple(NTuple::Tuple * tpl, const int NMAX)
   return status;
 }
 
-void TauMass::InitData(long nchtrack, long nneutrack)
+void TauTau::InitData(long nchtrack, long nneutrack)
 {
   m_ntrack=nchtrack+nneutrack;
   m_nchtr=nchtrack;
@@ -661,7 +661,7 @@ void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
   phi=Rvphi0;
 }
 
-StatusCode TauMass::execute()
+StatusCode TauTau::execute()
 {
   MsgStream log(msgSvc(), name());
   log << MSG::INFO << "in execute()" << endreq;
@@ -1126,7 +1126,7 @@ SKIP_GG:
   return StatusCode::SUCCESS;
 }
 
-StatusCode TauMass::finalize()
+StatusCode TauTau::finalize()
 {
   std::cout << "Event proceed: " << event_proceed << std::endl;
   std::cout << "Event selected: " << event_write << std::endl;
