@@ -15,7 +15,7 @@ use ParticleID   ParticleID-*  Analysis
 use BesROOT      BesROOT-00-*     External
 
 apply_pattern component_library 
-library TauMass  *.cxx  components/*.cxx
+library TauTau  *.cxx  components/*.cxx
 
 
 apply_pattern declare_runtime files=*.txt
