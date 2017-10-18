@@ -14,9 +14,10 @@ use ParticleID   ParticleID-*  Analysis
 
 use BesROOT      BesROOT-00-*     External
 
-apply_pattern component_library 
-library TauTau  *.cxx  components/*.cxx
+#use RootEvent   RootEvent-00-* 
 
+apply_pattern component_library 
+library TauTau  *.cxx  components/*.cxx RootEvent/*.cxx
 
 apply_pattern declare_runtime files=*.txt
 

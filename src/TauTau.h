@@ -30,6 +30,10 @@
 
 #include "ibn/averager.h"
 
+//#include "RootEvent/RootMdc.h"
+
+#include "SelectionConfig.h"
+
 class TauTau : public Algorithm 
 {
 	public:
@@ -37,6 +41,9 @@ class TauTau : public Algorithm
   StatusCode initialize();
   StatusCode execute();
   StatusCode finalize();  
+
+
+  SelectionConfig cfg;
 
 	private:
   int STRICT_TAU_CUT;

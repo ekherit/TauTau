@@ -54,6 +54,8 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #include "TauTau.h"
 #include "Sphericity.h"
 
+#include "Utils.h"
+
 
 #include "VertexFit/KinematicFit.h"
 #include "VertexFit/VertexFit.h"
@@ -626,41 +628,6 @@ void TauTau::InitData(long nchtrack, long nneutrack)
 }
 
 
-void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
-{
-  /*  Reconstruct the vertex */
-  Hep3Vector xorigin(0,0,0);
-  IVertexDbSvc*  vtxsvc;
-  Gaudi::svcLocator()->service("VertexDbSvc", vtxsvc);
-  if(vtxsvc->isVertexValid())
-  {
-    double* dbv = vtxsvc->PrimaryVertex(); 
-    double*  vv = vtxsvc->SigmaPrimaryVertex();  
-    xorigin.setX(dbv[0]);
-    xorigin.setY(dbv[1]);
-    xorigin.setZ(dbv[2]);
-  }
-  /* Vertex game. copy from rhophi analysis */
-  double phi0=mdcTrk->helix(1);
-  double xv=xorigin.x();
-  double yv=xorigin.y();
-  //double Rxy=(mdc.x[i]-xv)*cos(phi0)+(mdc.y[i]-yv)*sin(phi0);
-  //mdc.r[i]=Rxy;
-  HepVector a = mdcTrk->helix();
-  HepSymMatrix Ea = mdcTrk->err();
-  HepPoint3D point0(0.,0.,0.);   // the initial point for MDC recosntruction
-  HepPoint3D IP(xorigin[0],xorigin[1],xorigin[2]); 
-  VFHelix helixip(point0,a,Ea); 
-  helixip.pivot(IP);
-  HepVector vecipa = helixip.a();
-  double  Rvxy0=fabs(vecipa[0]);  //the nearest distance to IP in xy plane
-  double  Rvz0=vecipa[3];         //the nearest distance to IP in z direction
-  double  Rvphi0=vecipa[1];
-  ro=Rvxy0;
-  z=Rvz0;
-  phi=Rvphi0;
-}
-
 StatusCode TauTau::execute()
 {
   MsgStream log(msgSvc(), name());
@@ -688,9 +655,20 @@ StatusCode TauTau::execute()
   }
   event_proceed++;
 
-  /*  Get information about reconstructed events */
+  //  Get information about reconstructed events
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
+
+	std::list<EvtRecTrack*> good_neutral_tracks;
+	std::list<EvtRecTrack*> good_charged_tracks;
+
+  //fill initial value of the selected event
+  good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+  good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+
+  /*  Get information about reconstructed events */
+  //SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
+  //SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
   //SmartDataPtr<MCParticleVector> mcParticleCol(eventSvc(), "Event/McParticles");
   //SmartRefVector<McParticle> mcParticleCol(eventSvc(), "Event/McParticles");
@@ -707,7 +685,7 @@ StatusCode TauTau::execute()
   typedef std::pair <double, unsigned> pair_t;
   mmap_t pmap;
   mmap_t Emap; //multi map to sort good tracks by energy order
-  unsigned good_charged_tracks = 0;
+  unsigned ngood_charged_tracks = 0;
 
 
   if(evtRecEvent->totalCharged()  >= MIN_CHARGED_TRACKS)
@@ -742,7 +720,7 @@ StatusCode TauTau::execute()
     /* Two or more charged tracks witch signal in EMC */
     // save only 2,3,4 charged tracks
     // 4th track is to test systematics
-    good_charged_tracks=Emap.size();
+    ngood_charged_tracks=Emap.size();
     if(Emap.size()<MIN_CHARGED_TRACKS || MAX_TRACK_NUMBER < Emap.size()) goto SKIP_CHARGED;
 
     //now fill the arrayes using indexes sorted by energy
@@ -969,7 +947,7 @@ StatusCode TauTau::execute()
     /*  fill data for neutral tracks */
     int track=0; //index for neutral tracks
     emc.Etotal=0;
-    emc.ngood_charged_track=good_charged_tracks;
+    emc.ngood_charged_track=ngood_charged_tracks;
     Emap.clear();
     pmap.clear();
     //calculate good tracks
@@ -1055,8 +1033,8 @@ StatusCode TauTau::execute()
   }
 //selection of gamma-gamma events
 SKIP_CHARGED:
-  gg.ngood_charged_track = good_charged_tracks;
-  if(good_charged_tracks==0)
+  gg.ngood_charged_track = ngood_charged_tracks;
+  if(ngood_charged_tracks==0)
   {
     //select and sort only good neutral tracks.
     Emap.clear();
