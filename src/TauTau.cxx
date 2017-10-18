@@ -664,6 +664,17 @@ StatusCode TauTau::execute()
 
   //fill initial value of the selected event
   good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+
+  //filter good charged tracks 
+  std::list<EvtRecTrack*> emc_good_charged_tracks;
+  for( std::list<EvtRecTrack*>::iterator it=good_charged_tracks.begin();
+       it!=good_charged_tracks.end();
+       ++it)
+  {
+  }
+
+
+
   good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
 
   /*  Get information about reconstructed events */
