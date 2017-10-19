@@ -663,19 +663,45 @@ StatusCode TauTau::execute()
 	std::list<EvtRecTrack*> good_charged_tracks;
 
   //fill initial value of the selected event
+  //come from IP and cos(theta)<max_cos_theta
   good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+  //good neutral tracks
+  good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
 
-  //filter good charged tracks 
+  //filter good charged tracks keep only tracks with emcShower
   std::list<EvtRecTrack*> emc_good_charged_tracks;
   for( std::list<EvtRecTrack*>::iterator it=good_charged_tracks.begin();
        it!=good_charged_tracks.end();
        ++it)
   {
+    EvtRecTrack * track = *it;
+    if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
+    if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+    RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
+    RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
+    if(
+    emc_good_charged_tracks.push_back(track);
+  }
+
+  emc_good_charged_tracks.sort(); //sort over deposited energy in EMC
+  emc_good_charged_tracks.reverse();
+
+  if ( good_neutral_tracks.size() == 0 ) //GOES to SIGNAL TauTau selection
+  {
+    if( cfg.MIN_CHARGED_TRACKS <= emc_good_charged_tracks.size() 
+        && emc_good_charged_tracks.size() < cfg.MAX_CHARGED_TRACKS )
+    {
+
+    }
+  }
+  else //gamma-gamma selection
+  {
   }
 
 
 
-  good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+
+
 
   /*  Get information about reconstructed events */
   //SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
