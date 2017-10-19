@@ -210,6 +210,26 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
 	return good_neutral_tracks;
 }
 
+//struct EmcEnergyOrder
+//{
+//  bool operator < (const EvtRecTrack * track1, const EvtRecTrack *track2)
+//  {
+//    /*  
+//     *
+//     *  E1 < E2  true if E1<E2
+//     *  none < E2 always true
+//     *  E1 < none always false
+//     *  none < none always false
+//     *   
+//     */
+//    if(!track2->isEmcShowerValid())  return false;
+//    RecEmcShower *emcTrk1 = track2->emcShower();
+//    if(!track1->isEmcShowerValid())  return true;
+//    RecEmcShower *emcTrk2 = track1->emcShower();
+//    return emcTrk1->energy() < emcTrk2->energy();
+//  }
+//};
+
 /*  
  *
  *  E1 < E2  true if E1<E2
@@ -217,12 +237,12 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
  *  E1 < none always false
  *  none < none always false
  *   */
-inline bool operator<(EvtRecTrack * track1, EvtRecTrack *track2)
+inline bool EmcEnergyOrder(EvtRecTrack * track1, EvtRecTrack *track2)
 {
     if(!track2->isEmcShowerValid())  return false;
     RecEmcShower *emcTrk1 = track2->emcShower();
     if(!track1->isEmcShowerValid())  return true;
-    RecEmcShower *emcTrk1 = track1->emcShower();
+    RecEmcShower *emcTrk2 = track1->emcShower();
     return emcTrk1->energy() < emcTrk2->energy();
 }
 

@@ -679,11 +679,10 @@ StatusCode TauTau::execute()
     if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
     RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
     RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
-    if(
     emc_good_charged_tracks.push_back(track);
   }
 
-  emc_good_charged_tracks.sort(); //sort over deposited energy in EMC
+  emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   emc_good_charged_tracks.reverse();
 
   if ( good_neutral_tracks.size() == 0 ) //GOES to SIGNAL TauTau selection

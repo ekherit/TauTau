@@ -34,6 +34,8 @@
 
 #include "SelectionConfig.h"
 
+#include "RootTauTauEvent.h"
+
 class TauTau : public Algorithm 
 {
 	public:
@@ -64,6 +66,9 @@ class TauTau : public Algorithm
   long int bhabha_events; 
   long int gg_events; 
 
+
+  RootTauTauEvent event;
+
 	NTuple::Tuple * main_tuple;//main tuple 
 	NTuple::Item<long> m_time; //time when events is writed (unixtime)
 	NTuple::Item<long> m_ntrack; //total number of tracks.
@@ -71,6 +76,8 @@ class TauTau : public Algorithm
 	NTuple::Item<long> m_nneutr;//number of neutral tracks
   NTuple::Item<double> m_Etotal; //total energy deposition
   NTuple::Item<double> m_Eemc; //total energy deposition EMC only
+
+
 
   /*  Main Drift Chamber Information */
   struct MDC_t
