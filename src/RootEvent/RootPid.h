@@ -20,15 +20,24 @@
 #include "GaudiKernel/NTuple.h"
 #include "ParticleID/ParticleID.h"
 
+enum PID 
+{
+  ELECTRON=0, 
+  MUON=1, 
+  PION=2, 
+  KAON=3, 
+  PROTON=4
+};
+
 struct RootPid
 {
-	NTuple::Array<long> * ntrack; 
+	NTuple::Item<long> * ntrack; 
 	NTuple::Array<double> chi2[5]; 
 	NTuple::Array<double> prob[5]; 
 
   ParticleID * PID;
 
-	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Itel<long> & ntrk)
+	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk)
   {
     ntrack = & ntrk;
 		tuple->addIndexedItem ("pid_chi2_e",  *ntrack, chi2[ELECTRON]);
@@ -75,4 +84,4 @@ struct RootPid
       prob[pid][i] = PID->prob(pid);
     }
   }
-}
+};

@@ -17,7 +17,7 @@
 
 void RootMdc::init_tuple(void)
 {
-	add_to_tuple(tuple);
+	//add_to_tuple(tuple);
 }
 
 
@@ -31,7 +31,7 @@ void RootMdc::fill(int i, EvtRecTrack * track)
 	if(!track->isMdcTrackValid()) return; 
 	//RecMdcTrack  *mdcTrk = (*track)->mdcTrack();
   RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-	trackId[i] = mdcTrk->trackId();
+	id[i] = mdcTrk->trackId();
 	q[i] = mdcTrk->charge(); 
 	p[i] = mdcTrk->p();
 	px[i]= mdcTrk->px();

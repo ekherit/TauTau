@@ -110,7 +110,7 @@ StatusCode TauTau::initialize(void)
   StatusCode status;
   try
   {
-    fEvent->init_tuple(this, "FILE1/event","Signal tau tau events");
+    fEvent.init_tuple(this, "FILE1/event","Signal tau tau events");
   }
 	catch(std::runtime_error & error)
 	{

@@ -16,7 +16,7 @@
 
 #pragma once
 #include "RootTrack.h"
-struct RootMdc : public RootTrack, public RootTuple
+struct RootMdc : public RootTracks, public RootTuple
 {
 	virtual void init(void);
 	virtual void init_tuple(void);

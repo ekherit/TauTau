@@ -16,6 +16,7 @@
 
 #pragma once 
 
+#include "GaudiKernel/Algorithm.h"
 #include "GaudiKernel/NTuple.h"
 #include "EvtRecEvent/EvtRecTrack.h"
 
@@ -24,7 +25,6 @@ struct RootTuple
 	public:
 		NTuple::Tuple * tuple; //tuple
 		virtual ~RootTuple(void){};
-
 		virtual void init(void)=0;
 		virtual void init_tuple(void)=0;
     virtual void init_tuple(Algorithm * algo, const char * dir, const char * title)

@@ -18,9 +18,10 @@
 
 #include <vector>
 
-#include "RootTuple.h"
-#include "RootMass.h"
-#include "RootTrack.h"
+#include "RootEvent/RootTuple.h"
+#include "RootEvent/RootTrack.h"
+
+#include "RootEvent/RootPid.h"
 
 #include "CLHEP/Vector/LorentzVector.h"
 
@@ -37,8 +38,11 @@ enum CHANNEL
    EK  =  3,  MUK  =  13,  KK  =  23 
 };
 
-struct RootTauTauEvent : public RootTuple
+class RootTauTauEvent : public RootTuple
 {
+  public:
+  RootTauTauEvent(void) {}
+  virtual ~RootTauTauEvent(void) {}
 	NTuple::Item<long>    run; //run number
 	NTuple::Item<long>    event; //event number 
 	NTuple::Item<long>    time; //time of the event
@@ -56,6 +60,10 @@ struct RootTauTauEvent : public RootTuple
 	RootTracks T; //track information (momentum, vertex, muon depth...)
   RootPid Pid; //particle id for track
 
+  void init_tuple(Algorithm * algo, const char * dir, const char * title)
+  {
+    RootTuple::init_tuple(algo,dir,title);
+  }
 	virtual void init_tuple(void)
   {
     tuple->addItem ("channel", channel);
@@ -63,6 +71,6 @@ struct RootTauTauEvent : public RootTuple
     T.add_to_tuple(tuple,ntrack); 
     Pid.add_to_tuple(tuple,ntrack); 
   };
-	virtual void init(void)
+	virtual void init(void) {};
 	virtual void fill(int i,  EvtRecTrack * track);
 };

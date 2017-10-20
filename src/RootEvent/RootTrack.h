@@ -34,7 +34,7 @@ struct RootTracks
 	NTuple::Array<double> x, y, z, r; //poca coordinate of track
 	NTuple::Array<double> vxy, vz, vphi; //poca coordinate of track
   NTuple::Array<double> depth; //depth in muon system
-	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Itel<long> & ntrack)
+	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrack)
 	{
 		//tuple->addItem ("ntrack", ntrack); 
 		tuple->addIndexedItem ("trackid",   ntrack, id);
