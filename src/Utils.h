@@ -246,3 +246,26 @@ inline bool EmcEnergyOrder(EvtRecTrack * track1, EvtRecTrack *track2)
     return emcTrk1->energy() < emcTrk2->energy();
 }
 
+inline bool ChargeOrder(EvtRecTrack * track1, EvtRecTrack *track2)
+{
+    if(!track2->isMdcTrackValid()) return false; 
+    RecMdcTrack * mdc2 = track2->mdcTrack();  
+    if(!track1->isMdcTrackValid()) return true; 
+    RecMdcTrack * mdc1 = track1->mdcTrack();  
+    return mdc1->charge() < mdc2->charge();
+}
+
+inline int GetCharge(EvtRecTrack * track)
+{
+  if(!track->isMdcTrackValid()) return -999;
+  RecMdcTrack * mdc = track->mdcTrack();  
+  return mdc->charge();
+}
+
+inline double GetMomentum(EvtRecTrack * track)
+{
+  if(!track->isMdcTrackValid()) return -999;
+  RecMdcTrack * mdc = track->mdcTrack();  
+  return mdc->p();
+}
+

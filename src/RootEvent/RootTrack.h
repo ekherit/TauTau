@@ -18,28 +18,26 @@
 
 #include "RootTuple.h"
 
-struct RootTrack
+struct RootTracks
 {
-  static long MAX_TRACK_NUMBER;
-  static long MIN_TRACK_NUMBER;
-	NTuple::Item<long>    ntrack;  //size of 
-	NTuple::Array<long>   trackId; //id of the track
+	//NTuple::Item<long>    ntrack;  //size of 
+	NTuple::Array<long>   id; //id of the track
 	NTuple::Array<double> q; //charge of the track
 	NTuple::Array<double> E;
 	NTuple::Array<double> p;
 	NTuple::Array<double> px;
 	NTuple::Array<double> py;
 	NTuple::Array<double> pz;
-	NTuple::Array<double> pt; //transvese momentum
-	NTuple::Array<double> theta,phi;
+	NTuple::Array<double> pt;
+	NTuple::Array<double> theta;
+	NTuple::Array<double> phi;
 	NTuple::Array<double> x, y, z, r; //poca coordinate of track
 	NTuple::Array<double> vxy, vz, vphi; //poca coordinate of track
   NTuple::Array<double> depth; //depth in muon system
-	virtual void add_to_tuple(NTuple::Tuple * tuple)
+	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Itel<long> & ntrack)
 	{
-		//tuple->addItem ("ntrack", ntrack, MIN_TRACK_NUMBER,MAX_TRACK_NUMBER); 
-		tuple->addItem ("ntrack", ntrack); 
-		tuple->addIndexedItem ("trackId",   ntrack, trackId);
+		//tuple->addItem ("ntrack", ntrack); 
+		tuple->addIndexedItem ("trackid",   ntrack, id);
 		tuple->addIndexedItem ("q",     ntrack, q);
 		tuple->addIndexedItem ("E",     ntrack, E);
 		tuple->addIndexedItem ("p",     ntrack, p);

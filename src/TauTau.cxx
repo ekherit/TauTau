@@ -101,283 +101,22 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 StatusCode TauTau::initialize(void)
 {
   MsgStream log(msgSvc(), name());
-
   log << MSG::INFO << "in initialize()" << endmsg;
   event_proceed=0;
   event_write = 0;
   tau_events=0;
   bhabha_events=0;
   gg_event_writed=0;
-
   StatusCode status;
-  NTuplePtr my_nt(ntupleSvc(), "FILE1/mhadr");
-  if(my_nt) main_tuple=my_nt;
-  else
+  try
   {
-    main_tuple = ntupleSvc()->book("FILE1/mhadr", CLID_ColumnWiseTuple, "Multihadron tree plus bhabha");
-    if(main_tuple)
-    {
-      //common
-      status=main_tuple->addItem("t", m_time);
-      status=main_tuple->addItem("ntrack", m_ntrack);
-      status=main_tuple->addItem("nchtrk", m_nchtr);
-      status=main_tuple->addItem("nneutrk", m_nneutr);
-      status=main_tuple->addItem("Etotal", m_Etotal);
-      status=main_tuple->addItem("Eemc", m_Eemc);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(main_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
+    fEvent->init_tuple(this, "FILE1/event","Signal tau tau events");
   }
-
-  /*  MDC ntuple intialization */
-  NTuplePtr nt_mdc(ntupleSvc(), "FILE1/mdc");
-  if(nt_mdc) mdc_tuple=nt_mdc;
-  else
-  {
-    mdc_tuple = ntupleSvc()->book("FILE1/mdc", CLID_ColumnWiseTuple, "Charged  tracks");
-    if(mdc_tuple)
-    {
-      status = mdc_tuple->addItem ("ntrack", mdc.ntrack, 0, MAX_TRACK_NUMBER);
-      status = mdc_tuple->addItem ("ngt", mdc.ngood_track, 0, MAX_TRACK_NUMBER); //number of good tracks
-      status = mdc_tuple->addItem ("Emdc", mdc.Emdc);
-      status = mdc_tuple->addItem ("Eemc", mdc.Eemc);
-      status = mdc_tuple->addItem ("nip", mdc.nip);
-      status = mdc_tuple->addIndexedItem ("p", mdc.ntrack, mdc.p);
-      status = mdc_tuple->addIndexedItem ("pt", mdc.ntrack, mdc.pt);
-      status = mdc_tuple->addIndexedItem ("px", mdc.ntrack, mdc.px);
-      status = mdc_tuple->addIndexedItem ("py", mdc.ntrack, mdc.py);
-      status = mdc_tuple->addIndexedItem ("pz", mdc.ntrack, mdc.pz);
-      status = mdc_tuple->addIndexedItem ("theta", mdc.ntrack, mdc.theta);
-      status = mdc_tuple->addIndexedItem ("phi", mdc.ntrack, mdc.phi);
-      status = mdc_tuple->addIndexedItem ("x", mdc.ntrack, mdc.x);
-      status = mdc_tuple->addIndexedItem ("y", mdc.ntrack, mdc.y);
-      status = mdc_tuple->addIndexedItem ("z", mdc.ntrack, mdc.z);
-      status = mdc_tuple->addIndexedItem ("r", mdc.ntrack, mdc.r);
-      status = mdc_tuple->addIndexedItem ("rvxy", mdc.ntrack, mdc.rvxy);
-      status = mdc_tuple->addIndexedItem ("rvz", mdc.ntrack, mdc.rvz);
-      status = mdc_tuple->addIndexedItem ("rvphi", mdc.ntrack, mdc.rvphi);
-      status = mdc_tuple->addIndexedItem ("ismu", mdc.ntrack, mdc.ismu);
-      status = mdc_tuple->addIndexedItem ("q", mdc.ntrack, mdc.q);
-      // EMC information for charged tracks
-      status = mdc_tuple->addIndexedItem ("isemc", mdc.ntrack, mdc.isemc);
-      status = mdc_tuple->addIndexedItem ("E", mdc.ntrack, mdc.E);
-      status = mdc_tuple->addIndexedItem ("dE", mdc.ntrack, mdc.dE);
-      status = mdc_tuple->addIndexedItem ("temc", mdc.ntrack, mdc.temc);
-      status = mdc_tuple->addIndexedItem ("ncrstl", mdc.ntrack, mdc.ncrstl);
-      status = mdc_tuple->addIndexedItem ("cellId", mdc.ntrack, mdc.cellId);
-      status = mdc_tuple->addIndexedItem ("status", mdc.ntrack, mdc.status);
-      status = mdc_tuple->addIndexedItem ("module", mdc.ntrack, mdc.module);
-      status = mdc_tuple->addIndexedItem ("M", mdc.ntrack, mdc.M);
-      status = mdc_tuple->addIndexedItem ("istof", mdc.ntrack, mdc.istof);
-      status = mdc_tuple->addIndexedItem ("X", mdc.ntrack, mdc.X);
-      status = mdc_tuple->addIndexedItem ("Y", mdc.ntrack, mdc.Y);
-      status = mdc_tuple->addIndexedItem ("Z", mdc.ntrack, mdc.Z);
-
-      /*  sphericity part */
-      status = mdc_tuple->addItem("S", mdc.S);
-      status = mdc_tuple->addItem("ccos", mdc.ccos);
-      status = mdc_tuple->addItem("atheta", mdc.atheta);
-      status = mdc_tuple->addItem("aphi", mdc.aphi);
-      status = mdc_tuple->addItem("acompl", mdc.acompl);
-
-      /*  particle identification part */
-      status = mdc_tuple->addIndexedItem ("probe", mdc.ntrack, mdc.probe);
-      status = mdc_tuple->addIndexedItem ("probmu", mdc.ntrack, mdc.probmu);
-      status = mdc_tuple->addIndexedItem ("probpi", mdc.ntrack, mdc.probpi);
-      status = mdc_tuple->addIndexedItem ("probK", mdc.ntrack, mdc.probK);
-      status = mdc_tuple->addIndexedItem ("probp", mdc.ntrack, mdc.probp);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(mdc_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  NTuplePtr nt_emc(ntupleSvc(), "FILE1/emc");
-  if(nt_emc) emc_tuple=nt_emc;
-  else
-  {
-    emc_tuple = ntupleSvc()->book("FILE1/emc", CLID_ColumnWiseTuple, "Netutral track");
-    if(emc_tuple)
-    {
-      status = emc.init_tuple(emc_tuple);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(emc_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  NTuplePtr nt_muc(ntupleSvc(), "FILE1/muc");
-  if(nt_muc) muc_tuple=nt_muc;
-  else
-  {
-    muc_tuple = ntupleSvc()->book("FILE1/muc", CLID_ColumnWiseTuple, "Muon system");
-    if(muc_tuple)
-    {
-      status = muc.init_tuple(muc_tuple);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(muc_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  NTuplePtr nt2(ntupleSvc(), "FILE1/dedx");
-  if(nt2) dedx_tuple=nt2;
-  else
-  {
-    dedx_tuple = ntupleSvc()->book("FILE1/dedx", CLID_ColumnWiseTuple, "dedx information");
-    if(dedx_tuple)
-    {
-      status = dedx_tuple->addItem ("dedx.ntrack", dedx.ntrack, 0, MAX_TRACK_NUMBER);
-      status = dedx_tuple->addIndexedItem ("pid", dedx.ntrack, dedx.pid );
-      status = dedx_tuple->addIndexedItem ("chie", dedx.ntrack, dedx.chie );
-      status = dedx_tuple->addIndexedItem ("chimu",dedx.ntrack, dedx.chimu );
-      status = dedx_tuple->addIndexedItem ("chipi", dedx.ntrack, dedx.chipi );
-      status = dedx_tuple->addIndexedItem ("chik", dedx.ntrack, dedx.chik );
-      status = dedx_tuple->addIndexedItem ("chip", dedx.ntrack, dedx.chip );
-      status = dedx_tuple->addIndexedItem ("ghit", dedx.ntrack, dedx.ghit );
-      status = dedx_tuple->addIndexedItem ("thit", dedx.ntrack, dedx.thit );
-      status = dedx_tuple->addIndexedItem ("probPH", dedx.ntrack, dedx.probPH );
-      status = dedx_tuple->addIndexedItem ("normPH", dedx.ntrack, dedx.normPH );
-      status = dedx_tuple->addIndexedItem ("dedx_e", dedx.ntrack, dedx.e );
-      status = dedx_tuple->addIndexedItem ("dedx_mu", dedx.ntrack, dedx.mu );
-      status = dedx_tuple->addIndexedItem ("dedx_pi", dedx.ntrack, dedx.pi );
-      status = dedx_tuple->addIndexedItem ("dedx_K", dedx.ntrack, dedx.K );
-      status = dedx_tuple->addIndexedItem ("dedx_p", dedx.ntrack, dedx.p );
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(dedx_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  if(CHECK_MC)
-  {
-    NTuplePtr nt(ntupleSvc(), "FILE1/mc");
-    if(nt) mc.tuple=nt;
-    else
-    {
-      mc.tuple = ntupleSvc()->book("FILE1/mc", CLID_ColumnWiseTuple, "Monte Carlo information");
-      if(mc.tuple)
-      {
-        status = mc.init_tuple(mc.tuple, MAX_TRACK_NUMBER);
-      }
-      else
-      {
-        log << MSG::ERROR << "    Cannot book N-tuple:" << long(mc.tuple) << endmsg;
-        return StatusCode::FAILURE;
-      }
-    }
-  }
-
-  if(CHECK_TOF)
-  {
-
-    NTuplePtr nt_tof(ntupleSvc(), "FILE1/tof");
-    if(nt_tof) tof_tuple=nt2;
-    else
-    {
-      tof_tuple = ntupleSvc()->book("FILE1/tof", CLID_ColumnWiseTuple, "tof information");
-      if(tof_tuple)
-      {
-        status = tof_tuple->addItem ("ntrack", tof.ntrack, 0, MAX_TRACK_NUMBER);
-        status = tof_tuple->addIndexedItem ("trackID", tof.ntrack, tof.trackID );
-        status = tof_tuple->addIndexedItem ("tofID", tof.ntrack, tof.tofID);
-        status = tof_tuple->addIndexedItem ("tofTrackID", tof.ntrack, tof.tofTrackID);
-        status = tof_tuple->addIndexedItem ("status", tof.ntrack, tof.status);
-        status = tof_tuple->addIndexedItem ("path", tof.ntrack, tof.path);
-        status = tof_tuple->addIndexedItem ("zrhit", tof.ntrack, tof.zrhit);
-        status = tof_tuple->addIndexedItem ("ph", tof.ntrack, tof.ph);
-        status = tof_tuple->addIndexedItem ("tof", tof.ntrack, tof.tof);
-        status = tof_tuple->addIndexedItem ("errtof", tof.ntrack, tof.errtof);
-        status = tof_tuple->addIndexedItem ("beta", tof.ntrack, tof.beta);
-        status = tof_tuple->addIndexedItem ("texpe", tof.ntrack, tof.texpe);
-        status = tof_tuple->addIndexedItem ("texpmu", tof.ntrack, tof.texpmu);
-        status = tof_tuple->addIndexedItem ("texppi", tof.ntrack, tof.texppi);
-        status = tof_tuple->addIndexedItem ("texpK", tof.ntrack, tof.texpK);
-        status = tof_tuple->addIndexedItem ("texpp", tof.ntrack, tof.texpp);
-        status = tof_tuple->addIndexedItem ("toffsete", tof.ntrack, tof.toffsete);
-        status = tof_tuple->addIndexedItem ("toffsetmu", tof.ntrack, tof.toffsetmu);
-        status = tof_tuple->addIndexedItem ("toffsetpi", tof.ntrack, tof.toffsetpi);
-        status = tof_tuple->addIndexedItem ("toffsetK", tof.ntrack, tof.toffsetK);
-        status = tof_tuple->addIndexedItem ("toffsetp", tof.ntrack, tof.toffsetp);
-        status = tof_tuple->addIndexedItem ("toffsetap", tof.ntrack, tof.toffsetap);
-        status = tof_tuple->addIndexedItem ("sigmae", tof.ntrack, tof.sigmae);
-        status = tof_tuple->addIndexedItem ("sigmamu", tof.ntrack, tof.sigmamu);
-        status = tof_tuple->addIndexedItem ("sigmapi", tof.ntrack, tof.sigmapi);
-        status = tof_tuple->addIndexedItem ("sigmaK", tof.ntrack, tof.sigmaK);
-        status = tof_tuple->addIndexedItem ("sigmap", tof.ntrack, tof.sigmap);
-        status = tof_tuple->addIndexedItem ("sigmaap", tof.ntrack, tof.sigmaap);
-        status = tof_tuple->addIndexedItem ("quality", tof.ntrack, tof.quality);
-        status = tof_tuple->addIndexedItem ("t0", tof.ntrack, tof.t0);
-        status = tof_tuple->addIndexedItem ("errt0", tof.ntrack, tof.errt0);
-        status = tof_tuple->addIndexedItem ("errz", tof.ntrack, tof.errz);
-        status = tof_tuple->addIndexedItem ("phi", tof.ntrack, tof.phi);
-        status = tof_tuple->addIndexedItem ("errphi", tof.ntrack, tof.errphi);
-        status = tof_tuple->addIndexedItem ("E", tof.ntrack, tof.E);
-        status = tof_tuple->addIndexedItem ("errE", tof.ntrack, tof.errE);
-      }
-      else
-      {
-        log << MSG::ERROR << "    Cannot book N-tuple:" << long(tof_tuple) << endmsg;
-        return StatusCode::FAILURE;
-      }
-    }
-  }
-
-  NTuplePtr nt_gg(ntupleSvc(), "FILE1/gg");
-  if(nt_gg) gg_tuple=nt_gg;
-  else
-  {
-    gg_tuple = ntupleSvc()->book("FILE1/gg", CLID_ColumnWiseTuple, "gamma-gamma annihilation");
-    if(gg_tuple)
-    {
-      status = gg.init_tuple(gg_tuple);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(gg_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  NTuplePtr nt_head(ntupleSvc(), "FILE1/head");
-  if(nt_head) head_tuple=nt_head;
-  else
-  {
-    head_tuple = ntupleSvc()->book("FILE1/head", CLID_ColumnWiseTuple, "Head");
-    if(head_tuple)
-    {
-      status = head_tuple->addItem ("run", head_run);
-      status = head_tuple->addItem ("n", head_event_number);
-      status = head_tuple->addItem ("nsel", head_event_selected);
-      status = head_tuple->addItem ("nchtr", head_ncharged_tracks);
-      status = head_tuple->addItem ("nchtr_rms", head_ncharged_tracks_rms);
-      status = head_tuple->addItem ("nntr", head_nneutral_tracks);
-      status = head_tuple->addItem ("nntr_rms", head_nneutral_tracks_rms);
-      status = head_tuple->addItem ("nttr", head_ntotal_tracks);
-      status = head_tuple->addItem ("nttr_rms", head_ntotal_tracks_rms);
-    }
-    else
-    {
-      log << MSG::ERROR << "    Cannot book N-tuple:" << long(head_tuple) << endmsg;
-      return StatusCode::FAILURE;
-    }
-  }
-
-  nchtr_a.reset();
-  nntr_a.reset();
-  nttr_a.reset();
-
+	catch(std::runtime_error & error)
+	{
+		log << MSG::ERROR << error.what() << endmsg;
+		return StatusCode::FAILURE;
+	}
   return StatusCode::SUCCESS;
 }
 
@@ -683,14 +422,26 @@ StatusCode TauTau::execute()
   }
 
   emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
-  emc_good_charged_tracks.reverse();
+  emc_good_charged_tracks.reverse(); //begin from hier energie
 
-  if ( good_neutral_tracks.size() == 0 ) //GOES to SIGNAL TauTau selection
+  /*  Select exactly 2 charged tracks
+   *  And no good neutral tracks
+   *  */
+  if(    good_neutral_tracks.size() == 0 
+      && cfg.MIN_CHARGED_TRACKS <= emc_good_charged_tracks.size()
+      && emc_good_charged_tracks.size() < cfg.MAX_CHARGED_TRACKS 
+    ) //GOES to SIGNAL TauTau selection
   {
-    if( cfg.MIN_CHARGED_TRACKS <= emc_good_charged_tracks.size() 
-        && emc_good_charged_tracks.size() < cfg.MAX_CHARGED_TRACKS )
+    //sort tracks on charge (lover charge goes first)
+    emc_good_charged_tracks.sort(ChargeOrder);
+    std::vector<EvtRecTrack*> Tracks
+      (
+        emc_good_charged_tracks.begin(), 
+        emc_good_charged_tracks.end()
+      );
+    for(int i=0;i<Tracks.size();i++)
     {
-
+      std::cout << i << "    " << GetCharge(Tracks[i]) << std::endl;
     }
   }
   else //gamma-gamma selection

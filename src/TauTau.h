@@ -67,7 +67,7 @@ class TauTau : public Algorithm
   long int gg_events; 
 
 
-  RootTauTauEvent event;
+  RootTauTauEvent fEvent;
 
 	NTuple::Tuple * main_tuple;//main tuple 
 	NTuple::Item<long> m_time; //time when events is writed (unixtime)

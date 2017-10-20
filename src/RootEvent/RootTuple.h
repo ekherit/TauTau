@@ -24,8 +24,31 @@ struct RootTuple
 	public:
 		NTuple::Tuple * tuple; //tuple
 		virtual ~RootTuple(void){};
+
 		virtual void init(void)=0;
 		virtual void init_tuple(void)=0;
+    virtual void init_tuple(Algorithm * algo, const char * dir, const char * title)
+    {
+      NTuplePtr nt(algo->ntupleSvc(), dir);
+      if(nt) 
+      {
+        tuple = nt;
+      }
+      else
+      {
+        tuple = algo->ntupleSvc()->book(dir, CLID_ColumnWiseTuple, title);
+        if(tuple)
+        {
+          init_tuple();
+        }
+        else
+        {
+          char buf[1024];
+          sprintf(buf, "   Cannot book N-tuple: %s %s %x", dir, title, long(tuple));
+          throw std::runtime_error(buf);
+        }
+      }
+    }
 		virtual void fill(EvtRecTrack * track) {};
     virtual void write(void) { tuple->write(); }
 };
