@@ -23,11 +23,12 @@
 struct RootTuple
 {
 	public:
+    RootTuple(void) {};
 		NTuple::Tuple * tuple; //tuple
 		virtual ~RootTuple(void){};
 		virtual void init(void)=0;
-		virtual void init_tuple(void)=0;
-    virtual void init_tuple(Algorithm * algo, const char * dir, const char * title)
+		virtual void bind_tuple(void)=0;
+    virtual void make_tuple(Algorithm * algo, const char * dir, const char * title)
     {
       NTuplePtr nt(algo->ntupleSvc(), dir);
       if(nt) 
@@ -39,7 +40,7 @@ struct RootTuple
         tuple = algo->ntupleSvc()->book(dir, CLID_ColumnWiseTuple, title);
         if(tuple)
         {
-          init_tuple();
+          bind_tuple();
         }
         else
         {

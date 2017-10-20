@@ -12,7 +12,6 @@ ${CMTROOT}/mgr/cmt setup -csh -pack=TauTau -version=TauTau-00-00-01 -path=/afs/i
 if ( $status != 0 ) then
   echo "${CMTROOT}/mgr/cmt setup -csh -pack=TauTau -version=TauTau-00-00-01 -path=/afs/ihep.ac.cn/users/n/nikolaev/batch/7.0.2.p01  -no_cleanup $* >${cmtTauTautempfile}"
   set cmtsetupstatus=2
-
   /bin/rm -f ${cmtTauTautempfile}
   unset cmtTauTautempfile
   exit $cmtsetupstatus

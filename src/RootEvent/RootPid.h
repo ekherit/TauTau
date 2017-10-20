@@ -52,8 +52,8 @@ struct RootPid
 		tuple->addIndexedItem ("pid_chi2_K",  *ntrack, chi2[KAON]);
 		tuple->addIndexedItem ("pid_prob_K",  *ntrack, prob[KAON]);
 
-		tuple->addIndexedItem ("pid_chi2_p",  *ntrack, chi2[KAON]);
-		tuple->addIndexedItem ("pid_prob_p",  *ntrack, prob[KAON]);
+		tuple->addIndexedItem ("pid_chi2_p",  *ntrack, chi2[PROTON]);
+		tuple->addIndexedItem ("pid_prob_p",  *ntrack, prob[PROTON]);
   }
 
   void init(void)
@@ -80,8 +80,8 @@ struct RootPid
     PID->calculate();
     for(int pid = 0; pid <5; ++pid)
     {
-      chi2[pid][i] = PID->chi(pid);
-      prob[pid][i] = PID->prob(pid);
+      chi2[pid][i]= PID->chi(pid);
+      prob[pid][i]= PID->prob(pid);
     }
   }
 };

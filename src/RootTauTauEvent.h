@@ -41,8 +41,7 @@ enum CHANNEL
 class RootTauTauEvent : public RootTuple
 {
   public:
-  RootTauTauEvent(void) {}
-  virtual ~RootTauTauEvent(void) {}
+  virtual ~RootTauTauEvent(void);
 	NTuple::Item<long>    run; //run number
 	NTuple::Item<long>    event; //event number 
 	NTuple::Item<long>    time; //time of the event
@@ -60,12 +59,15 @@ class RootTauTauEvent : public RootTuple
 	RootTracks T; //track information (momentum, vertex, muon depth...)
   RootPid Pid; //particle id for track
 
-  void init_tuple(Algorithm * algo, const char * dir, const char * title)
+  //void init_tuple(Algorithm * algo, const char * dir, const char * title)
+  //{
+  //  RootTuple::init_tuple(algo,dir,title);
+  //}
+	virtual void bind_tuple(void)
   {
-    RootTuple::init_tuple(algo,dir,title);
-  }
-	virtual void init_tuple(void)
-  {
+    tuple->addItem ("run", run);
+    tuple->addItem ("event", event);
+    tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
     tuple->addItem ("ntrack", ntrack, 2,2);
     T.add_to_tuple(tuple,ntrack); 
