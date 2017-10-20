@@ -69,7 +69,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("event", event);
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
-    tuple->addItem ("ntrack", ntrack, 2,2);
+    tuple->addItem ("ntrack", ntrack, 0,2);
     T.add_to_tuple(tuple,ntrack); 
     Pid.add_to_tuple(tuple,ntrack); 
   };
