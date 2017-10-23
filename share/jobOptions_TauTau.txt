@@ -1,14 +1,2 @@
 ApplicationMgr.DLLs += {"TauTau"};
 ApplicationMgr.TopAlg += {"TauTau"};
-TauMass.CHECK_TOF = 1;
-TauMass.CHECK_DEDX = 1;
-TauMass.CHECK_MUC = 1;
-TauMass.CHECK_MC = 1;
-TauMass.MC_DP = 0.08;
-TauMass.DELTA_X=1.0;
-TauMass.DELTA_Y=1.0;
-TauMass.DELTA_Z=10.0;
-TauMass.USE_IPCUT=1;
-TauMass.IPR=1; 
-TauMass.IPTRACKS=2;
-TauMass.STRICT_TAU_CUT=0;

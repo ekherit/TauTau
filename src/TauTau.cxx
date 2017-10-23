@@ -51,8 +51,8 @@ using CLHEP::HepLorentzVector;
 #ifndef ENABLE_BACKWARDS_COMPATIBILITY
 typedef HepGeom::Point3D<double> HepPoint3D;
 #endif
+
 #include "TauTau.h"
-#include "Sphericity.h"
 
 #include "Utils.h"
 
@@ -62,29 +62,18 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #include "VertexFit/Helix.h"
 #include "ParticleID/ParticleID.h"
 
-
-const double PI_MESON_MASS=0.13957018; //GeV
-
-
-const double EMS_THRESHOLD = 0.05; //GeV
-const double MAX_MOMENTUM  = 2.5; //GeV
-
-const double EMC_ENDCUP_THRESHOLD=0.05;
-const double EMC_BARREL_THRESHOLD=0.025;
-
 inline double sq(double x) { return x*x; }
 
 TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
-  declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=0); //GeV
+  declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
   declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
   declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
-
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
-  declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.93);
+  declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.8);
 }
 
 
@@ -197,7 +186,6 @@ StatusCode TauTau::execute()
     fEvent.channel = 0;
     fEvent.ntrack = 2;
     fEvent.Pid.init();
-    std::cout << "Tracks.size = " << Tracks.size() << std::endl;
     for(int i=0;i<Tracks.size();++i)
     {
       fEvent.Pid.fill(i,Tracks[i]);
@@ -205,8 +193,21 @@ StatusCode TauTau::execute()
       //std::cout << i << "    " << GetCharge(Tracks[i]) << std::endl;
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
-    std::cout << "Before fEvent.write() " <<std::endl;
+
+    fEvent.acop = M_PI - (fEvent.T.phi[1]  -  fEvent.T.phi[0] );
+
+    //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};
+    Hep3Vector p[2] = { Tracks[0]->mdcKalTrack()->p3(), Tracks[1]->mdcKalTrack()->p3() };
+    Hep3Vector psum  = p[0] +  p[1];
+    Hep3Vector ptsum = p[0] +  p[1];
+    ptsum.setZ(0);
+    double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.E[0]-fEvent.T.E[1];
+
+    fEvent.ptem = ptsum.mag() / Emis;
+    fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
+    fEvent.M2 = 0;
     fEvent.write();
+    //double E[2] = { sqrt( 
   }
   else //gamma-gamma selection
   {

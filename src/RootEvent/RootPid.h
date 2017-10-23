@@ -19,6 +19,7 @@
 
 #include "GaudiKernel/NTuple.h"
 #include "ParticleID/ParticleID.h"
+#include "DstEvent/TofHitStatus.h"
 
 enum PID 
 {
@@ -32,28 +33,28 @@ enum PID
 struct RootPid
 {
 	NTuple::Item<long> * ntrack; 
-	NTuple::Array<double> chi2[5]; 
-	NTuple::Array<double> prob[5]; 
+	NTuple::Array<double> chi2_pid[5];  //this if from package PID
+	NTuple::Array<double> chi2_dedx[5]; 
+	NTuple::Array<double> chi2_tof[5]; 
 
   ParticleID * PID;
 
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk)
   {
     ntrack = & ntrk;
-		tuple->addIndexedItem ("pid_chi2_e",  *ntrack, chi2[ELECTRON]);
-		tuple->addIndexedItem ("pid_prob_e",  *ntrack, prob[ELECTRON]);
+    const char * chan[] = {"e","mu","pi","K","p"};
+    for( int pid = 0;pid< 5;++pid)
+    {
+      char item_name[1024];
+      sprintf(item_name,"chi2_pid_%s",chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, chi2_pid[pid]);
 
-		tuple->addIndexedItem ("pid_chi2_mu",  *ntrack, chi2[MUON]);
-		tuple->addIndexedItem ("pid_prob_mu",  *ntrack, prob[MUON]);
+      sprintf(item_name,"chi2_dedx_%s",chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, chi2_dedx[pid]);
 
-		tuple->addIndexedItem ("pid_chi2_pi",  *ntrack, chi2[PION]);
-		tuple->addIndexedItem ("pid_prob_pi",  *ntrack, prob[PION]);
-
-		tuple->addIndexedItem ("pid_chi2_K",  *ntrack, chi2[KAON]);
-		tuple->addIndexedItem ("pid_prob_K",  *ntrack, prob[KAON]);
-
-		tuple->addIndexedItem ("pid_chi2_p",  *ntrack, chi2[PROTON]);
-		tuple->addIndexedItem ("pid_prob_p",  *ntrack, prob[PROTON]);
+      sprintf(item_name,"chi2_tof_%s", chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, chi2_tof[pid]);
+    }
   }
 
   void init(void)
@@ -80,8 +81,48 @@ struct RootPid
     PID->calculate();
     for(int pid = 0; pid <5; ++pid)
     {
-      chi2[pid][i]= PID->chi(pid);
-      prob[pid][i]= PID->prob(pid);
+      chi2_pid[pid][i]= PID->chi(pid);
+    }
+    //my pid information
+    if(track->isMdcTrackValid() && track->isMdcDedxValid() && track->isTofTrackValid())
+    {
+      RecMdcDedx  * dedx = track->mdcDedx();
+      chi2_dedx[ELECTRON][i] = chi2_dedx[ELECTRON][i] + pow(dedx->chiE() ,2);
+      chi2_dedx[MUON][i]     = chi2_dedx[MUON][i]     + pow(dedx->chiMu(),2);
+      chi2_dedx[PION][i]     = chi2_dedx[PION][i]     + pow(dedx->chiPi(),2);
+      chi2_dedx[KAON][i]     = chi2_dedx[KAON][i]     + pow(dedx->chiK() ,2);
+      chi2_dedx[PROTON][i]   = chi2_dedx[PROTON][i]   + pow(dedx->chiP() ,2);
+
+      SmartRefVector<RecTofTrack> tofs = track->tofTrack();
+      double  atof[5] = {0,0,0,0,0};
+      double dtof2[5] = {0,0,0,0,0};
+      unsigned nlayers = 0;
+      for(SmartRefVector<RecTofTrack>::iterator iter_tof = tofs.begin();
+          iter_tof!=tofs.end(); ++iter_tof)
+      {
+        TofHitStatus *status = new TofHitStatus;
+        status->setStatus((*iter_tof)->status());
+        double tof  = (*iter_tof)->tof();
+        double texp[5];
+        texp[ELECTRON] = (*iter_tof)->texpElectron();
+        texp[MUON]     = (*iter_tof)->texpMuon();
+        texp[PION]     = (*iter_tof)->texpPion();
+        texp[KAON]     = (*iter_tof)->texpKaon();
+        texp[PROTON]   = (*iter_tof)->texpProton();
+        for(int pid = 0; pid < 5; ++pid)
+        {
+          atof[pid] += tof - texp[pid];
+          dtof2[pid] += (*iter_tof)->errtof() * (*iter_tof)->errtof();
+        }
+        nlayers++;
+      }
+
+      for(int pid = 0; pid < 5; ++pid)
+      {
+        atof[pid] /= nlayers;
+        dtof2[pid] /= nlayers;
+        chi2_tof[pid][i] = atof[pid] * atof[pid] / dtof2[pid];
+      }
     }
   }
 };

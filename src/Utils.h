@@ -269,3 +269,11 @@ inline double GetMomentum(EvtRecTrack * track)
   return mdc->p();
 }
 
+inline Hep3Vector GetHep3Vector(EvtRecTrack * track)
+{
+  if(!track->isMdcTrackValid()) return Hep3Vector();
+  return Hep3Vector(track->mdcKalTrack()->px(), track->mdcKalTrack()->py(),track->mdcKalTrack()->pz());
+}
+
+
+

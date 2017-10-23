@@ -58,6 +58,10 @@ class RootTauTauEvent : public RootTuple
 	NTuple::Item<long> ntrack;  //number of tracks (must be 2)
 	RootTracks T; //track information (momentum, vertex, muon depth...)
   RootPid Pid; //particle id for track
+  NTuple::Item<double>  ptem;
+  NTuple::Item<double>  acop;
+  NTuple::Item<double>  acol;
+  NTuple::Item<double>  M2;
 
   //void init_tuple(Algorithm * algo, const char * dir, const char * title)
   //{
@@ -72,6 +76,10 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("ntrack", ntrack, 0,2);
     T.add_to_tuple(tuple,ntrack); 
     Pid.add_to_tuple(tuple,ntrack); 
+    tuple->addItem("acop",acop);
+    tuple->addItem("acol",acol);
+    tuple->addItem("ptem",ptem);
+    tuple->addItem("M2",M2);
   };
 	virtual void init(void) {};
 	virtual void fill(int i,  EvtRecTrack * track);

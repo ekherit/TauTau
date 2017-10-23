@@ -22,6 +22,8 @@ RootTauTauEvent::~RootTauTauEvent(void)
 {
 }
 
+const int UNSET_VALUE = -999;
+
 void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
 {
   if(track->isMdcTrackValid())
@@ -29,10 +31,17 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
     RecMdcKalTrack * mdc = track->mdcKalTrack();
     T.id[i] = mdc->trackId(); //id of the track
     T.q[i] =  mdc->charge(); //charge of the track
-    //T.E[i] = mdc->energy();
-    T.E[i] = 0;
     T.p[i] = mdc->p();
-    std::cout << " i = " << i << " p = " << mdc->p() << std::endl;
+    if(track->isEmcShowerValid())
+    {
+      T.E[i] = track->emcShower()->energy();
+      T.Ep[i] = T.E[i]/T.p[i];
+    }
+    else
+    {
+      T.E[i] = UNSET_VALUE;
+      T.Ep[i] = UNSET_VALUE;
+    }
     T.px[i] = mdc->px();
     T.py[i] = mdc->py();
     T.pz[i] = mdc->pz();
@@ -52,32 +61,33 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
   }
   else
   {
-    T.id[i] = -999;
-    T.q[i]  = -999;
-    T.E[i]  = -999; 
-    T.p[i]  = -999; 
-    T.px[i] = -999; 
-    T.py[i] = -999; 
-    T.pz[i] = -999; 
-    T.pt[i] = -999; 
-    T.theta[i]= - 999; 
-    T.phi[i] =  -999;
-    T.x[i] = -999;
-    T.y[i] = -999;
-    T.z[i] = -999; 
-    T.r[i] = -999; 
-
-    T.vxy[i] = -999;
-    T.vz[i] = -999; 
-    T.vphi[i] = -999; 
+    T.id[i] = UNSET_VALUE;
+    T.q[i]  = UNSET_VALUE;
+    T.E[i]  = UNSET_VALUE; 
+    T.p[i]  = UNSET_VALUE; 
+    T.px[i] = UNSET_VALUE; 
+    T.py[i] = UNSET_VALUE; 
+    T.pz[i] = UNSET_VALUE; 
+    T.pt[i] = UNSET_VALUE; 
+    T.theta[i]= UNSET_VALUE; 
+    T.phi[i] =  UNSET_VALUE;
+    T.x[i] = UNSET_VALUE;
+    T.y[i] = UNSET_VALUE;
+    T.z[i] = UNSET_VALUE; 
+    T.r[i] = UNSET_VALUE; 
+    T.vxy[i] = UNSET_VALUE;
+    T.vz[i] = UNSET_VALUE; 
+    T.vphi[i] = UNSET_VALUE; 
   }
   if(track->isMucTrackValid())
   {
     RecMucTrack *mucTrk = track->mucTrack();
     T.depth[i]= mucTrk->depth();
+    T.Nmuhit[i] = mucTrk->numHits();
   }
   else 
   {
-    T.depth[i] = - 9999;
+    T.depth[i] =  UNSET_VALUE;
+    T.Nmuhit[i] = UNSET_VALUE;
   }
 }
