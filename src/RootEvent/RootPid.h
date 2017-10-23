@@ -36,6 +36,7 @@ struct RootPid
 	NTuple::Array<double> chi2_pid[5];  //this if from package PID
 	NTuple::Array<double> chi2_dedx[5]; 
 	NTuple::Array<double> chi2_tof[5]; 
+	NTuple::Array<double> tof; 
 
   ParticleID * PID;
 
