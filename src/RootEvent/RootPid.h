@@ -36,7 +36,10 @@ struct RootPid
 	NTuple::Array<double> chi2_pid[5];  //this if from package PID
 	NTuple::Array<double> chi2_dedx[5]; 
 	NTuple::Array<double> chi2_tof[5]; 
-	NTuple::Array<double> tof; 
+	NTuple::Item<double>  ftof; 
+	NTuple::Array<double> fDedx; 
+	NTuple::Array<double> tof_exp[5]; 
+	NTuple::Array<double> dedx_exp[5]; 
 
   ParticleID * PID;
 
@@ -55,7 +58,15 @@ struct RootPid
 
       sprintf(item_name,"chi2_tof_%s", chan[pid]);
       tuple->addIndexedItem (item_name,  *ntrack, chi2_tof[pid]);
+
+      sprintf(item_name,"tof_exp_%s", chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, tof_exp[pid]);
+
+      sprintf(item_name,"dedx_exp_%s", chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, dedx_exp[pid]);
     }
+    tuple->addIndexedItem ("tof",  *ntrack, ftof);
+    tuple->addIndexedItem ("dedx",  *ntrack, fDedx);
   }
 
   void init(void)
@@ -88,11 +99,11 @@ struct RootPid
     if(track->isMdcTrackValid() && track->isMdcDedxValid() && track->isTofTrackValid())
     {
       RecMdcDedx  * dedx = track->mdcDedx();
-      chi2_dedx[ELECTRON][i] = chi2_dedx[ELECTRON][i] + pow(dedx->chiE() ,2);
-      chi2_dedx[MUON][i]     = chi2_dedx[MUON][i]     + pow(dedx->chiMu(),2);
-      chi2_dedx[PION][i]     = chi2_dedx[PION][i]     + pow(dedx->chiPi(),2);
-      chi2_dedx[KAON][i]     = chi2_dedx[KAON][i]     + pow(dedx->chiK() ,2);
-      chi2_dedx[PROTON][i]   = chi2_dedx[PROTON][i]   + pow(dedx->chiP() ,2);
+      chi2_dedx[ELECTRON][i] = pow(dedx->chiE() ,2);
+      chi2_dedx[MUON][i]     = pow(dedx->chiMu(),2);
+      chi2_dedx[PION][i]     = pow(dedx->chiPi(),2);
+      chi2_dedx[KAON][i]     = pow(dedx->chiK() ,2);
+      chi2_dedx[PROTON][i]   = pow(dedx->chiP() ,2);
 
       SmartRefVector<RecTofTrack> tofs = track->tofTrack();
       double  atof[5] = {0,0,0,0,0};
@@ -103,7 +114,7 @@ struct RootPid
       {
         TofHitStatus *status = new TofHitStatus;
         status->setStatus((*iter_tof)->status());
-        double tof  = (*iter_tof)->tof();
+        double t  = (*iter_tof)->tof();
         double texp[5];
         texp[ELECTRON] = (*iter_tof)->texpElectron();
         texp[MUON]     = (*iter_tof)->texpMuon();
@@ -112,7 +123,7 @@ struct RootPid
         texp[PROTON]   = (*iter_tof)->texpProton();
         for(int pid = 0; pid < 5; ++pid)
         {
-          atof[pid] += tof - texp[pid];
+          atof[pid] += t - texp[pid];
           dtof2[pid] += (*iter_tof)->errtof() * (*iter_tof)->errtof();
         }
         nlayers++;
@@ -121,6 +132,7 @@ struct RootPid
       for(int pid = 0; pid < 5; ++pid)
       {
         atof[pid] /= nlayers;
+        dt[pid][i] = atof[pid];
         dtof2[pid] /= nlayers;
         chi2_tof[pid][i] = atof[pid] * atof[pid] / dtof2[pid];
       }
