@@ -22,6 +22,7 @@
 #include "RootEvent/RootTrack.h"
 
 #include "RootEvent/RootPid.h"
+#include "RootEvent/RootMcTruth.h"
 
 #include "CLHEP/Vector/LorentzVector.h"
 
@@ -58,6 +59,7 @@ class RootTauTauEvent : public RootTuple
 	NTuple::Item<long> ntrack;  //number of tracks (must be 2)
 	RootTracks T; //track information (momentum, vertex, muon depth...)
   RootPid Pid; //particle id for track
+  RootMcTruth McTruth;
   NTuple::Item<double>  ptem;
   NTuple::Item<double>  acop;
   NTuple::Item<double>  acol;
@@ -76,6 +78,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("ntrack", ntrack, 0,2);
     T.add_to_tuple(tuple,ntrack); 
     Pid.add_to_tuple(tuple,ntrack); 
+    McTruth.add_to_tuple(tuple,ntrack);
     tuple->addItem("acop",acop);
     tuple->addItem("acol",acol);
     tuple->addItem("ptem",ptem);

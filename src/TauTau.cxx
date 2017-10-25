@@ -127,6 +127,7 @@ StatusCode TauTau::execute()
   //  Get information about reconstructed events
   SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
+  SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
 	std::list<EvtRecTrack*> good_neutral_tracks;
 	std::list<EvtRecTrack*> good_charged_tracks;
@@ -190,11 +191,16 @@ StatusCode TauTau::execute()
     {
       fEvent.Pid.fill(i,Tracks[i]);
       fEvent.fill(i,Tracks[i]);
+      fEvent.McTruth.fill(i,Tracks[i],mcParticleCol);
       //std::cout << i << "    " << GetCharge(Tracks[i]) << std::endl;
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
 
-    fEvent.acop = M_PI - (fEvent.T.phi[1]  -  fEvent.T.phi[0] );
+    double phi[2] = {fEvent.T.phi[0],  fEvent.T.phi[1]};
+    double dphi = (phi[1]-phi[0]);
+    if(dphi>M_PI) dphi = dphi-2*M_PI;
+    if(dphi<-M_PI) dphi = dphi+2*M_PI;
+    fEvent.acop = M_PI - fabs(dphi);
 
     //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};
     Hep3Vector p[2] = { Tracks[0]->mdcKalTrack()->p3(), Tracks[1]->mdcKalTrack()->p3() };
