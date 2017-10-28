@@ -36,10 +36,12 @@ struct RootPid
 	NTuple::Array<double> chi2_pid[5];  //this if from package PID
 	NTuple::Array<double> chi2_dedx[5]; 
 	NTuple::Array<double> chi2_tof[5]; 
-	NTuple::Array<double>  ftof; 
 	NTuple::Array<double> fDedx[5]; 
+
+	NTuple::Array<double> ftof; 
+	NTuple::Array<double> tof_sigma; 
 	NTuple::Array<double> tof_exp[5]; 
-	//NTuple::Array<double> dedx_exp[5]; 
+	NTuple::Array<double> tof_delta[5]; 
 
   ParticleID * PID;
 
@@ -62,10 +64,14 @@ struct RootPid
       sprintf(item_name,"tof_exp_%s", chan[pid]);
       tuple->addIndexedItem (item_name,  *ntrack, tof_exp[pid]);
 
+      sprintf(item_name,"delta_tof_%s", chan[pid]);
+      tuple->addIndexedItem (item_name,  *ntrack, tof_delta[pid]);
+
       sprintf(item_name,"dedx_%s", chan[pid]);
       tuple->addIndexedItem (item_name,  *ntrack, fDedx[pid]);
     }
     tuple->addIndexedItem ("tof",  *ntrack, ftof);
+    tuple->addIndexedItem ("tof_sigma",  *ntrack, tof_sigma);
   }
 
   void init(void)
@@ -111,17 +117,22 @@ struct RootPid
       chi2_dedx[PROTON][i]   = pow(dedx->chiP() ,2.0);
 
       SmartRefVector<RecTofTrack> tofs = track->tofTrack();
-      double ttof=0;
-      double  atof[5] = {0,0,0,0,0};
-      double dtof2[5] = {0,0,0,0,0};
+      double tof_sum=0;
+      double dtof2_sum=0;//sum of the errors in the tof
+      double dtof_sum[5] = {0,0,0,0,0}; //sum of the differencies in tof1 and tof2
+      double tof_exp_sum[5] = {0,0,0,0,0};
       unsigned nlayers = 0;
       for(SmartRefVector<RecTofTrack>::iterator iter_tof = tofs.begin();
           iter_tof!=tofs.end(); ++iter_tof)
       {
         TofHitStatus *status = new TofHitStatus;
         status->setStatus((*iter_tof)->status());
+        if( !(status->is_counter()) ) continue;
+        //if( status->layer()!=0 ) continue;
+
         double t  = (*iter_tof)->tof();
-        ttof+=t;
+        ftof[i] = t;
+        tof_sum += t;
         double texp[5];
         texp[ELECTRON] = (*iter_tof)->texpElectron();
         texp[MUON]     = (*iter_tof)->texpMuon();
@@ -135,23 +146,45 @@ struct RootPid
         tof_exp[KAON][i]     = (*iter_tof)->texpKaon();
         tof_exp[PROTON][i]   = (*iter_tof)->texpProton();
 
+        dtof2_sum += (*iter_tof)->errtof() * (*iter_tof)->errtof();
+        for(int pid = 0; pid < 5; ++pid) 
+        {
+          tof_exp_sum[pid] += texp[pid];
+          dtof_sum[pid] += (t - texp[pid]);
+        }
+
+        nlayers++;
+        //std::cout <<  t << "  " << (*iter_tof)->errtof() << "  barrel=" <<  status->is_barrel();
+        //std::cout << "  counter=" << status->is_counter();
+        //std::cout << " layer = " <<  status->layer();
+        //std::cout <<std::endl;
+      }
+      if(nlayers>0)
+      {
+        //std::cout <<"new track" << std::endl;
+        ftof[i] = tof_sum/nlayers;
+        tof_sigma[i] = sqrt(dtof2_sum/nlayers);
+        //std::cout << ftof[i] << "  " << tof_sigma[i] << std::endl;
         for(int pid = 0; pid < 5; ++pid)
         {
-          atof[pid] += t - texp[pid];
-          dtof2[pid] += (*iter_tof)->errtof() * (*iter_tof)->errtof();
+          tof_exp[pid][i] = tof_exp_sum[pid]/nlayers;
+          tof_delta[pid][i] = dtof_sum[pid]/nlayers;
+          chi2_tof[pid][i] = pow ( tof_delta[pid][i]/tof_sigma[i], 2); ;
         }
-        nlayers++;
       }
-      ttof/=nlayers;
-      ftof[i]=ttof;
-
-      for(int pid = 0; pid < 5; ++pid)
+      else
       {
-        atof[pid] /= nlayers;
-      //  dt[pid][i] = atof[pid];
-        dtof2[pid] /= nlayers;
-        chi2_tof[pid][i] = atof[pid] * atof[pid] / dtof2[pid];
+        ftof[i] = 99;
+        tof_sigma[i] = 99;
+        for(int pid = 0; pid < 5; ++pid)
+        {
+          tof_exp[pid][i] = 99; 
+          tof_delta[pid][i] = 99; 
+          chi2_tof[pid][i] = 999;
+        }
       }
+
     }
+    //std::cout << "new track" << std::endl;
   }
 };

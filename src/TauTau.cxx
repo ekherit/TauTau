@@ -73,7 +73,18 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
-  declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.8);
+  declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.93);
+
+  declareProperty("EMC_ENDCUP_MIN_ENERGY",    cfg.EMC_ENDCUP_MIN_ENERGY = 0.05);
+  declareProperty("EMC_BARREL_MIN_ENERGY",    cfg.EMC_BARREL_MIN_ENERGY = 0.025);
+
+  //endcup calorimeter
+  declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.86);
+  declareProperty("EMC_ENDCUP_MAX_COS_THETA", cfg.EMC_ENDCUP_MAX_COS_THETA = 0.92);
+  //barrel calorimeter
+  declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.8);
+  declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
+
 }
 
 
@@ -89,7 +100,8 @@ StatusCode TauTau::initialize(void)
   StatusCode status;
   try
   {
-    fEvent.make_tuple(this, "FILE1/event","Signal tau tau events");
+    fEvent.make_tuple(this, "FILE1/tt","Signal tau tau events");
+    fGG.make_tuple(this, "FILE1/gg","Two gamma (luminocity) events");
   }
 	catch(std::runtime_error & error)
 	{
@@ -117,9 +129,9 @@ StatusCode TauTau::execute()
   if(isprint)
   {
     std::cout << "proceed event: " << setw(15) << nproceed_events;
-    std::cout << "  tau-mu:" << setw(15) << ntautau_events;
+    std::cout << "  ττ:" << setw(15) << ntautau_events;
     std::cout << "  ee:" << setw(15) << nbhabha_events;
-    std::cout << "  gg:" << setw(15) << ngg_events;
+    std::cout << "  γγ:" << setw(15) << ngg_events;
     std::cout << std::endl;
   }
   nproceed_events++;
@@ -191,7 +203,10 @@ StatusCode TauTau::execute()
     {
       fEvent.Pid.fill(i,Tracks[i]);
       fEvent.fill(i,Tracks[i]);
-      fEvent.McTruth.fill(i,Tracks[i],mcParticleCol);
+      if(eventHeader->runNumber() < 0)
+      {
+        fEvent.McTruth.fill(i,Tracks[i],mcParticleCol);
+      }
       //std::cout << i << "    " << GetCharge(Tracks[i]) << std::endl;
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
@@ -213,10 +228,75 @@ StatusCode TauTau::execute()
     fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
     fEvent.write();
-    //double E[2] = { sqrt( 
+    ntautau_events++;
   }
-  else //gamma-gamma selection
+  //GAMMA GAMMA LUMINOCITY SELECTION
+  fGG.N0 = good_neutral_tracks.size();
+  fGG.Nq = good_charged_tracks.size();
+  if
+  ( 
+        2 <= fGG.N0 && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
+      && fGG.Nq <= fGG.CHARGED_TRACKS_NUMBER
+  )
   {
+
+    /*
+    std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
+    std::cout << " N0 cut = " << fGG.NEUTRAL_TRACKS_NUMBER;
+    std::cout << " Nq cut = " << fGG.CHARGED_TRACKS_NUMBER;
+    std::cout << " E/B min = " << fGG.EEB_MIN_CUT;
+    std::cout << " E/B max = " << fGG.EEB_MAX_CUT;
+    std::cout << " cos = " << fGG.COS_THETA_CUT;
+    std::cout << " delta theta = " << fGG.DELTA_THETA_CUT;
+    std::cout << " delta phi min = " << fGG.MIN_DELTA_PHI_CUT;
+    std::cout << " delta phi max = " << fGG.MAX_DELTA_PHI_CUT;
+    std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
+    std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
+    std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
+    std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
+    std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
+    std::cout << std::endl;
+    */
+
+
+    good_neutral_tracks.sort(EmcEnergyOrder);
+    good_neutral_tracks.reverse();
+    std::vector<EvtRecTrack*> T
+      (
+        good_neutral_tracks.begin(), 
+        good_neutral_tracks.end()
+      );
+    fGG.Nq = good_charged_tracks.size();
+    bool keep=true;
+    double E[2];
+    double x[2]; //E/Ebeam
+    double theta[2];
+    double phi[2];
+    for(int i=0;i<2;i++)
+    {
+      RecEmcShower * emc = T[i]->emcShower();
+      E[i] = emc->energy();
+      x[i] = 2.0*E[i] / cfg.CENTER_MASS_ENERGY;
+      phi[i] = emc->phi();
+      theta[i] = emc->theta();
+      keep = keep && ( fGG.EEB_MIN_CUT < x[i]  && x[i] < fGG.EEB_MAX_CUT );
+      keep = keep && fabs(cos(theta[i])) < fGG.COS_THETA_CUT;
+      fGG.E[i] = E[i];
+      fGG.E_Eb[i] = x[i];
+      fGG.phi[i] = phi[i];
+      fGG.theta[i] = theta[i];
+    }
+    fGG.delta_theta =  theta[0] + theta[1] - M_PI;
+    fGG.delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
+    keep = keep && fabs( fGG.delta_theta) < fGG.DELTA_THETA_CUT;
+    keep = keep && fGG.delta_phi > fGG.MIN_DELTA_PHI_CUT;
+    keep = keep && fGG.delta_phi < fGG.MAX_DELTA_PHI_CUT;
+    //std::cout << fGG.delta_theta << " " << fGG.delta_phi << std::endl;
+    if(keep) 
+    {
+      fGG.write();
+      ngg_events++;
+    }
   }
   return StatusCode::SUCCESS;
 }
@@ -225,9 +305,9 @@ StatusCode TauTau::finalize()
 {
   std::cout << "Event proceed: " << nproceed_events << std::endl;
   std::cout << "Event selected: " << nwrited_events << std::endl;
-  std::cout << "Tau candidates: " << ntautau_events << endl;
+  std::cout << "ττ candidates: " << ntautau_events << endl;
   std::cout << "Bhabha candidates: " << nbhabha_events << endl;
-  std::cout << "Gamma-Gamma candidates: " << ngg_events << endl;
+  std::cout << "γγ candidates: " << ngg_events << endl;
   std::cout << "Selection efficiency: " << nwrited_events/double(nproceed_events) << std::endl;
   return StatusCode::SUCCESS;
 }

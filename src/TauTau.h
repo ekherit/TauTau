@@ -35,6 +35,7 @@
 #include "SelectionConfig.h"
 
 #include "RootTauTauEvent.h"
+#include "GammaGammaEvent.h"
 
 class TauTau : public Algorithm 
 {
@@ -50,7 +51,8 @@ class TauTau : public Algorithm
     long int ntautau_events; //number of mu ivents for track #1
     long int nbhabha_events; 
     long int ngg_events; 
-    RootTauTauEvent fEvent;
+    RootTauTauEvent fEvent; //tau tau events
+    GammaGammaEvent fGG;   //gamma gamma events for luminocity
 };
 
 #endif
