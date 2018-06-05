@@ -14,7 +14,7 @@ use ParticleID   ParticleID-*  Analysis
 
 use BesROOT      BesROOT-00-*     External
 
-#use RootEvent   RootEvent-00-* 
+use RootEvent   RootEvent-00-* 
 
 apply_pattern component_library 
 library TauTau  *.cxx  components/*.cxx RootEvent/*.cxx RootTauTauEvent.cxx
