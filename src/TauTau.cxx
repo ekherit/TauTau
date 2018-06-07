@@ -224,8 +224,9 @@ StatusCode TauTau::execute()
     Hep3Vector psum  = p[0] +  p[1];
     Hep3Vector ptsum = p[0] +  p[1];
     ptsum.setZ(0);
-    double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.E[0]-fEvent.T.E[1];
+    double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.p[0]-fEvent.T.p[1];
 
+    fEvent.pt =  ptsum.mag();
     fEvent.ptem = ptsum.mag() / Emis;
     fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
