@@ -213,12 +213,14 @@ StatusCode TauTau::execute()
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
 
+    // Calculate acoplanarity
     double phi[2] = {fEvent.T.phi[0],  fEvent.T.phi[1]};
     double dphi = (phi[1]-phi[0]);
     if(dphi>M_PI) dphi = dphi-2*M_PI;
     if(dphi<-M_PI) dphi = dphi+2*M_PI;
     fEvent.acop = M_PI - fabs(dphi);
 
+    //calculae missing energy and ptem
     //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};
     Hep3Vector p[2] = { Tracks[0]->mdcKalTrack()->p3(), Tracks[1]->mdcKalTrack()->p3() };
     Hep3Vector psum  = p[0] +  p[1];
@@ -226,7 +228,7 @@ StatusCode TauTau::execute()
     ptsum.setZ(0);
     double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.p[0]-fEvent.T.p[1];
 
-    fEvent.pt =  ptsum.mag();
+    //fEvent.pt =  ptsum.mag();
     fEvent.ptem = ptsum.mag() / Emis;
     fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
@@ -234,11 +236,11 @@ StatusCode TauTau::execute()
     //SELECTION
     for(int i=0;i<2;++i)
     {
-      select &= fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
-      select &= 0 < fEvent.T.p[i] && fEvent.T.p[i] < 1.5;
-      select &= 0.1 <  fEvent.T.Ep[i] && fEvent.T.Ep[i] < 0.8;
-      select &= 2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
-      select &= 0.05 < fEvent.ptem && fEvent.ptem < 1.1;
+      select &=        fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
+      select &=    0 < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.5;
+      select &=  0.1 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 0.8;
+      select &=  2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
+      select &= 0.05 < fEvent.ptem        && fEvent.ptem        < 1.1;
     }
     if(select)
     {
