@@ -60,7 +60,7 @@ class RootTauTauEvent : public RootTuple
 	RootTracks T; //track information (momentum, vertex, muon depth...)
   RootPid Pid; //particle id for track
   RootMcTruth McTruth;
-  NTuple::Item<double>  pt;
+  //NTuple::Item<double>  pt;
   NTuple::Item<double>  ptem;
   NTuple::Item<double>  acop;
   NTuple::Item<double>  acol;
@@ -83,7 +83,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem("acop",acop);
     tuple->addItem("acol",acol);
     tuple->addItem("ptem",ptem);
-    tuple->addItem("pt",pt);
+    //tuple->addItem("pt",pt);
     tuple->addItem("M2",M2);
   };
 	virtual void init(void) {};
