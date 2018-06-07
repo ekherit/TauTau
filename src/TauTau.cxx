@@ -145,7 +145,7 @@ StatusCode TauTau::execute()
 	std::list<EvtRecTrack*> good_charged_tracks;
 
   //fill initial value of the selected event
-  //come from IP and cos(theta)<max_cos_theta
+  //come from IP and cos(theta)<max_cos_theta //define in utils
   good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
   //good neutral tracks
   good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
@@ -171,6 +171,7 @@ StatusCode TauTau::execute()
   emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   emc_good_charged_tracks.reverse(); //begin from hier energie
 
+  //SELECTION
   /*  Select exactly 2 charged tracks
    *  And no good neutral tracks
    *  */
@@ -188,8 +189,9 @@ StatusCode TauTau::execute()
       );
     RecMdcTrack * mdc[2] =  { Tracks[0]->mdcTrack(), Tracks[1]->mdcTrack() };
 
+    //SELECTION charge
     //opposite charge of this two tracks
-    if( mdc[0]->charge()*mdc[1]->charge() >= 0) return StatusCode::SUCCESS;
+    if( mdc[0]->charge()*mdc[1]->charge() >= 0) goto SKIP_TAUTAU;
 
     //std::cout << "Before fEvent.run " << std::endl;
     fEvent.run = eventHeader->runNumber();
@@ -227,9 +229,23 @@ StatusCode TauTau::execute()
     fEvent.ptem = ptsum.mag() / Emis;
     fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
-    fEvent.write();
-    ntautau_events++;
+    bool select=true;
+    //SELECTION
+    for(int i=0;i<2;++i)
+    {
+      select &= fabs(cos(fEvent.T[i].theta)) < 0.8; //goes to barrel
+      select &= 0 < fEvent.T[i].p && fEvent.T[i].p < 1.5;
+      select &= 0.1 <  fEvent.T[i].Ep && fEvent.T[i].Ep < 0.8;
+      select &= 2.5 < fEvent.Pid.ftof && fEvent.Pid.ftof < 5.5;
+      select &= 0.05 < fEvent.ptem && fEvent.ptem < 1.1;
+    }
+    if(select)
+    {
+      fEvent.write();
+      ntautau_events++;
+    }
   }
+SKIP_TAUTAU:
   //GAMMA GAMMA LUMINOCITY SELECTION
   fGG.N0 = good_neutral_tracks.size();
   fGG.Nq = good_charged_tracks.size();
