@@ -46,7 +46,7 @@ def proceed(run, directory, files):
         TEMPLATE_DST_FILES=TEMPLATE_DST_FILES+comma+'"'+name+'"'
     if TEMPLATE_DST_FILES=='': return
     print TEMPLATE_DST_FILES
-    configure('../share/template.cfg',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
+    configure('/ihepbatch/bes/nikolaev/7.0.3/TauTau/TauTau-00-00-01/share/template.cfg',TARGET_FILE,TEMPLATE_RUN_NUMBER, TEMPLATE_DST_FILES)
 #create qsub files
     configure_pbs_jobs(run)
 
