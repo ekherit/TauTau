@@ -238,7 +238,7 @@ StatusCode TauTau::execute()
     {
       select &=        fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
       select &=    0 < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.5;
-      select &=  0.1 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 0.8;
+      select &=  0.1 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 1.1;
       select &=  2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
       select &= 0.05 < fEvent.ptem        && fEvent.ptem        < 1.1;
     }
