@@ -4,6 +4,13 @@ foreach x ( `seq  55115 55155`)
     echo TauTau.CENTER_MASS_ENERGY=3.539482 \; >> $x.cfg
   endif
 end
+#tune point below threshold
+#Points.push_back({"Point1", 55157,55161,3550.872,0.182,0,0});
+foreach x ( `seq  55157 55161`)
+  if ( -f $x.cfg ) then
+    echo TauTau.CENTER_MASS_ENERGY=3.550872 \; >> $x.cfg
+  endif
+end
 #first threshold point P2
 #Points.push_back({"Point2", 55162,55199,3552.849,0.093,0,0});
 foreach x ( `seq  55162 55199`)
