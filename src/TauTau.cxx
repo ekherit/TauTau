@@ -228,7 +228,7 @@ StatusCode TauTau::execute()
     ptsum.setZ(0);
     double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.p[0]-fEvent.T.p[1];
 
-    //fEvent.pt =  ptsum.mag();
+    fEvent.ptsum =  ptsum.mag();
     fEvent.ptem = ptsum.mag() / Emis;
     fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
@@ -236,11 +236,11 @@ StatusCode TauTau::execute()
     //SELECTION
     for(int i=0;i<2;++i)
     {
-      select &=        fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
-      select &=    0 < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.5;
-      select &=  0.1 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 1.1;
-      select &=  2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
-      select &= 0.05 < fEvent.ptem        && fEvent.ptem        < 1.1;
+      select &=                     fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
+      select &=    0  < fEvent.T.p[i]      && fEvent.T.p[i]      < 2.0;
+      select &=  0.05 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 1.1;
+      select &=   2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
+      select &=  0.00 < fEvent.ptem        && fEvent.ptem        < 1.1;
     }
     if(select)
     {
