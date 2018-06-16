@@ -122,6 +122,7 @@ StatusCode TauTau::execute()
   time_t t=eventHeader->time();
   bool isprint=false;
   if(nproceed_events<10) isprint=true;
+  if(nproceed_events==0) std::cout << "Wcm = " << cfg.CENTER_MASS_ENERGY << " GeV" << std::endl;
   if(10 <= nproceed_events && nproceed_events < 100 && nproceed_events % 10 ==0) isprint=true;
   if(100 <= nproceed_events && nproceed_events < 1000 && nproceed_events % 100 ==0) isprint = true;
   if(1000 <= nproceed_events && nproceed_events < 10000 && nproceed_events % 1000 ==0) isprint = true;
