@@ -48,6 +48,8 @@ class RootTauTauEvent : public RootTuple
 	NTuple::Item<long>    time; //time of the event
 	NTuple::Item<long>    ngood_charged_track;     //number of good charged tracks in event
 	NTuple::Item<long>    ngood_neutral_track;     //number of good neutral tracks in event
+	NTuple::Item<long>    nctrack;     //number of total charged tracks
+  NTuple::Item<long>    nntrack;     //number of total neutral tracks
 
   /*
    *  00 - ee  |  10 - μe  |  20 - Ke
@@ -77,6 +79,8 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
     tuple->addItem ("ntrack", ntrack, 0,2);
+    tuple->addItem ("nctrack", nctrack, 0,10);
+    tuple->addItem ("nntrack", nntrack, 0,10);
     T.add_to_tuple(tuple,ntrack); 
     Pid.add_to_tuple(tuple,ntrack); 
     McTruth.add_to_tuple(tuple,ntrack);

@@ -243,10 +243,17 @@ StatusCode TauTau::execute()
       select &=   2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
       select &=  0.00 < fEvent.ptem        && fEvent.ptem        < 1.1;
     }
+    fEvent.nntrack = evtRecEvent->totalTracks() - evtRecEvent->totalCharged();
+    fEvent.nctrack = evtRecEvent->totalCharged();
     if(select)
     {
       fEvent.write();
       ntautau_events++;
+      std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
+      std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
+      std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
+      std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
+      std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
     }
   }
 SKIP_TAUTAU:
@@ -260,7 +267,7 @@ SKIP_TAUTAU:
   )
   {
 
-    /*
+    /*  
     std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
     std::cout << " N0 cut = " << fGG.NEUTRAL_TRACKS_NUMBER;
     std::cout << " Nq cut = " << fGG.CHARGED_TRACKS_NUMBER;
@@ -275,8 +282,8 @@ SKIP_TAUTAU:
     std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
     std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
     std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
-    std::cout << std::endl;
     */
+    std::cout << std::endl;
 
 
     good_neutral_tracks.sort(EmcEnergyOrder);
