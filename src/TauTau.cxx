@@ -283,8 +283,8 @@ SKIP_TAUTAU:
     std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
     std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
     std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
-    */
     std::cout << std::endl;
+    */
 
 
     good_neutral_tracks.sort(EmcEnergyOrder);
