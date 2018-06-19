@@ -15,6 +15,7 @@
 // =====================================================================================
 
 #pragma once
+#include <iostream>
 
 struct SelectionConfig
 {
@@ -72,5 +73,63 @@ struct SelectionConfig
   bool FILL_TOF;
   bool FILL_MUC;
   bool FILL_NEUTRAL;
+
+  void print(void)
+  {
+    std::cout  << "CENTER_MASS_ENERGY = " << CENTER_MASS_ENERGY << std::endl;      //center mass energy
+    std::cout  << "MIN_CHARGED_TRACKS = " << MIN_CHARGED_TRACKS << std::endl; //minimum good charged tracks in selection
+    std::cout  << "MAX_CHARGED_TRACKS = " << MAX_CHARGED_TRACKS << std::endl; //maximum good charged tracks in selection
+    std::cout  << "MAX_NEUTRAL_TRACKS = " << MAX_NEUTRAL_TRACKS << std::endl; //maximum good neutral tracks in selection
+    std::cout  << "IP_MAX_RHO = " << IP_MAX_RHO << std::endl; //std::cout << erection point cut
+    std::cout  << "MAX_COS_THETA = " << MAX_COS_THETA << std::endl; //maximum  cos(theta) for good charged track
+
+    std::cout  << "EMC_ENDCUP_MIN_COS_THETA = " << EMC_ENDCUP_MIN_COS_THETA << std::endl;
+    std::cout  << "EMC_ENDCUP_MAX_COS_THETA = " << EMC_ENDCUP_MAX_COS_THETA << std::endl;
+    std::cout  << "EMC_ENDCUP_MIN_ENERGY = " << EMC_ENDCUP_MIN_ENERGY << std::endl;
+    std::cout  << "EMC_BARREL_MAX_COS_THETA = " << EMC_BARREL_MAX_COS_THETA << std::endl;
+    std::cout  << "EMC_BARREL_MIN_ENERGY = " << EMC_BARREL_MIN_ENERGY << std::endl;
+
+    std::cout  << "NEUTRAL_CLOSE_CHARGED_ANGLE = " << NEUTRAL_CLOSE_CHARGED_ANGLE << std::endl;
+
+    std::cout  << "MAX_MUON_EP_RATIO = " << MAX_MUON_EP_RATIO << std::endl;
+    std::cout  << "MAX_KAON_EP_RATIO = " << MAX_KAON_EP_RATIO << std::endl;
+
+    std::cout  << "MIN_MUON_EP_RATIO = " << MIN_MUON_EP_RATIO << std::endl;
+    std::cout  << "MIN_KAON_EP_RATIO = " << MIN_KAON_EP_RATIO << std::endl;
+
+    std::cout  << "MAX_PION_MOMENTUM = " << MAX_PION_MOMENTUM << std::endl; //maximum pion momentum
+    std::cout  << "MIN_PION_MOMENTUM = " << MIN_PION_MOMENTUM << std::endl; //maximum pion momentum
+
+    std::cout  << "MIN_RECOIL_MASS = " << MIN_RECOIL_MASS << std::endl; //minimum recoil mass cut
+    std::cout  << "MAX_RECOIL_MASS = " << MAX_RECOIL_MASS << std::endl; //minimum recoil mass cut
+
+    std::cout  << "MIN_KAON_MOMENTUM = " << MIN_KAON_MOMENTUM << std::endl; //minimum kaon momentum
+    std::cout  << "MAX_KAON_MOMENTUM = " << MAX_KAON_MOMENTUM << std::endl; //maximum pion momentum
+
+    std::cout  << "MIN_MUON_MOMENTUM = " << MIN_MUON_MOMENTUM << std::endl; //minimum kaon momentum
+    std::cout  << "MAX_MUON_MOMENTUM = " << MAX_MUON_MOMENTUM << std::endl; //maximum pion momentum
+
+    std::cout  << "MIN_INVARIANT_MASS = " << MIN_INVARIANT_MASS << std::endl; //minimum invariant  mass cut
+    std::cout  << "MAX_INVARIANT_MASS = " << MAX_INVARIANT_MASS << std::endl; //manimum invariant  mass cut
+
+    std::cout  << "MIN_KAON_MISSING_MASS = " << MIN_KAON_MISSING_MASS << std::endl;   //minimum kaon missing mass
+    std::cout  << "MAX_KAON_MISSING_MASS = " << MAX_KAON_MISSING_MASS << std::endl;   //minimum kaon missing mass
+    std::cout  << "MIN_MUON_MISSING_MASS = " << MIN_MUON_MISSING_MASS << std::endl;   //minimum muon missing mass
+    std::cout  << "MAX_MUON_MISSING_MASS = " << MAX_MUON_MISSING_MASS << std::endl;   //minimum muon missing mass
+
+    std::cout  << "MIN_MISSING_MASS = " << MIN_MISSING_MASS << std::endl; 
+    std::cout  << "MAX_MISSING_MASS = " << MAX_MISSING_MASS << std::endl; 
+
+    std::cout  << "MAX_KIN_CHI2 = " << MAX_KIN_CHI2 << std::endl; //maximum chi2 for kinematic fit
+    std::cout  << "MAX_PID_CHI2 = " << MAX_PID_CHI2 << std::endl; //maximum chi2 for my PID
+
+    std::cout  << "FILL_MDC = " << FILL_MDC << std::endl;
+    std::cout  << "FILL_EMC = " << FILL_EMC << std::endl;
+    std::cout  << "FILL_DEDX = " << FILL_DEDX << std::endl;
+    std::cout  << "FILL_TOF = " << FILL_TOF << std::endl;
+    std::cout  << "FILL_MUC = " << FILL_MUC << std::endl;
+    std::cout  << "FILL_NEUTRAL = " << FILL_NEUTRAL << std::endl;
+
+  }
 
 };

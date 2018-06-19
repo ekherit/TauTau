@@ -108,6 +108,7 @@ StatusCode TauTau::initialize(void)
 		log << MSG::ERROR << error.what() << endmsg;
 		return StatusCode::FAILURE;
 	}
+  cfg.print();
   return StatusCode::SUCCESS;
 }
 
@@ -249,11 +250,11 @@ StatusCode TauTau::execute()
     {
       fEvent.write();
       ntautau_events++;
-      std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
-      std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
-      std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
-      std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
-      std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
+      //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
+      //std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
+      //std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
+      //std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
+      //std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
     }
   }
 SKIP_TAUTAU:
