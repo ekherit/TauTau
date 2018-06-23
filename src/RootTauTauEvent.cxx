@@ -28,7 +28,8 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
 {
   if(track->isMdcTrackValid())
   {
-    RecMdcKalTrack * mdc = track->mdcKalTrack();
+    //RecMdcKalTrack * mdc = track->mdcKalTrack();
+    RecMdcTrack * mdc = track->mdcTrack();
     T.id[i] = mdc->trackId(); //id of the track
     T.q[i] =  mdc->charge(); //charge of the track
     T.p[i] = mdc->p();

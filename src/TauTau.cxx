@@ -69,7 +69,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 {
   declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
   declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
-  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
+  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=3); 
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
@@ -189,19 +189,26 @@ StatusCode TauTau::execute()
         emc_good_charged_tracks.begin(), 
         emc_good_charged_tracks.end()
       );
-    RecMdcTrack * mdc[2] =  { Tracks[0]->mdcTrack(), Tracks[1]->mdcTrack() };
-
     //SELECTION charge
     //opposite charge of this two tracks
-    if( mdc[0]->charge()*mdc[1]->charge() >= 0) goto SKIP_TAUTAU;
+    double charge=1;
+    for(int i=Tracks.size()-1; i>=0; i--) 
+    {
+      charge = charge * Tracks[i]->mdcTrack()->charge();
+    };
+    if( charge >= 0) goto SKIP_TAUTAU;
+    int idx[2];
+    idx[1]=Tracks.size()-1;
+    if(Tracks[Tracks.size()-2]->mdcTrack()->charge() !=  Tracks[Trakcs.size()-1]->mdcTrack()->charge() ) idx[0]=Tracks.size()-2;
+    else idx[0] = 0;
 
-    //std::cout << "Before fEvent.run " << std::endl;
+
     fEvent.run = eventHeader->runNumber();
     fEvent.event = eventHeader->eventNumber();
     fEvent.time = eventHeader->time();
     //std::cout << "eventTime = " << eventHeader->time() << std::endl;
     fEvent.channel = 0;
-    fEvent.ntrack = 2;
+    fEvent.ntrack = emc_good_charged_tracks.size();
     fEvent.Pid.init();
     for(int i=0;i<Tracks.size();++i)
     {
@@ -216,30 +223,30 @@ StatusCode TauTau::execute()
     }
 
     // Calculate acoplanarity
-    double phi[2] = {fEvent.T.phi[0],  fEvent.T.phi[1]};
-    double dphi = (phi[1]-phi[0]);
+    double phi[2] = {fEvent.T.phi[idx[0]],  fEvent.T.phi[idx[1]]};
+    double dphi = (phi[idx[1]]-phi[idx[0]]);
     if(dphi>M_PI) dphi = dphi-2*M_PI;
     if(dphi<-M_PI) dphi = dphi+2*M_PI;
     fEvent.acop = M_PI - fabs(dphi);
 
     //calculae missing energy and ptem
     //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};
-    Hep3Vector p[2] = { Tracks[0]->mdcKalTrack()->p3(), Tracks[1]->mdcKalTrack()->p3() };
+    Hep3Vector p[2] = { Tracks[idx[0]]->mdcTrack()->p3(), Tracks[idx[1]]->mdcTrack()->p3() };
     Hep3Vector psum  = p[0] +  p[1];
     Hep3Vector ptsum = p[0] +  p[1];
     ptsum.setZ(0);
-    double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.p[0]-fEvent.T.p[1];
+    double Emis = cfg.CENTER_MASS_ENERGY - fEvent.T.p[idx[0]]-fEvent.T.p[idx[1]];
 
     fEvent.ptsum =  ptsum.mag();
     fEvent.ptem = ptsum.mag() / Emis;
-    fEvent.acol = (p[1].cross(p[0]).mag()/(p[1].mag()*p[0].mag()));
+    fEvent.acol = (p[1].dot(p[0]).mag()/(p[1].mag()*p[0].mag()));
     fEvent.M2 = 0;
     bool select=true;
     //SELECTION
-    for(int i=0;i<2;++i)
+    for(int i=0;i<Tracks.size();++i)
     {
       select &=                     fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
-      select &=    0  < fEvent.T.p[i]      && fEvent.T.p[i]      < 2.0;
+      select &=  0.2  < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.1;
       select &=  0.05 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 1.1;
       select &=   2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
       select &=  0.00 < fEvent.ptem        && fEvent.ptem        < 1.1;
