@@ -199,7 +199,7 @@ StatusCode TauTau::execute()
     if( charge >= 0) goto SKIP_TAUTAU;
     int idx[2];
     idx[1]=Tracks.size()-1;
-    if(Tracks[Tracks.size()-2]->mdcTrack()->charge() !=  Tracks[Trakcs.size()-1]->mdcTrack()->charge() ) idx[0]=Tracks.size()-2;
+    if(Tracks[Tracks.size()-2]->mdcTrack()->charge() !=  Tracks[Tracks.size()-1]->mdcTrack()->charge() ) idx[0]=Tracks.size()-2;
     else idx[0] = 0;
 
 
