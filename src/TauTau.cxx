@@ -239,7 +239,7 @@ StatusCode TauTau::execute()
 
     fEvent.ptsum =  ptsum.mag();
     fEvent.ptem = ptsum.mag() / Emis;
-    fEvent.acol = (p[1].dot(p[0]).mag()/(p[1].mag()*p[0].mag()));
+    fEvent.acol = p[1].dot(p[0])/(p[1].mag()*p[0].mag());
     fEvent.M2 = 0;
     bool select=true;
     //SELECTION
