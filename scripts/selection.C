@@ -43,6 +43,7 @@ struct ScanPoint_t
   int Ntt;
   int Ngg;
   std::string selection;
+  std::map<std::string, int> NttMap;
 };
 
 #include <regex>
@@ -336,13 +337,13 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
   {
     c->cd(i++);
     int Ntt=p.tt->Draw(varexp,selection,gopt);
-    if(add_to_prev_selection) p.Ntt += Ntt;
-    else p.Ntt=Ntt;
+    p.Ntt=Ntt;
+    if(opt=="clear") p.NttMap.clear();
+    if(opt=="add") p.NttMap[selection]=Ntt; 
     char title[1024];
     sprintf(title, "%s %d events", p.title, p.Ntt);
     p.tt->GetHistogram()->SetTitle(title);
-    if(add_to_prev_selection) p.selection += std::string(" || ") + selection;
-    else p.selection = selection;
+    p.selection = selection;
     if(opt=="save")
     {
       p.Ngg = p.gg->GetEntries();
@@ -387,24 +388,51 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
   }
 }
 
-void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false)
+void add_last(std::vector<ScanPoint_t> & P)
+{
+  for ( auto & p : P)
+  {
+    p.NttMap[p.selection]=p.Ntt;
+  }
+}
+void set_last(std::vector<ScanPoint_t> & P)
+{
+  for ( auto & p : P)
+  {
+    p.NttMap.clear();
+    p.NttMap[p.selection]=p.Ntt;
+  }
+}
+
+void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false, std::string title="")
 {
   long totalNtt=0;
   long totalNgg = 0;
   double totalL=0;
   for(int i=0; i<P.size()-1;++i)
   {
-    totalNtt += P[i].Ntt;
+    for(auto & item: P[i].NttMap)
+    {
+      totalNtt += item.second;
+    }
     if(P[i].Ngg==0) P[i].Ngg = P[i].gg->GetEntries();
     totalNgg+=P[i].Ngg;
     totalL += P[i].L;
   }
   double sigma_gg = totalNgg/totalL;
   std::ofstream ofs(filename);
-  ofs << "#" << P[0].selection << std::endl;
+  ofs << "#Selection: " << P[0].selection << std::endl;
+  ofs << "#Aliases: " << std::endl;
+  ofs << "#    e0 = " << P[0].tt->GetAlias("e0") << std::endl;
+  ofs << "#    e1 = " << P[0].tt->GetAlias("e1") << std::endl;
+  ofs << "#    u0 = " << P[0].tt->GetAlias("u0") << std::endl;
+  ofs << "#    u1 = " << P[0].tt->GetAlias("u1") << std::endl;
+  ofs << "#    pi0 = " << P[0].tt->GetAlias("pi0") << std::endl;
+  ofs << "#    pi1 = " << P[0].tt->GetAlias("pi1") << std::endl;
   for(int i=0; i<P.size()-1;++i)
   {
-    int Ntt = P[i].Ntt;
+    int Ntt=0;
+    for(auto & item: P[i].NttMap) Ntt+=item.second;
     int Ngg = P[i].Ngg;
     double L = Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
     ofs << setw(5) << i <<  setw(15) << P[i].L << "  " << 10 << setw(15) << P[i].W  << setw(15) << P[i].dW;
@@ -414,7 +442,8 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
   if(!nofit)
   {
     char command[65536];
-    sprintf(command, "taufit  '%s' --output '%s' &", filename,filename);
+    if(title=="") title=P[0].selection;
+    sprintf(command, "taufit --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
     system(command);
   }
 }
