@@ -42,6 +42,7 @@ struct ScanPoint_t
   std::list<std::pair<int,double> > runs;
   int Ntt;
   int Ngg;
+  std::string selection;
 };
 
 #include <regex>
@@ -83,7 +84,7 @@ void set_alias(TTree * tt, double W)
   {
     //electron id
     char alias[65535];
-    sprintf(alias,"0.8 < Ep[%1$d] && Ep[%1$d]<1.05 && chi2_dedx_e[%1$d]<5 && abs(delta_tof_e[%1$d])<0.2",i);
+    sprintf(alias,"0.8 < Ep[%1$d] && Ep[%1$d]<1.05 && chi2_dedx_e[%1$d]<5 && abs(delta_tof_e[%1$d])<0.3",i);
     char particle[16];
     sprintf(particle,"e%d",i);
     std::cout << particle << "=" << alias << std::endl;
@@ -95,8 +96,8 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("ee", "e0 && e1");
 
   //define muons
-  tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0] > 80*p[0]-50 || depth[0]>40) && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.2 && Ep[0]<0.7");
-  tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && (depth[0] > 80*p[0]-50 || depth[0]>40) && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.2 && Ep[1]<0.7");
+  tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && depth[0]>0 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
+  tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && depth[1]>0 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
   tt->SetAlias("uu", "u0 && u1");
   tt->SetAlias("eu", "(e0 && u1) || (u0 && e1)");
 
@@ -321,27 +322,34 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   return g;
 }
 
-void draw_point(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="", bool xs=false)
+void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="", std::string opt="")
 {
   auto c = new TCanvas;
+  c->SetTitle(selection);
   int ny = floor(sqrt(P.size()+1));
   int nx = ny+1;
   c->Divide(nx,ny);
   int i = 1;
+  bool add_to_prev_selection=false;
+  if(opt=="add") add_to_prev_selection=true;
   for (auto & p : P)
   {
     c->cd(i++);
-    p.Ntt = p.tt->Draw(varexp,selection,gopt);
+    int Ntt=p.tt->Draw(varexp,selection,gopt);
+    if(add_to_prev_selection) p.Ntt += Ntt;
+    else p.Ntt=Ntt;
     char title[1024];
     sprintf(title, "%s %d events", p.title, p.Ntt);
     p.tt->GetHistogram()->SetTitle(title);
-    if(xs)
+    if(add_to_prev_selection) p.selection += std::string(" || ") + selection;
+    else p.selection = selection;
+    if(opt=="save")
     {
       p.Ngg = p.gg->GetEntries();
       std::cout << i-2 << " " << p.Ngg << endl;
     }
   }
-  if(xs)
+  if(opt=="save")
   {
     TGraphErrors * g = new TGraphErrors;
     long totalNtt=0;
@@ -378,6 +386,39 @@ void draw_point(std::vector<ScanPoint_t> & P, const char * varexp, const char * 
     g->Draw("ap");
   }
 }
+
+void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false)
+{
+  long totalNtt=0;
+  long totalNgg = 0;
+  double totalL=0;
+  for(int i=0; i<P.size()-1;++i)
+  {
+    totalNtt += P[i].Ntt;
+    if(P[i].Ngg==0) P[i].Ngg = P[i].gg->GetEntries();
+    totalNgg+=P[i].Ngg;
+    totalL += P[i].L;
+  }
+  double sigma_gg = totalNgg/totalL;
+  std::ofstream ofs(filename);
+  ofs << "#" << P[0].selection << std::endl;
+  for(int i=0; i<P.size()-1;++i)
+  {
+    int Ntt = P[i].Ntt;
+    int Ngg = P[i].Ngg;
+    double L = Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
+    ofs << setw(5) << i <<  setw(15) << P[i].L << "  " << 10 << setw(15) << P[i].W  << setw(15) << P[i].dW;
+    ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
+    ofs << setw(10) << Ntt << setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
+  }
+  if(!nofit)
+  {
+    char command[65536];
+    sprintf(command, "taufit  '%s' --output '%s' &", filename,filename);
+    system(command);
+  }
+}
+
 TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char * selection)
 {
   TGraphErrors * g = new TGraphErrors;
@@ -422,8 +463,6 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
       Points[i].tt->Draw(var[v],selection);
     }
   }
-  TCut ee="Ep[0]>0.85 && Ep[0]<1.05 && Ep[1]>0.85 && Ep[1]<1.05 && abs(dedx_e[0])<3 && abs(dedx_e[1])<3";
-
   return g;
 }
 
