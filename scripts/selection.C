@@ -44,6 +44,11 @@ struct ScanPoint_t
   int Ngg;
 };
 
+#include <regex>
+const char * make_alias(int channel, const char * templ )
+{
+  return templ;
+}
 
 const double MTAU=1776.86;
 void set_alias(TTree * tt, double W)
@@ -74,13 +79,24 @@ void set_alias(TTree * tt, double W)
   //particles id
 
   //define electrons
-  tt->SetAlias("e0","0.85 < Ep[0] && Ep[0]<1.05 && chi2_dedx_e[0]<5 && abs(delta_tof_e[0])<0.3");
-  tt->SetAlias("e1","0.85 < Ep[1] && Ep[1]<1.05 && chi2_dedx_e[1]<5 && abs(delta_tof_e[0])<0.3");
+  for(int i=0;i<2;i++)
+  {
+    //electron id
+    char alias[65535];
+    sprintf(alias,"0.8 < Ep[%1$d] && Ep[%1$d]<1.05 && chi2_dedx_e[%1$d]<5 && abs(delta_tof_e[%1$d])<0.2",i);
+    char particle[16];
+    sprintf(particle,"e%d",i);
+    std::cout << particle << "=" << alias << std::endl;
+    tt->SetAlias(particle,alias);
+    //muon id
+  }
+  //tt->SetAlias("e0","0.8 < Ep[0] && Ep[0]<1.05 && chi2_dedx_e[0]<5 && abs(delta_tof_e[0])<0.3");
+  //tt->SetAlias("e1","0.8 < Ep[1] && Ep[1]<1.05 && chi2_dedx_e[1]<5 && abs(delta_tof_e[0])<0.3");
   tt->SetAlias("ee", "e0 && e1");
 
   //define muons
-  tt->SetAlias("u0","0.15 < E[0] && E[0] < 0.25 && depth[0]>0 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
-  tt->SetAlias("u1","0.15 < E[1] && E[1] < 0.25 && depth[1]>0 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
+  tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0] > 80*p[0]-50 || depth[0]>40) && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.2 && Ep[0]<0.7");
+  tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && (depth[0] > 80*p[0]-50 || depth[0]>40) && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.2 && Ep[1]<0.7");
   tt->SetAlias("uu", "u0 && u1");
   tt->SetAlias("eu", "(e0 && u1) || (u0 && e1)");
 
