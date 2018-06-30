@@ -85,6 +85,10 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.8);
   declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
 
+  //for tau+ -> pi+pi0
+  declareProperty("GAMMA_GAMMA_MIN_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.10);
+  declareProperty("GAMMA_GAMMA_MAX_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.20);
+
 }
 
 
@@ -156,25 +160,13 @@ StatusCode TauTau::execute()
   //std::cout << "Number of good neutral tracks = " << good_neutral_tracks.size() << std::endl;
 
   //filter good charged tracks keep only tracks with emcShower
-  std::list<EvtRecTrack*> emc_good_charged_tracks;
-  for( std::list<EvtRecTrack*>::iterator it=good_charged_tracks.begin();
-       it!=good_charged_tracks.end();
-       ++it)
-  {
-    EvtRecTrack * track = *it;
-    if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
-    if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-    RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
-    RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
-    emc_good_charged_tracks.push_back(track);
-  }
-  //std::cout << "Number of good charged tracks with emc = " << good_charged_tracks.size() << std::endl;
+  std::list<EvtRecTrack*> emc_good_charged_tracks =  createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 
   emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   emc_good_charged_tracks.reverse(); //begin from hier energie
 
   //SELECTION
-  /*  Select exactly 2 charged tracks
+  /*  Select exactly 2 charged tracks with EMC signal
    *  And no good neutral tracks
    *  */
   if(    good_neutral_tracks.size() == 0 
@@ -189,6 +181,7 @@ StatusCode TauTau::execute()
         emc_good_charged_tracks.begin(), 
         emc_good_charged_tracks.end()
       );
+
     //SELECTION charge
     //opposite charge of this two tracks
     double charge=1;
@@ -222,12 +215,7 @@ StatusCode TauTau::execute()
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
 
-    // Calculate acoplanarity
-    double phi[2] = {fEvent.T.phi[idx[0]],  fEvent.T.phi[idx[1]]};
-    double dphi = (phi[idx[1]]-phi[idx[0]]);
-    if(dphi>M_PI) dphi = dphi-2*M_PI;
-    if(dphi<-M_PI) dphi = dphi+2*M_PI;
-    fEvent.acop = M_PI - fabs(dphi);
+    fEvent.acop = Acoplanarity(fEvent.T.phi[idx[0]], fEvent.T.phi[idx[1]]);
 
     //calculae missing energy and ptem
     //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};

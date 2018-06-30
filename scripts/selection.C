@@ -97,7 +97,9 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("ee", "e0 && e1");
 
   //define muons
+  //tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0]>(80*p[0]-50) || depth[0]>40) && Nmuhit[0]>1 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
   tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && depth[0]>0 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
+  ///tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && (depth[1]>(80*p[1]-50) || depth[1]>40) && Nmuhit[1]>1 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
   tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && depth[1]>0 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
   tt->SetAlias("uu", "u0 && u1");
   tt->SetAlias("eu", "(e0 && u1) || (u0 && e1)");
@@ -323,7 +325,7 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   return g;
 }
 
-void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="", std::string opt="")
+void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="col", std::string opt="")
 {
   auto c = new TCanvas;
   c->SetTitle(selection);
@@ -446,6 +448,34 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     sprintf(command, "taufit --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
     system(command);
   }
+}
+
+void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const char * cut, const char * his="")
+{
+  std::string title = std::string("mc_data: ") + selection + " cut= " + cut;
+  TCanvas * c = new TCanvas("data_mc_diff", title.c_str());
+  TChain * chain = new TChain("data_mc_diff","data_mc_diff");
+  set_alias((TTree*)chain, MTAU*2);
+  for(int i=1;i<P.size()-1;++i) chain->Add((TChain*)P[i].tt);
+  std::string sel(selection);
+  sel+=">>h1(";
+  sel+=his;
+  sel+=")";
+  chain->Draw(sel.c_str(),cut,"goff");
+  auto hdata  = chain->GetHistogram();
+  P[P.size()-1].tt->SetLineColor(kRed);
+  sel=selection;
+  sel+=">>h2(";
+  sel+=his;
+  sel+=")";
+  P[P.size()-1].tt->Draw(sel.c_str(), cut, "goff");
+  auto hmc = P[P.size()-1].tt->GetHistogram();
+  hmc->Draw();
+  hmc->GetXaxis()->SetTitle(selection);
+  hmc->SetLineWidth(2);
+  hdata->Scale(double(hmc->GetEntries())/hdata->Integral());
+  hdata->SetLineWidth(2);
+  hdata->Draw("SAME");
 }
 
 TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char * selection)
