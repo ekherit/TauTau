@@ -69,7 +69,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 {
   declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
   declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
-  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=3); 
+  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
@@ -147,20 +147,9 @@ StatusCode TauTau::execute()
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
-	std::list<EvtRecTrack*> good_neutral_tracks;
-	std::list<EvtRecTrack*> good_charged_tracks;
-
-  //fill initial value of the selected event
-  //come from IP and cos(theta)<max_cos_theta //define in utils
-  good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
-  //good neutral tracks
-  good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
-
-  //std::cout << "Number of good charged tracks = " << good_charged_tracks.size() << std::endl;
-  //std::cout << "Number of good neutral tracks = " << good_neutral_tracks.size() << std::endl;
-
-  //filter good charged tracks keep only tracks with emcShower
-  std::list<EvtRecTrack*> emc_good_charged_tracks =  createGoodEmcChargedTrackList(cfg, good_charged_tracks);
+	std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+	std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+  std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 
   emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   emc_good_charged_tracks.reverse(); //begin from hier energie
