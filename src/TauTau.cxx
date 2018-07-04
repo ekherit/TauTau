@@ -69,7 +69,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 {
   declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
   declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
-  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=3); 
+  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
@@ -84,6 +84,10 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   //barrel calorimeter
   declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.8);
   declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
+
+  //for tau+ -> pi+pi0
+  declareProperty("GAMMA_GAMMA_MIN_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.10);
+  declareProperty("GAMMA_GAMMA_MAX_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.20);
 
 }
 
@@ -143,38 +147,15 @@ StatusCode TauTau::execute()
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
-	std::list<EvtRecTrack*> good_neutral_tracks;
-	std::list<EvtRecTrack*> good_charged_tracks;
-
-  //fill initial value of the selected event
-  //come from IP and cos(theta)<max_cos_theta //define in utils
-  good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
-  //good neutral tracks
-  good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
-
-  //std::cout << "Number of good charged tracks = " << good_charged_tracks.size() << std::endl;
-  //std::cout << "Number of good neutral tracks = " << good_neutral_tracks.size() << std::endl;
-
-  //filter good charged tracks keep only tracks with emcShower
-  std::list<EvtRecTrack*> emc_good_charged_tracks;
-  for( std::list<EvtRecTrack*>::iterator it=good_charged_tracks.begin();
-       it!=good_charged_tracks.end();
-       ++it)
-  {
-    EvtRecTrack * track = *it;
-    if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
-    if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-    RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
-    RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
-    emc_good_charged_tracks.push_back(track);
-  }
-  //std::cout << "Number of good charged tracks with emc = " << good_charged_tracks.size() << std::endl;
+	std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+	std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+  std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 
   emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   emc_good_charged_tracks.reverse(); //begin from hier energie
 
   //SELECTION
-  /*  Select exactly 2 charged tracks
+  /*  Select exactly 2 charged tracks with EMC signal
    *  And no good neutral tracks
    *  */
   if(    good_neutral_tracks.size() == 0 
@@ -189,6 +170,7 @@ StatusCode TauTau::execute()
         emc_good_charged_tracks.begin(), 
         emc_good_charged_tracks.end()
       );
+
     //SELECTION charge
     //opposite charge of this two tracks
     double charge=1;
@@ -222,12 +204,7 @@ StatusCode TauTau::execute()
       //std::cout << i << "    " << GetMomentum(Tracks[i]) << std::endl;
     }
 
-    // Calculate acoplanarity
-    double phi[2] = {fEvent.T.phi[idx[0]],  fEvent.T.phi[idx[1]]};
-    double dphi = (phi[idx[1]]-phi[idx[0]]);
-    if(dphi>M_PI) dphi = dphi-2*M_PI;
-    if(dphi<-M_PI) dphi = dphi+2*M_PI;
-    fEvent.acop = M_PI - fabs(dphi);
+    fEvent.acop = Acoplanarity(fEvent.T.phi[idx[0]], fEvent.T.phi[idx[1]]);
 
     //calculae missing energy and ptem
     //Hep3Vector p[2] = { GetHep3Vector(Tracks[0]), GetHep3Vector(Tracks[1])};

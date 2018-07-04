@@ -110,6 +110,26 @@ inline std::list<EvtRecTrack*> createGoodChargedTrackList(
 	return good_charged_tracks;
 }
 
+inline std::list<EvtRecTrack*> createGoodEmcChargedTrackList(
+		SelectionConfig & cfg, 
+    const std::list<EvtRecTrack*> & good_charged_tracks
+		)
+{
+  std::list<EvtRecTrack*> emc_good_charged_tracks;
+  for( std::list<EvtRecTrack*>::iterator it = good_charged_tracks.begin();
+      it!=good_charged_tracks.end();
+      ++it)
+  {
+    EvtRecTrack * track = *it;
+    if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
+    if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+    RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
+    RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
+    emc_good_charged_tracks.push_back(track);
+  }
+  return emc_good_charged_tracks;
+}
+
 inline std::list<EvtRecTrack*> createGoodNeutralTrackList(
 		SelectionConfig & cfg, 
 		SmartDataPtr<EvtRecEvent>    & evtRecEvent, 
@@ -259,5 +279,9 @@ inline Hep3Vector GetHep3Vector(EvtRecTrack * track)
 
 inline double Acoplanarity(double phi1, double phi2)
 {
-  return fmod(phi2-phi1 + 4*M_PI, 2*M_PI) - M_PI;
+    double dphi = (phi2-phi1);
+    if(dphi > +M_PI) dphi = dphi - 2*M_PI;
+    if(dphi < -M_PI) dphi = dphi + 2*M_PI;
+    return  M_PI - fabs(dphi);
+  //return fmod(phi2-phi1 + 4*M_PI, 2*M_PI) - M_PI;
 }
