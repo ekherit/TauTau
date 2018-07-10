@@ -46,6 +46,8 @@ struct ScanPoint_t
   std::map<std::string, int> NttMap;
 };
 
+std::map<std::string, const char * > SelMap;
+
 #include <regex>
 const char * make_alias(int channel, const char * templ )
 {
@@ -389,6 +391,9 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
     g->Draw("ap");
   }
 }
+
+void select(std::vector<ScanPoint_t> & P, std::map<std::string, const char *> 
+    selection, const char * varexp, cost
 
 void add_last(std::vector<ScanPoint_t> & P)
 {
