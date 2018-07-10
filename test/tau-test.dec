@@ -1,53 +1,55 @@
 Decay tau-
-#Modes in PDG2018
-#G3+G4
-0.17757         mu- anti-nu_mu nu_tau                      PHOTOS TAULNUNU;
-
-#G5+G6
-0.1965          e- anti-nu_e  nu_tau                      PHOTOS TAULNUNU;
-
-#G9
-0.1082         pi- nu_tau                                 TAUSCALARNU;
-
-#G10
-0.00696         K- nu_tau                                 TAUSCALARNU;
-
-#G14
-0.2549         pi- pi0 nu_tau                             TAUHADNU -0.108 0.775 0.149 1.364 0.400;
-
-#G20
-0.0926         pi0 pi0 pi-  nu_tau                        TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
-
-#G23
-0.00065        nu_tau     K-      pi0     pi0             PYTHIA    41;
-
-#G27
-0.0104         nu_tau     pi-     pi0     pi0     pi0     PYTHIA    41;
-
-#G29: h- 3pi0 nu_tau
-0.0016          nu_tau     pi-     pi0  pi0  pi0  pi0      PHSP;
-
-0.0931         pi- pi- pi+ nu_tau                         TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
-0.0462         nu_tau     pi-     pi+     pi-     pi0     PYTHIA    41;
-
-
-0.0120         K*-  nu_tau                                TAUVECTORNU;
-
-0.001435       nu_tau     K-      pi-     K+              PYTHIA    41;
-0.00155        nu_tau     K0      pi-     anti-K0         PYTHIA    41;
-0.00150        nu_tau     K-      pi0     K0              PYTHIA    41;
-0.00345        nu_tau     K-      pi+     pi-             PYTHIA    41;
-0.00382        nu_tau     pi-     anti-K0 pi0             PYTHIA    41;
-0.00139         nu_tau     eta     pi-     pi0             PYTHIA    41;
-
-#0.0013         nu_tau     gamma   pi-     pi0             PYTHIA    41;
-
-0.00100         nu_tau     pi-     pi-     pi+  pi0  pi0   PHSP;
-0.000821        nu_tau     pi-     pi-     pi-  pi+  pi+   PHSP;
-0.000162        nu_tau     pi-     pi-  pi-  pi+  pi+  pi0 PHSP;
-0.000194        nu_tau     pi-     pi-  pi+  pi0  pi0  pi0 PHSP;
-0.0041          nu_tau     pi-     omega     pi0           PYTHIA    41;
-0.00148         nu_tau     K-      K0                      PYTHIA    41;
-0.00041         nu_tau     K-      omega                   PYTHIA    41;
+##Modes in PDG2018
+#G16
+1.00        nu_tau     K-     pi0             PYTHIA    41;
+##G3+G4
+#0.17757         mu- anti-nu_mu nu_tau                      PHOTOS TAULNUNU;
+#
+##G5+G6
+#0.1965          e- anti-nu_e  nu_tau                      PHOTOS TAULNUNU;
+#
+##G9
+#0.1082         pi- nu_tau                                 TAUSCALARNU;
+#
+##G10
+#0.00696         K- nu_tau                                 TAUSCALARNU;
+#
+##G14
+#0.2549         pi- pi0 nu_tau                             TAUHADNU -0.108 0.775 0.149 1.364 0.400;
+#
+##G20
+#0.0926         pi0 pi0 pi-  nu_tau                        TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
+#
+##G23
+#0.00065        nu_tau     K-      pi0     pi0             PYTHIA    41;
+#
+##G27
+#0.0104         nu_tau     pi-     pi0     pi0     pi0     PYTHIA    41;
+#
+##G29: h- 3pi0 nu_tau
+#0.0016          nu_tau     pi-     pi0  pi0  pi0  pi0      PHSP;
+#
+#0.0931         pi- pi- pi+ nu_tau                         TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
+#0.0462         nu_tau     pi-     pi+     pi-     pi0     PYTHIA    41;
+#
+#
+#0.0120         K*-  nu_tau                                TAUVECTORNU;
+#
+#0.001435       nu_tau     K-      pi-     K+              PYTHIA    41;
+#0.00155        nu_tau     K0      pi-     anti-K0         PYTHIA    41;
+#0.00150        nu_tau     K-      pi0     K0              PYTHIA    41;
+#0.00345        nu_tau     K-      pi+     pi-             PYTHIA    41;
+#0.00382        nu_tau     pi-     anti-K0 pi0             PYTHIA    41;
+#0.00139         nu_tau     eta     pi-     pi0             PYTHIA    41;
+#
+##0.0013         nu_tau     gamma   pi-     pi0             PYTHIA    41;
+#
+#0.00100         nu_tau     pi-     pi-     pi+  pi0  pi0   PHSP;
+#0.000821        nu_tau     pi-     pi-     pi-  pi+  pi+   PHSP;
+#0.000162        nu_tau     pi-     pi-  pi-  pi+  pi+  pi0 PHSP;
+#0.000194        nu_tau     pi-     pi-  pi+  pi0  pi0  pi0 PHSP;
+#0.0041          nu_tau     pi-     omega     pi0           PYTHIA    41;
+#0.00148         nu_tau     K-      K0                      PYTHIA    41;
+#0.00041         nu_tau     K-      omega                   PYTHIA    41;
 Enddecay
 CDecay tau+
