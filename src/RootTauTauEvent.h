@@ -59,9 +59,11 @@ class RootTauTauEvent : public RootTuple
    */ 
 	NTuple::Item<long> channel; //used channel
 	NTuple::Item<long> ntrack;  //number of tracks (must be 2)
-	RootTracks T; //track information (momentum, vertex, muon depth...)
-  RootPid Pid; //particle id for track
-  RootMcTruth McTruth;
+	RootTracks T;  //track information (momentum, vertex, muon depth...)
+	RootTracks Tn; //neutral track
+  RootPid Pid;   //particle id for charged track
+  RootMcTruth  McTruth;
+  RootMcTruth nMcTruth; // mc truth for nuetral tracks
   NTuple::Item<double>  ptsum;
   NTuple::Item<double>  ptem;
   NTuple::Item<double>  acop;
@@ -79,11 +81,13 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
     tuple->addItem ("ntrack", ntrack, 0,3);
-    tuple->addItem ("nctrack", nctrack, 0,10);
-    tuple->addItem ("nntrack", nntrack, 0,10);
-    T.add_to_tuple(tuple,ntrack); 
+    tuple->addItem ("Nc", ngood_charged_track, 0, 3);
+    tuple->addItem ("Nn", ngood_neutral_track, 0, 6);
+    T.add_to_tuple (tuple,ngood_charged_track); 
+    Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ntrack); 
     McTruth.add_to_tuple(tuple,ntrack);
+    nMcTruth.add_to_tuple(tuple,ntrack,"n");
     tuple->addItem("acop",acop);
     tuple->addItem("acol",acol);
     tuple->addItem("ptem",ptem);
