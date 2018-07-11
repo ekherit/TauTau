@@ -77,6 +77,6 @@ Decay tau-
 0.0041         nu_tau     pi-     omega   pi0                   PHSP;
 #Could not find this channel in pdg, get from orig file and tune to make \sum G_i = 1.000000
 0.001289       nu_tau     gamma   pi-     pi0                   PHSP;
-#Enddecay
 Enddecay
 CDecay tau+
+End
