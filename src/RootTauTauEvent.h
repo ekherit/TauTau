@@ -48,8 +48,7 @@ class RootTauTauEvent : public RootTuple
 	NTuple::Item<long>    time; //time of the event
 	NTuple::Item<long>    ngood_charged_track;     //number of good charged tracks in event
 	NTuple::Item<long>    ngood_neutral_track;     //number of good neutral tracks in event
-	NTuple::Item<long>    nctrack;     //number of total charged tracks
-  NTuple::Item<long>    nntrack;     //number of total neutral tracks
+  NTuple::Item<long>    npi0; //number of pi0
 
   /*
    *  00 - ee  |  10 - μe  |  20 - Ke
@@ -69,6 +68,13 @@ class RootTauTauEvent : public RootTuple
   NTuple::Item<double>  acop;
   NTuple::Item<double>  acol;
   NTuple::Item<double>  M2;
+  NTuple::Item<double>  S; //sphericity (lambda2+lambda3)*1.5
+  NTuple::Item<double>  A; //aplanarity 1.5*lambda3
+  NTuple::Item<double>  lambda1; //eigen values of sphericity tenzor
+  NTuple::Item<double>  lambda2; //
+  NTuple::Item<double>  lambda3; //
+
+  NTuple::Array<double> Mpi0;
 
   //void init_tuple(Algorithm * algo, const char * dir, const char * title)
   //{
@@ -83,6 +89,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("ntrack", ntrack, 0,3);
     tuple->addItem ("Nc", ngood_charged_track, 0, 3);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 6);
+    tuple->addItem ("Npi0", npi0, 0, 3);
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ntrack); 
@@ -93,6 +100,12 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem("ptem",ptem);
     tuple->addItem("ptsum",ptsum);
     tuple->addItem("M2",M2);
+    tuple->addItem("S",S);
+    tuple->addItem("A",A);
+    tuple->addItem("l1",lambda1);
+    tuple->addItem("l2",lambda2);
+    tuple->addItem("l3",lambda3);
+    tuple->addIndexedItem("Mpi0", npi0, Mpi0);
   };
 	virtual void init(void) {};
 	virtual void fill(int i,  EvtRecTrack * track);
