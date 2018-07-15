@@ -266,8 +266,8 @@ StatusCode TauTau::execute()
       }
     }
     fEvent.npi0 = Pn.size()/2;
-    //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
-    //std::cout << "neutral size = " << Pn.size() << std::endl;
+    std::cout << "Before fEvent.Mpi0 filling " << std::endl;
+    std::cout << "neutral size = " << Pn.size() << std::endl;
     if(pi0_cmb_list.size()!=0)
     {
       int idx=0;
@@ -290,6 +290,7 @@ StatusCode TauTau::execute()
       fEvent.event = eventHeader->eventNumber();
       fEvent.time  = eventHeader->time();
       fEvent.channel = 0;
+      std::cout << "Before fEvent.write() " << std::endl;
       fEvent.write();
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
