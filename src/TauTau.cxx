@@ -221,7 +221,7 @@ StatusCode TauTau::execute()
     fEvent.ptem  =  ptsum.mag() / Emis;
 
     //acoplanarity and acolinearity for momentum with higher transverse momentum
-    std::cout << "Before calculating acoplanarity" << std::endl;
+    std::cout << "Before calculating acoplanarity: T.size = " << T.size() << std::endl;
     fEvent.acop = Acoplanarity(T[0], T[1]);
     std::cout << "Before calculating acolinearity" << std::endl;
     fEvent.acol = Acolinearity(T[0], T[1]);
