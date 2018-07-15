@@ -98,7 +98,7 @@ void test_make_combination_list2(int N=3)
 {
   std::vector<int> v(2*N);
   for(int i=0;i<2*N;i++) v[i]=i;
-  std::vector< std::list<std::pari<int*, int*> > >  R = make_combination_list(v);
+  std::vector< std::list<std::pair<int*, int*> > >  R = make_combination_list(v);
   std::map<std::string, int> check;
   //for (auto & c : R)
   for(int i=0;i<R.size();++i)

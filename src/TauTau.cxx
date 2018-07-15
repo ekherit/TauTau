@@ -176,7 +176,7 @@ StatusCode TauTau::execute()
 
     fEvent.Pid.init();
 
-    HepLorentzVector P(T.size()); //lorentz vector for charged tracks (electron hypoteza)
+    std::vector<HepLorentzVector> P(T.size()); //lorentz vector for charged tracks (electron hypoteza)
     HepLorentzVector Psum;
     //calculate total transverse momentum
     Hep3Vector p3sum;
