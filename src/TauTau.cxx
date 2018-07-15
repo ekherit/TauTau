@@ -207,6 +207,7 @@ StatusCode TauTau::execute()
     for(int i=0;i<Tn.size();++i)
     {
       RecEmcShower * emc = Tn[i]->emcShower();
+      std::cout << "neutral " << i << "  " << emc->energy() << std::endl;
       Entot += emc->energy();
     }
 
