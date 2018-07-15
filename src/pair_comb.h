@@ -87,7 +87,7 @@ void test_make_combination_list(int N=3)
   
   int count = 0;
   std::cout << setw(10) << "id" << setw(10) << "#" << "           " << "combination" << endl;
-  for(std::map<std::string, int>::iterator it=check.begin(); it!=check.end; ++it)
+  for(std::map<std::string, int>::iterator it=check.begin(); it!=check.end(); ++it)
   {
     std::cout << setw(10) << ++count << setw(10) << it->second << "             " << it->first << endl;
     if(it->second !=1 ) std::cout << "ERROR wrong combination entry" << std::endl;
@@ -119,7 +119,7 @@ void test_make_combination_list2(int N=3)
   int count = 0;
   std::cout << setw(10) << "id" << setw(10) << "#" << "           " << "combination" << endl;
   //for(auto & m : check)
-  for(std::map<std::string, int>::iterator m=check.begin(); m!=check.end; ++m)
+  for(std::map<std::string, int>::iterator m=check.begin(); m!=check.end(); ++m)
   {
     std::cout << setw(10) << ++count << setw(10) << m->second << "             " << m->first << endl;
     if(m->second!=1) std::cout << "ERROR wrong combination entry" << std::endl;
