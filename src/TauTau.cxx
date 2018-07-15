@@ -231,9 +231,12 @@ StatusCode TauTau::execute()
       Hep3Vector p;
       RecEmcShower * emc = Tn[i]->emcShower();
       select &= fabs(cos(emc->theta())) < 0.8; //goes to barrel
+      p.setPx(emc->energy());
+      p.setPy(0);
+      p.setPz(0);
       p.setTheta(emc->theta());
       p.setPhi(emc->phi());
-      p.setMag(emc->energy());
+      //p.setMag(emc->energy());
       Pn[i].set(emc->energy(), p);
     }
     //if(!select) goto SKIP_TAUTAU;
