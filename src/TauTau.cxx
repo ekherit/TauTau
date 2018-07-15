@@ -162,8 +162,8 @@ StatusCode TauTau::execute()
       good_neutral_tracks.size() <= 6)
   {
     bool select=true;
-    fEvent.Nc = emc_good_charged_tracks.size();
-    fEvent.Nn = good_neutral_tracks.size();
+    fEvent.ngood_charged_track = emc_good_charged_tracks.size();
+    fEvent.ngood_neutral_track = good_neutral_tracks.size();
 
     //use vectors becase it is more usefull to use index instead of iterators over the list
     //ohhh I need the C++11 standard and more 
@@ -219,11 +219,10 @@ StatusCode TauTau::execute()
     std::vector<double> V = getSphericityEigenvalues(T);
     fEvent.S = Sphericity(V);
     fEvent.A = Aplanarity(V);
-    fEvent.lambda1 = v[0];
-    fEvent.lambda2 = v[1];
-    fEvent.lambda3 = v[2];
+    fEvent.lambda1 = V[0];
+    fEvent.lambda2 = V[1];
+    fEvent.lambda3 = V[2];
 
-    fEvent.M2 
 
     HepLorentzVector Pn(Tn.size()); //4-momentum of neutral tracks
     for( int i=0; i<Tn.size(); ++i)
@@ -241,14 +240,16 @@ StatusCode TauTau::execute()
 
     //find best pi0 combination
     //create combination list
-    combination_list_t<HepLorentzVector*> pi0_cmb_list = make_combination_list(Pn); 
+    typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
+    typedef std::vector< comb_t > comb_list_t;
+    std::vector< std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > > pi0_cmb_list = make_combination_list(Pn); 
     //loop over combinations
-    combination_list_t<HepLorentzVector*>::iterator best_comb;
+    comb_list_t::iterator best_comb;
     double chi2_mass=1e100;
-    for(combination_list_t<HepLorentzVector*>::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
+    for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
     {
       double chi2=0;
-      for(combination_t<HepLorentzVector*>::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
+      for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
       {
         //calculate invariant mass
         double m = (*(it_pair->first) +  *(it_pair->second)).mag();
@@ -263,7 +264,7 @@ StatusCode TauTau::execute()
     }
     fEvent.npi0 = Pn.size()/2;
     int idx=0;
-    for(combination_t<HepLorentzVector*>::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
+    for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
     {
       fEvent.Mpi0[idx++] = (*(it_pair->first) +  *(it_pair->second)).mag();
     }

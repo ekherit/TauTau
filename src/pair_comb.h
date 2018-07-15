@@ -71,12 +71,12 @@ void test_make_combination_list(int N=3)
   for(int i=0;i<2*N;i++) v[i]=i;
   make_combination_list(R,C,N,&v[0]);
   std::map<std::string, int> check;
-  for (auto & c : R)
+  for(int i=0;i<R.size();++i)
   {
     std::string s;
-    for(auto & p : c)
+    for(std::list<int,int>::iterator p=R[i].begin(); p!=R[i].end(); ++p)
     {
-      s+=to_string(p.first)+" "+to_string(p.second)+" ";
+      s+=to_string(p->first)+" "+to_string(p->second)+" ";
     }
     check[s]++;
   }
@@ -96,12 +96,14 @@ void test_make_combination_list2(int N=3)
   for(int i=0;i<2*N;i++) v[i]=i;
   std::vector< std::list<std::pari<int*, int*> > >  R = make_combination_list(v);
   std::map<std::string, int> check;
-  for (auto & c : R)
+  //for (auto & c : R)
+  for(int i=0;i<R.size();++i)
   {
     std::string s;
-    for(auto & p : c)
+    for(std::list<int*,int*>::iterator p=R[i].begin(); p!=R[i].end(); ++p)
+    //for(auto & p : c)
     {
-      s+=to_string(*p.first)+" "+to_string(*p.second)+" ";
+      s+=to_string(*p->first)+" "+to_string(*p->second)+" ";
     }
     check[s]++;
   }
