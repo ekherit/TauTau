@@ -244,6 +244,7 @@ StatusCode TauTau::execute()
 
     //find best pi0 combination
     //create combination list
+    std::cout << "Before find pi0 combinations"<< std::endl;
     typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
     typedef std::vector< comb_t > comb_list_t;
     std::vector< std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > > pi0_cmb_list = make_combination_list(Pn); 
