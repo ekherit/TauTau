@@ -26,7 +26,7 @@ struct RootMcTruth
 	NTuple::Item<long> * ntrack; 
 	NTuple::Array<long> pid; //particle id
 	NTuple::Array<long> mother_pid;
-	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix)
+	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
   {
     ntrack = & ntrk;
     tuple->addIndexedItem (prefix+"pid",  *ntrack, pid);
