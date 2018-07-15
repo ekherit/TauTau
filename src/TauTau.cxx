@@ -204,8 +204,12 @@ StatusCode TauTau::execute()
     std::cout << "Before calculating total energy" << std::endl;
     //calculate total deposited energy from neutral tracks
     double Entot = 0;
+    std::cout << "Tn.size = " << Tn.size() << std::endl;
     for(int i=0;i<Tn.size();++i)
     {
+      if(!Tn[i]->isEmcShowerValid()) {
+        std::cout << "ERROR " << i << " no EmcShowr" << std::endl;
+      }
       RecEmcShower * emc = Tn[i]->emcShower();
       std::cout << "neutral " << i << "  " << emc->energy() << std::endl;
       Entot += emc->energy();
