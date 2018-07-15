@@ -32,32 +32,32 @@ struct RootTracks
 	NTuple::Array<double> pt;
 	NTuple::Array<double> theta;
 	NTuple::Array<double> phi;
-	NTuple::Array<double> x, y, z, r; //poca coordinate of track
+	NTuple::Array<double> x, y, z, r; 
 	NTuple::Array<double> vxy, vz, vphi; //poca coordinate of track
   NTuple::Array<double> depth; //depth in muon system
   NTuple::Array<long> Nmuhit; //number of muon hits
-	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrack)
+	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrack, const std::string & prefix)
 	{
 		//tuple->addItem ("ntrack", ntrack); 
-		tuple->addIndexedItem ("trackid",   ntrack, id);
-		tuple->addIndexedItem ("q",     ntrack, q);
-		tuple->addIndexedItem ("E",     ntrack, E);
-		tuple->addIndexedItem ("Ep",     ntrack, Ep);
-		tuple->addIndexedItem ("p",     ntrack, p);
-		tuple->addIndexedItem ("px",    ntrack, px);
-		tuple->addIndexedItem ("py",    ntrack, py);
-		tuple->addIndexedItem ("pz",    ntrack, pz);
-		tuple->addIndexedItem ("pt",    ntrack, pt);
-		tuple->addIndexedItem ("theta", ntrack, theta);
-		tuple->addIndexedItem ("phi",   ntrack, phi);
-		tuple->addIndexedItem ("x",     ntrack, x);
-		tuple->addIndexedItem ("y",     ntrack, y);
-		tuple->addIndexedItem ("z",     ntrack, z);
-		tuple->addIndexedItem ("r",     ntrack, r);
-		tuple->addIndexedItem ("vxy",   ntrack, vxy);
-		tuple->addIndexedItem ("vz",    ntrack, vz);
-		tuple->addIndexedItem ("vphi",  ntrack, vphi);
-		tuple->addIndexedItem ("depth",  ntrack, depth);
-		tuple->addIndexedItem ("Nmuhit",  ntrack, Nmuhit);
+		tuple->addIndexedItem (prefix+"trackid",   ntrack, id);
+		tuple->addIndexedItem (prefix+"q",         ntrack, q);
+		tuple->addIndexedItem (prefix+"E",         ntrack, E);
+		tuple->addIndexedItem (prefix+"Ep",        ntrack, Ep);
+		tuple->addIndexedItem (prefix+"p",         ntrack, p);
+		tuple->addIndexedItem (prefix+"px",        ntrack, px);
+		tuple->addIndexedItem (prefix+"py",        ntrack, py);
+		tuple->addIndexedItem (prefix+"pz",        ntrack, pz);
+		tuple->addIndexedItem (prefix+"pt",        ntrack, pt);
+		tuple->addIndexedItem (prefix+"theta",     ntrack, theta);
+		tuple->addIndexedItem (prefix+"phi",       ntrack, phi);
+		tuple->addIndexedItem (prefix+"x",         ntrack, x);
+		tuple->addIndexedItem (prefix+"y",         ntrack, y);
+		tuple->addIndexedItem (prefix+"z",         ntrack, z);
+		tuple->addIndexedItem (prefix+"r",         ntrack, r);
+		tuple->addIndexedItem (prefix+"vxy",       ntrack, vxy);
+		tuple->addIndexedItem (prefix+"vz",        ntrack, vz);
+		tuple->addIndexedItem (prefix+"vphi",      ntrack, vphi);
+		tuple->addIndexedItem (prefix+"depth",     ntrack, depth);
+		tuple->addIndexedItem (prefix+"Nmuhit",    ntrack, Nmuhit);
 	}
 };

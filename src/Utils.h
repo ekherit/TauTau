@@ -36,11 +36,14 @@ using CLHEP::HepLorentzVector;
 #include "EvtRecEvent/EvtRecEvent.h"
 #include "EvtRecEvent/EvtRecTrack.h"
 
+#include <TMatrixDEigen.h>
+
 //#include "utils.h"
 #include "TypeDefs.h"
 #include "SelectionConfig.h"
 #include "PhysConst.h"
 
+template < class T> inline T sq(T value) { return value*value; }
 
 inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 {
@@ -256,6 +259,15 @@ inline bool ChargeOrder(EvtRecTrack * track1, EvtRecTrack *track2)
     return mdc1->charge() < mdc2->charge();
 }
 
+inline bool PtOrder(EvtRecTrack * track1, EvtRecTrack *track2)
+{
+    if(!track2->isMdcTrackValid()) return false; 
+    RecMdcTrack * mdc2 = track2->mdcTrack();  
+    if(!track1->isMdcTrackValid()) return true; 
+    RecMdcTrack * mdc1 = track1->mdcTrack();  
+    return mdc1->pt() < mdc2->pt();
+}
+
 inline int GetCharge(EvtRecTrack * track)
 {
   if(!track->isMdcTrackValid()) return -999;
@@ -284,4 +296,58 @@ inline double Acoplanarity(double phi1, double phi2)
     if(dphi < -M_PI) dphi = dphi + 2*M_PI;
     return  M_PI - fabs(dphi);
   //return fmod(phi2-phi1 + 4*M_PI, 2*M_PI) - M_PI;
+}
+
+inline double Acoplanarity(EvtRecTrack * t1, EvtRecTrack *t2)
+{
+  RecMdcKalTrack * mdcKal1 = t1->mdcKalTrack();
+  RecMdcKalTrack * mdcKal2 = t2->mdcKalTrack();
+  return Acoplanarity( mdcKal1->phi(), mdcKal2->phi());
+}
+
+inline double Acolinearity(EvtRecTrack * t1, EvtRecTrack *t2)
+{
+  RecMdcKalTrack * mdcKal1 = t1->mdcKalTrack();
+  RecMdcKalTrack * mdcKal2 = t2->mdcKalTrack();
+  return mdcKal1->p3().angle(mdcKal2->p3());
+}
+
+
+
+inline std::vector<double> getSphericityEigenvalues(const std::vector<EvtRecTrack*> & T)
+{
+  TMatrixD S(3,3); //sphericity tensor
+  //I am not sure that values will be zeroes after creation
+  for(int i=0;i<3;++i) for(int j=0;j<3;++j) S[i][j] =  0;
+  double p2sum = 0;
+  for(int track = 0;track < T.size(); ++track)
+  {
+    RecMdcKalTrack * mdcKal = T[track]->mdcKalTrack();
+    p2sum += sq(mdcKal->p());
+    for(int i=0;i<3;++i) for(int j=0;j<3;++j) 
+    {
+      S[i][j] += mdcKal->p3()[i] * mdcKal->p3()[j];
+    }
+  }
+  //normalize sphericity tenzor
+  for(int i=0;i<3;++i) for(int j=0;j<3;++j) S[i][j]/=p2sum;
+  //calculate eigen values
+  TMatrixDEigen Seigen(S);
+  const TVectorD & v = Seigen.GetEigenValuesRe();
+  //copy result to my vector
+  std::vector<double> result(3);
+  for(int i=0;i<3;i++) result[i]=v[i];
+  //sort eigenvalues in descent order
+  std::sort(result.rbegin(), result.rend());
+  return result;
+}
+
+inline double Sphericity(std::vector<double> & v)
+{
+  return 1.5*(v[1]+v[2]);
+}
+
+inline double Aplanarity(std::vector<double> & v)
+{
+  return 1.5*v[2];
 }

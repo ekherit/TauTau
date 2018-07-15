@@ -1,0 +1,83 @@
+Decay tau-
+#Modes in PDG2018
+#Modes with 1 charged particles
+#G3 I think photon radiation is already included in PDG branching G3
+1.0       mu- anti-nu_mu nu_tau                            PHOTOS TAULNUNU;
+#G5
+1.0       e- anti-nu_e  nu_tau                             PHOTOS TAULNUNU;
+#G9
+1.0       pi- nu_tau                                       TAUSCALARNU;
+#G10
+1.0       K- nu_tau                                        TAUSCALARNU;
+#G14
+1.0       pi- pi0 nu_tau                                   TAUHADNU -0.108 0.775 0.149 1.364 0.400;
+#G16
+1.0       nu_tau     K-      pi0                           PHSP;
+#G20
+1.0       pi0 pi0 pi-  nu_tau                              TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
+#G23
+1.0       nu_tau     K-      pi0     pi0                   PHSP;
+#G27
+1.0       nu_tau     pi-     pi0     pi0     pi0           PHSP;
+#G28
+1.0       nu_tau     K-      pi0     pi0     pi0           PHSP;
+#G30: h- 3pi0 nu_tau
+1.0       nu_tau     pi-     pi0     pi0     pi0  pi0      PHSP;
+##Modes with K0's
+#G36
+1.0       nu_tau     pi-     anti-K0                       PHSP;
+#G38
+1.0       nu_tau     K-      K0                            PHSP;
+#G41
+1.0       nu_tau     pi-     anti-K0 pi0                   PHSP;
+#G43
+1.0       nu_tau     K-      pi0     K0                    PHSP;
+#G45
+1.0       nu_tau     pi-     anti-K0 pi0      pi0          PHSP;
+#G47
+1.0       nu_tau     K0      pi-     anti-K0               PHSP;
+#G51
+1.0       nu_tau     K0      pi-     anti-K0  pi0          PHSP;
+#Modes with 3 charged particles
+#G70
+1.0       pi- pi- pi+  nu_tau                              TAUHADNU -0.108 0.775 0.149 1.364 0.400 1.23 0.4;
+#G78
+1.0       nu_tau     pi-     pi+     pi-     pi0           PHSP;
+#G85
+1.0       nu_tau     pi-     pi-     pi+     pi0  pi0      PHSP;
+#G88
+1.0       nu_tau     pi-     pi-     pi+     pi0  pi0  pi0 PHSP;
+#G97
+1.0       nu_tau     K-      pi+     pi-                   PHSP;
+#G106
+1.0       nu_tau     K-      pi-     K+                    PHSP;
+#G107
+1.0       nu_tau     K-      pi-     K+     pi0            PHSP;
+#Modes with 5 charged particles
+#G116
+1.0       nu_tau     pi-     pi-     pi-    pi+  pi+       PHSP;
+#G123
+1.0       nu_tau     pi-     pi-     pi-    pi+  pi+  pi0  PHSP;
+#Other modes
+#G134 remove from decays
+#0.0120         K*-  nu_tau                     TAUVECTORNU;
+#G148
+1.0       nu_tau     eta     pi-     pi0                   PHSP;
+#G149
+1.0       nu_tau     eta     pi-     pi0    pi0            PHSP;
+#G150
+1.0       nu_tau     eta     K-                            PHSP;
+#G152 changed from 4.8e-5 
+1.0       nu_tau     eta     K-      pi0                   PHSP;
+#G176
+1.0       nu_tau     pi-     omega                         PHSP;
+#G177
+1.0       nu_tau     K-      omega                         PHSP;
+#G178 
+1.0       nu_tau     pi-     omega   pi0                   PHSP;
+#Could not find this channel in pdg, get from orig file and tune to make \sum G_i = 1.000000
+1.0       nu_tau     gamma   pi-     pi0                   PHSP;
+#Enddecay
+Enddecay
+CDecay tau+
+End
