@@ -74,7 +74,7 @@ void test_make_combination_list(int N=3)
   for(int i=0;i<R.size();++i)
   {
     std::string s;
-    for(std::list<int,int>::iterator p=R[i].begin(); p!=R[i].end(); ++p)
+    for(std::list<std::pair<int,int> >::iterator p=R[i].begin(); p!=R[i].end(); ++p)
     {
       s+=to_string(p->first)+" "+to_string(p->second)+" ";
     }
@@ -100,7 +100,7 @@ void test_make_combination_list2(int N=3)
   for(int i=0;i<R.size();++i)
   {
     std::string s;
-    for(std::list<int*,int*>::iterator p=R[i].begin(); p!=R[i].end(); ++p)
+    for(std::list< std::pair< int*,int*> >::iterator p=R[i].begin(); p!=R[i].end(); ++p)
     //for(auto & p : c)
     {
       s+=to_string(*p->first)+" "+to_string(*p->second)+" ";
