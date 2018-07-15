@@ -159,7 +159,7 @@ StatusCode TauTau::execute()
 
   //TAU TAU SELECTION
   std::cout << "Before tau-tau selection " << std::endl;
-  if( 2 >= emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
+  if( 2 <=  emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
       good_neutral_tracks.size() <= 8)
   {
     bool select=true;
