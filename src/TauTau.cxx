@@ -159,7 +159,7 @@ StatusCode TauTau::execute()
 
   //TAU TAU SELECTION
   if( 2 >= emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
-      good_neutral_tracks.size() <= 6)
+      good_neutral_tracks.size() <= 8)
   {
     bool select=true;
     fEvent.ngood_charged_track = emc_good_charged_tracks.size();
@@ -239,7 +239,7 @@ StatusCode TauTau::execute()
       Pn[i].set(emc->energy(), p);
     }
     //if(!select) goto SKIP_TAUTAU;
-    if ( good_neutral_tracks.size() % 2 != 0  || good_neutral_tracks.size() > 6) goto SKIP_TAUTAU;
+    if ( good_neutral_tracks.size() % 2 != 0  ) goto SKIP_TAUTAU;
 
     //find best pi0 combination
     //create combination list
