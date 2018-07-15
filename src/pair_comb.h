@@ -80,7 +80,7 @@ void test_make_combination_list(int N=3)
       std::ostringstream os;
       os << p->first << " " << p->second << " ";
       //s+=to_string(p->first)+" "+to_string(p->second)+" ";
-      s+=s.str();
+      s+=os.str();
     }
     check[s]++;
   }
@@ -110,7 +110,7 @@ void test_make_combination_list2(int N=3)
       std::ostringstream os;
       os << *(p->first) << " " << *(p->second) << " ";
       //s+=to_string(p->first)+" "+to_string(p->second)+" ";
-      s+=s.str();
+      s+=os.str();
       //s+=to_string(*p->first)+" "+to_string(*p->second)+" ";
     }
     check[s]++;
