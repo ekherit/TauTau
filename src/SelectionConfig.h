@@ -67,7 +67,6 @@ struct SelectionConfig
 	double MAX_PID_CHI2; //maximum chi2 for my PID
 
   double GAMMA_GAMMA_MIN_INV_MASS;
-  double GAMMA_GAMMA_MIN_INV_MASS;
   bool FILL_MDC;
   bool FILL_EMC;
   bool FILL_DEDX;
