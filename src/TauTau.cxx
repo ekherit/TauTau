@@ -158,6 +158,7 @@ StatusCode TauTau::execute()
   emc_good_charged_tracks.reverse(); //begin from high transverse momentum
 
   //TAU TAU SELECTION
+  std::cout << "Before tau-tau selection " << std::endl;
   if( 2 >= emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
       good_neutral_tracks.size() <= 8)
   {
