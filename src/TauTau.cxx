@@ -179,6 +179,7 @@ StatusCode TauTau::execute()
 
     std::vector<HepLorentzVector> P(T.size()); //lorentz vector for charged tracks (electron hypoteza)
     HepLorentzVector Psum;
+    std::cout << "Before calculateing total transverse momentum" << std::endl;
     //calculate total transverse momentum
     Hep3Vector p3sum;
     double psum=0;
@@ -200,6 +201,7 @@ StatusCode TauTau::execute()
     //total transverse momentum
     Hep3Vector ptsum(p3sum.x(), p3sum.y(), 0);
 
+    std::cout << "Before calculating total energy" << std::endl;
     //calculate total deposited energy from neutral tracks
     double Entot = 0;
     for(int i=0;i<Tn.size();++i)
