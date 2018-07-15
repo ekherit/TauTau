@@ -265,7 +265,7 @@ inline bool PtOrder(EvtRecTrack * track1, EvtRecTrack *track2)
     RecMdcTrack * mdc2 = track2->mdcTrack();  
     if(!track1->isMdcTrackValid()) return true; 
     RecMdcTrack * mdc1 = track1->mdcTrack();  
-    return mdc1->pt() < mdc2->pt();
+    return mdc1->pxy() < mdc2->pxy();
 }
 
 inline int GetCharge(EvtRecTrack * track)
