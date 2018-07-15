@@ -16,6 +16,7 @@
  * =====================================================================================
  */
 #pragma once
+#include <ostream>
 
 #include <list>
 #include <vector>
@@ -76,7 +77,10 @@ void test_make_combination_list(int N=3)
     std::string s;
     for(std::list<std::pair<int,int> >::iterator p=R[i].begin(); p!=R[i].end(); ++p)
     {
-      s+=to_string(p->first)+" "+to_string(p->second)+" ";
+      std::ostringstream os;
+      os << p->first << " " << p->second << " ";
+      //s+=to_string(p->first)+" "+to_string(p->second)+" ";
+      s+=s.str();
     }
     check[s]++;
   }
@@ -103,7 +107,11 @@ void test_make_combination_list2(int N=3)
     for(std::list< std::pair< int*,int*> >::iterator p=R[i].begin(); p!=R[i].end(); ++p)
     //for(auto & p : c)
     {
-      s+=to_string(*p->first)+" "+to_string(*p->second)+" ";
+      std::ostringstream os;
+      os << *(p->first) << " " << *(p->second) << " ";
+      //s+=to_string(p->first)+" "+to_string(p->second)+" ";
+      s+=s.str();
+      //s+=to_string(*p->first)+" "+to_string(*p->second)+" ";
     }
     check[s]++;
   }
