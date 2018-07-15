@@ -62,7 +62,7 @@ class RootTauTauEvent : public RootTuple
 	RootTracks Tn; //neutral track
   RootPid Pid;   //particle id for charged track
   RootMcTruth  McTruth;
-  RootMcTruth nMcTruth; // mc truth for nuetral tracks
+  //RootMcTruth nMcTruth; // mc truth for nuetral tracks
   NTuple::Item<double>  ptsum;
   NTuple::Item<double>  ptem;
   NTuple::Item<double>  acop;
@@ -92,9 +92,9 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("Npi0", npi0, 0, 3);
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
-    Pid.add_to_tuple(tuple,ntrack); 
-    McTruth.add_to_tuple(tuple,ntrack);
-    nMcTruth.add_to_tuple(tuple,ntrack,"n");
+    Pid.add_to_tuple(tuple,ngood_charged_track); 
+    McTruth.add_to_tuple(tuple,ngood_charged_track);
+    //nMcTruth.add_to_tuple(tuple,ntrack,"n");
     tuple->addItem("acop",acop);
     tuple->addItem("acol",acol);
     tuple->addItem("ptem",ptem);

@@ -266,6 +266,7 @@ StatusCode TauTau::execute()
     fEvent.npi0 = Pn.size()/2;
     int idx=0;
     std::cout << "Before fEvent.Mpi0 filling " << std::endl;
+    std::cout << "neutral size = " << Pn.size() << std::endl;
     for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
     {
       fEvent.Mpi0[idx++] = (*(it_pair->first) +  *(it_pair->second)).mag();
