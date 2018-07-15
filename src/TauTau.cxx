@@ -231,9 +231,9 @@ StatusCode TauTau::execute()
       Hep3Vector p;
       RecEmcShower * emc = Tn[i]->emcShower();
       select &= fabs(cos(emc->theta())) < 0.8; //goes to barrel
-      p.setMag(emc->energy());
       p.setTheta(emc->theta());
       p.setPhi(emc->phi());
+      p.setMag(emc->energy());
       Pn[i].set(emc->energy(), p);
     }
     //if(!select) goto SKIP_TAUTAU;
@@ -264,8 +264,8 @@ StatusCode TauTau::execute()
       }
     }
     fEvent.npi0 = Pn.size()/2;
-    std::cout << "Before fEvent.Mpi0 filling " << std::endl;
-    std::cout << "neutral size = " << Pn.size() << std::endl;
+    //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
+    //std::cout << "neutral size = " << Pn.size() << std::endl;
     if(pi0_cmb_list.size()!=0)
     {
       int idx=0;
