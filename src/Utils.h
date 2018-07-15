@@ -119,15 +119,15 @@ inline std::list<EvtRecTrack*> createGoodEmcChargedTrackList(
 		)
 {
   std::list<EvtRecTrack*> emc_good_charged_tracks;
-  for( std::list<EvtRecTrack*>::iterator it = good_charged_tracks.begin();
+  for( std::list<EvtRecTrack*>::const_iterator it = good_charged_tracks.begin();
       it!=good_charged_tracks.end();
       ++it)
   {
     EvtRecTrack * track = *it;
-    if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
+    //if(!track->isMdcTrackValid()) continue;  //use only valid charged tracks
     if(!track->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-    RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
-    RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
+    //RecMdcTrack * mdcTrk = track->mdcTrack();  //main drift chambe
+    //RecEmcShower *emcTrk = track->emcShower(); //Electro Magnet Calorimeer
     emc_good_charged_tracks.push_back(track);
   }
   return emc_good_charged_tracks;
