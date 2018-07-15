@@ -219,6 +219,7 @@ StatusCode TauTau::execute()
     fEvent.acop = Acoplanarity(T[0], T[1]);
     fEvent.acol = Acolinearity(T[0], T[1]);
 
+    std::cout << "Before calculating sphericity " << std::endl;
     std::vector<double> V = getSphericityEigenvalues(T);
     fEvent.S = Sphericity(V);
     fEvent.A = Aplanarity(V);
@@ -227,6 +228,7 @@ StatusCode TauTau::execute()
     fEvent.lambda3 = V[2];
 
 
+    std::cout << "Before creating lorentz vector for neutral tracks " << std::endl;
     std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
     for( int i=0; i<Tn.size(); ++i)
     {
