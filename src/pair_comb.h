@@ -65,8 +65,8 @@ inline std::vector< std::list< std::pair<T*, T*> >  > make_combination_list(cons
 
 void test_make_combination_list(int N=3)
 {
-  std::list< std::pair<int, int> C;
-  std::vector< std::list< std::pair<T, T> >  > R;
+  std::list< std::pair<int, int> >C;
+  std::vector< std::list< std::pair<int, int> >  > R;
   std::vector<int> v(2*N);
   for(int i=0;i<2*N;i++) v[i]=i;
   make_combination_list(R,C,N,&v[0]);
