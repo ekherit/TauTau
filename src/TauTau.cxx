@@ -291,8 +291,6 @@ StatusCode TauTau::execute()
       fEvent.event = eventHeader->eventNumber();
       fEvent.time  = eventHeader->time();
       fEvent.channel = 0;
-      std::cout << "Before fEvent write " << std::endl;
-
       fEvent.write();
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
