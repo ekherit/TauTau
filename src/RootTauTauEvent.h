@@ -87,9 +87,9 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
     tuple->addItem ("ntrack", ntrack, 0,3);
-    tuple->addItem ("Nc", ngood_charged_track, 0, 3);
-    tuple->addItem ("Nn", ngood_neutral_track, 0, 6);
-    tuple->addItem ("Npi0", npi0, 0, 3);
+    tuple->addItem ("Nc", ngood_charged_track, 0, 6);
+    tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
+    tuple->addItem ("Npi0", npi0, 0, 4);
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 

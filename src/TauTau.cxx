@@ -158,7 +158,7 @@ StatusCode TauTau::execute()
   emc_good_charged_tracks.reverse(); //begin from high transverse momentum
 
   //TAU TAU SELECTION
-  if( 2 == emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 3  &&
+  if( 2 >= emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
       good_neutral_tracks.size() <= 6)
   {
     bool select=true;
@@ -222,7 +222,6 @@ StatusCode TauTau::execute()
     fEvent.lambda1 = V[0];
     fEvent.lambda2 = V[1];
     fEvent.lambda3 = V[2];
-    fEvent.M2 = 0;
 
 
     std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
