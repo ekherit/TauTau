@@ -20,11 +20,15 @@
 #include <list>
 #include <vector>
 //template<class T> using combination_t =  std::vector< std::pair<T, T> >;
-template<class T> using combination_t =  std::list< std::pair<T, T> >;
-template<class T> using combination_list_t =  std::vector< combination_t<T>  >;
+//template<class T> using combination_t =  std::list< std::pair<T, T> >;
+//template<class T> using combination_list_t =  std::vector< std::list< std::pair<T, T> >  >;
 
 template< class T> 
-inline void make_combination_list(combination_list_t<T> & R, combination_t<T>  & comb, size_t N, T * v)
+inline void make_combination_list(
+    std::vector< std::list< std::pair<T, T> >  > & R, 
+    std::list< std::pair<T, T> > & comb, 
+    size_t N, 
+    T * v)
 {
   if(N==1) 
   {
@@ -49,20 +53,20 @@ inline void make_combination_list(combination_list_t<T> & R, combination_t<T>  &
 //make combination list from vector of object 
 //the combination list will containt pointer to initial objects
 template<class T> 
-inline combination_list_t<T*> make_combination_list(const std::vector<T> & V)
+inline std::vector< std::list< std::pair<T*, T*> >  > make_combination_list(const std::vector<T> & V)
 {
   std::vector<T*> v(V.size());
   for(size_t i = 0;i<v.size();++i) v[i] = const_cast<T*>(&V[i]);
-  combination_t<T*>  comb;
-  combination_list_t<T*> comb_list;
+  std::list< std::pair<T*, T*> >  comb;
+  std::vector< std::list< std::pair<T*, T*> >  > comb_list;
   make_combination_list(comb_list, comb, V.size()/2, &v[0]);
   return comb_list;
 }
 
 void test_make_combination_list(int N=3)
 {
-  combination_t<int>  C;
-  combination_list_t<int>  R;
+  std::list< std::pair<int, int> C;
+  std::vector< std::list< std::pair<T, T> >  > R;
   std::vector<int> v(2*N);
   for(int i=0;i<2*N;i++) v[i]=i;
   make_combination_list(R,C,N,&v[0]);
@@ -90,7 +94,7 @@ void test_make_combination_list2(int N=3)
 {
   std::vector<int> v(2*N);
   for(int i=0;i<2*N;i++) v[i]=i;
-  auto R = make_combination_list(v);
+  std::vector< std::list<std::pari<int*, int*> > >  R = make_combination_list(v);
   std::map<std::string, int> check;
   for (auto & c : R)
   {
