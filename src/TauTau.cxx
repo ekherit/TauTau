@@ -158,7 +158,6 @@ StatusCode TauTau::execute()
   emc_good_charged_tracks.reverse(); //begin from high transverse momentum
 
   //TAU TAU SELECTION
-  std::cout << "Before tau-tau selection " << std::endl;
   if( 2 <=  emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
       good_neutral_tracks.size() <= 8)
   {
@@ -179,7 +178,6 @@ StatusCode TauTau::execute()
 
     std::vector<HepLorentzVector> P(T.size()); //lorentz vector for charged tracks (electron hypoteza)
     HepLorentzVector Psum;
-    std::cout << "Before calculateing total transverse momentum" << std::endl;
     //calculate total transverse momentum
     Hep3Vector p3sum;
     double psum=0;
@@ -201,17 +199,13 @@ StatusCode TauTau::execute()
     //total transverse momentum
     Hep3Vector ptsum(p3sum.x(), p3sum.y(), 0);
 
-    std::cout << "Before calculating total energy" << std::endl;
     //calculate total deposited energy from neutral tracks
     double Entot = 0;
-    std::cout << "Tn.size = " << Tn.size() << std::endl;
     for(int i=0;i<Tn.size();++i)
     {
       if(!Tn[i]->isEmcShowerValid()) {
-        std::cout << "ERROR " << i << " no EmcShowr" << std::endl;
       }
       RecEmcShower * emc = Tn[i]->emcShower();
-      std::cout << "neutral " << i << "  " << emc->energy() << std::endl;
       Entot += emc->energy();
     }
 
@@ -221,12 +215,9 @@ StatusCode TauTau::execute()
     fEvent.ptem  =  ptsum.mag() / Emis;
 
     //acoplanarity and acolinearity for momentum with higher transverse momentum
-    std::cout << "Before calculating acoplanarity: T.size = " << T.size() << std::endl;
     fEvent.acop = Acoplanarity(T[0], T[1]);
-    std::cout << "Before calculating acolinearity" << std::endl;
     fEvent.acol = Acolinearity(T[0], T[1]);
 
-    std::cout << "Before calculating sphericity " << std::endl;
     std::vector<double> V = getSphericityEigenvalues(T);
     fEvent.S = Sphericity(V);
     fEvent.A = Aplanarity(V);
@@ -235,7 +226,6 @@ StatusCode TauTau::execute()
     fEvent.lambda3 = V[2];
 
 
-    std::cout << "Before creating lorentz vector for neutral tracks " << std::endl;
     std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
     for( int i=0; i<Tn.size(); ++i)
     {
@@ -255,7 +245,6 @@ StatusCode TauTau::execute()
 
     //find best pi0 combination
     //create combination list
-    std::cout << "Before find pi0 combinations"<< std::endl;
     typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
     typedef std::vector< comb_t > comb_list_t;
     std::vector< std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > > pi0_cmb_list = make_combination_list(Pn); 
@@ -279,8 +268,8 @@ StatusCode TauTau::execute()
       }
     }
     fEvent.npi0 = Pn.size()/2;
-    std::cout << "Before fEvent.Mpi0 filling " << std::endl;
-    std::cout << "neutral size = " << Pn.size() << std::endl;
+    //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
+    //std::cout << "neutral size = " << Pn.size() << std::endl;
     if(pi0_cmb_list.size()!=0)
     {
       int idx=0;
@@ -303,7 +292,7 @@ StatusCode TauTau::execute()
       fEvent.event = eventHeader->eventNumber();
       fEvent.time  = eventHeader->time();
       fEvent.channel = 0;
-      std::cout << "Before fEvent.write() " << std::endl;
+      //std::cout << "Before fEvent.write() " << std::endl;
       fEvent.write();
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
