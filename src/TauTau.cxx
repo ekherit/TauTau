@@ -224,7 +224,7 @@ StatusCode TauTau::execute()
     fEvent.lambda3 = V[2];
 
 
-    HepLorentzVector Pn(Tn.size()); //4-momentum of neutral tracks
+    std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
     for( int i=0; i<Tn.size(); ++i)
     {
       Hep3Vector p;

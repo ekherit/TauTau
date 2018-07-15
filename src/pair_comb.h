@@ -90,7 +90,7 @@ void test_make_combination_list(int N=3)
   for(std::map<std::string, int>::iterator it=check.begin(); it!=check.end; ++it)
   {
     std::cout << setw(10) << ++count << setw(10) << it->second << "             " << it->first << endl;
-    if(it->second!=1) std::cout << "ERROR wrong combination entry" << std::endl;
+    if(it->second !=1 ) std::cout << "ERROR wrong combination entry" << std::endl;
   }
 }
 
