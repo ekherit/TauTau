@@ -392,8 +392,6 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
   }
 }
 
-void select(std::vector<ScanPoint_t> & P, std::map<std::string, const char *> 
-    selection, const char * varexp, cost
 
 void add_last(std::vector<ScanPoint_t> & P)
 {
