@@ -159,20 +159,18 @@ StatusCode TauTau::execute()
   emc_good_charged_tracks.sort(ChargeOrder);
 
   //TAU TAU SELECTION
-  if( 2 <=  emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
-
   if( (  2 == emc_good_charged_tracks.size()  || 
          4 == emc_good_charged_tracks.size()  ||
          6 == emc_good_charged_tracks.size()  //till 3 charged particle decay for each tau
       ) 
       && 
-      (
-         0 == good_neutral_tracks.size()  ||
+      (  0 == good_neutral_tracks.size()  ||
          2 == good_neutral_tracks.size()  ||
          4 == good_neutral_tracks.size()  ||
          6 == good_neutral_tracks.size()  ||
          8 == good_neutral_tracks.size()  //till 2pi0 for each tau decay
       )
+    )
   {
     bool select=true;
     fEvent.ngood_charged_track = emc_good_charged_tracks.size();
