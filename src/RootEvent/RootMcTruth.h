@@ -26,6 +26,8 @@ struct RootMcTruth
 	NTuple::Item<long> * ntrack; 
 	NTuple::Array<long> pid; //particle id
 	NTuple::Array<long> mother_pid;
+  std::list<int> blacklist;
+  std::list<int> whitelist;
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
   {
     ntrack = & ntrk;
@@ -39,6 +41,24 @@ struct RootMcTruth
   {
   }
 
+  void set_blacklist(std::list<int> bl) 
+  {
+    blacklist = bl;
+  }
+  void set_whitelist(std::list<int> bl) 
+  {
+    whitelist = bl;
+  }
+
+  void add_black_item(int id)
+  {
+    blacklist.push_back(id);
+  }
+  void add_white_item(int id)
+  {
+    whitelist.push_back(id);
+  }
+
 	virtual void fill(int i, EvtRecTrack * track,  Event::McParticleCol * mcParticleCol)
   {
     RecMdcKalTrack * mdc = track->mdcKalTrack();
@@ -48,6 +68,10 @@ struct RootMcTruth
     {
       Event::McParticle * p = *ip;
       int mc_track_id = p->trackIndex();
+      int pdg_id  = p->particleProperty();
+      if(blacklist.find(pdg_id) != blacklist.end())  continue; //skip some particles
+      //or keep specific particles if whitelist is not empty
+      if( !whitelist.empty() && whitelist.find(pdg_id)==whitelist.end() ) continue; 
       //HepLorentzVector P4 = p->initialFourMomentum();
       Hep3Vector p_mc = p->initialFourMomentum().vect();
       Hep3Vector delta_p = mdc->p3() - p_mc;
