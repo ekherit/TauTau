@@ -53,11 +53,11 @@ struct RootMcTruth
 
   void add_black_item(int id)
   {
-    blacklist.push_back(id);
+    blacklist.emplace(id);
   }
   void add_white_item(int id)
   {
-    whitelist.push_back(id);
+    whitelist.emplace(id);
   }
 
 	virtual void fill(int i, EvtRecTrack * track,  Event::McParticleCol * mcParticleCol)
