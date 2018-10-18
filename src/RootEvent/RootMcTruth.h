@@ -15,6 +15,7 @@
 // =====================================================================================
 
 #pragma once
+#include <set>
 
 #include "RootTuple.h"
 #include "McParticle.h"
@@ -26,8 +27,8 @@ struct RootMcTruth
 	NTuple::Item<long> * ntrack; 
 	NTuple::Array<long> pid; //particle id
 	NTuple::Array<long> mother_pid;
-  std::list<int> blacklist;
-  std::list<int> whitelist;
+  std::set<int> blacklist;
+  std::set<int> whitelist;
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
   {
     ntrack = & ntrk;
@@ -41,11 +42,11 @@ struct RootMcTruth
   {
   }
 
-  void set_blacklist(std::list<int> bl) 
+  void set_blacklist(std::set<int> bl) 
   {
     blacklist = bl;
   }
-  void set_whitelist(std::list<int> bl) 
+  void set_whitelist(std::set<int> bl) 
   {
     whitelist = bl;
   }
