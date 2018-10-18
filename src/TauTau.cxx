@@ -154,8 +154,9 @@ StatusCode TauTau::execute()
   std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 
   //emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
-  emc_good_charged_tracks.sort(PtOrder); //sort over deposited energy in EMC
-  emc_good_charged_tracks.reverse(); //begin from high transverse momentum
+  //emc_good_charged_tracks.sort(PtOrder); //sort over transverse momentum
+  //emc_good_charged_tracks.reverse(); //begin from high transverse momentum
+  emc_good_charged_tracks.sort(ChargeOrder);
 
   //TAU TAU SELECTION
   if( 2 <=  emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
