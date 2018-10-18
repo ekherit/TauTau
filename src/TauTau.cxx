@@ -159,7 +159,19 @@ StatusCode TauTau::execute()
 
   //TAU TAU SELECTION
   if( 2 <=  emc_good_charged_tracks.size()  &&  emc_good_charged_tracks.size() <= 6  &&
-      good_neutral_tracks.size() <= 8)
+
+  if( (  2 == emc_good_charged_tracks.size()  || 
+         4 == emc_good_charged_tracks.size()  ||
+         6 == emc_good_charged_tracks.size()  //till 3 charged particle decay for each tau
+      ) 
+      && 
+      (
+         0 == good_neutral_tracks.size()  ||
+         2 == good_neutral_tracks.size()  ||
+         4 == good_neutral_tracks.size()  ||
+         6 == good_neutral_tracks.size()  ||
+         8 == good_neutral_tracks.size()  //till 2pi0 for each tau decay
+      )
   {
     bool select=true;
     fEvent.ngood_charged_track = emc_good_charged_tracks.size();
@@ -248,7 +260,7 @@ StatusCode TauTau::execute()
     typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
     typedef std::vector< comb_t > comb_list_t;
     std::vector< std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > > pi0_cmb_list = make_combination_list(Pn); 
-    //loop over combinations
+    //loop over all combinations
     comb_list_t::iterator best_comb;
     double chi2_mass=1e100;
     for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)

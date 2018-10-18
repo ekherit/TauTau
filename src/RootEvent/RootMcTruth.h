@@ -43,6 +43,7 @@ struct RootMcTruth
   {
     RecMdcKalTrack * mdc = track->mdcKalTrack();
     double x=1e100;
+    bool found=false;
     for(Event::McParticleCol::iterator ip=mcParticleCol->begin(); ip!=mcParticleCol->end(); ++ip)
     {
       Event::McParticle * p = *ip;
@@ -53,12 +54,18 @@ struct RootMcTruth
       double y = sqrt( delta_p.mag2() / ( p_mc.mag() * mdc->p3().mag() ) );
       if(y<x && y<0.1)
       {
+        found=true;
         x=y;
         pid[i] = p->particleProperty();
         mother_pid[i] = p->mother().particleProperty();
         //std::cout << y << " " << mdc->charge() << " " << pid [i] << " " << mdc->p() << " " << p_mc.mag()  << std::endl;
-        break;
+        //break;
       }
+    }
+    if (!found) 
+    {
+      pid[i] = 0;
+      mother_pid[i] = 0;
     }
   }
 };
