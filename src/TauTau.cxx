@@ -383,6 +383,10 @@ SKIP_TAUTAU:
     //std::cout << fGG.delta_theta << " " << fGG.delta_phi << std::endl;
     if(keep) 
     {
+      for(int i=0;i<emc_good_charged_tracks.size();++i)
+      {
+        std::cout << "pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+      }
       fGG.write();
       ngg_events++;
     }
