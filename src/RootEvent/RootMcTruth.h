@@ -24,16 +24,16 @@
 
 struct RootMcTruth
 {
-	NTuple::Item<long> * ntrack; 
+	//NTuple::Item<long> * ntrack; 
 	NTuple::Array<long> pid; //particle id
 	NTuple::Array<long> mother_pid;
   std::set<int> blacklist;
   std::set<int> whitelist;
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
   {
-    ntrack = & ntrk;
-    tuple->addIndexedItem (prefix+"pid",  *ntrack, pid);
-    tuple->addIndexedItem (prefix+"mpid",  *ntrack, mother_pid);
+    //ntrack = & ntrk;
+    tuple->addIndexedItem (prefix+"pid",  ntrk, pid);
+    tuple->addIndexedItem (prefix+"mpid", ntrk, mother_pid);
   }
 
 	virtual void init(void){};
