@@ -92,5 +92,6 @@ struct RootMcTruth
       pid[i] = 0;
       mother_pid[i] = 0;
     }
+    std::cout << i << " " << pid[i] << std::endl;
   }
 };
