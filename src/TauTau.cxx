@@ -309,6 +309,10 @@ StatusCode TauTau::execute()
       fEvent.time  = eventHeader->time();
       fEvent.channel = 0;
       //std::cout << "Before fEvent.write() " << std::endl;
+      for(int i=0;i<emc_good_charged_tracks.size();++i)
+      {
+        std::cout << "pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+      }
       fEvent.write();
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
@@ -383,10 +387,6 @@ SKIP_TAUTAU:
     //std::cout << fGG.delta_theta << " " << fGG.delta_phi << std::endl;
     if(keep) 
     {
-      for(int i=0;i<emc_good_charged_tracks.size();++i)
-      {
-        std::cout << "pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-      }
       fGG.write();
       ngg_events++;
     }
