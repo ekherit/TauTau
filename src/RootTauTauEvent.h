@@ -95,8 +95,8 @@ class RootTauTauEvent : public RootTuple
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 
     //McTruth.add_to_tuple(tuple,ngood_charged_track);
-    tuple->addIndexedItem ("pid",  ngood_charged_track, pid);
-    tuple->addIndexedItem ("mpid", ngood_charged_track, mother_pid);
+    tuple->addIndexedItem ("xxxpid",  ngood_charged_track, pid);
+    tuple->addIndexedItem ("xxxmpid", ngood_charged_track, mother_pid);
     //add black item for McTruth
     //remove quarks
     /*
