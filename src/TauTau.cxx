@@ -316,7 +316,7 @@ StatusCode TauTau::execute()
         fEvent.pid[i]=314+i;
         fEvent.mother_pid[i] = 271+i;
         //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-        std::cout << fEvent.pid[i] << " " << fEvent.mother_pid[i] << std::endl;
+        std::cout << i << " " << fEvent.pid[i] << " " << fEvent.mother_pid[i] << std::endl;
       }
       fEvent.write();
       ntautau_events++;
