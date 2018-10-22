@@ -311,9 +311,12 @@ StatusCode TauTau::execute()
       //std::cout << "Before fEvent.write() " << std::endl;
       for(int i=0;i<emc_good_charged_tracks.size();++i)
       {
-        std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+        //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
         fEvent.McTruth.pid[i] = 314; 
-        std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+        fEvent.pid[i]=314+i;
+        fEvent.mother_pid[i] = 271+I;
+        //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+        std::cout << fEvent.pid[i] << " " << fEvent.mother_pid[i] << std::endl;
       }
       fEvent.write();
       ntautau_events++;
