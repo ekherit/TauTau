@@ -99,6 +99,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addIndexedItem ("mpid", ngood_charged_track, mother_pid);
     //add black item for McTruth
     //remove quarks
+    /*
     McTruth.add_black_item(1); //d
     McTruth.add_black_item(-1); //dbar
     McTruth.add_black_item(2); //u
@@ -127,6 +128,7 @@ class RootTauTauEvent : public RootTuple
 
     McTruth.add_black_item(21); //gluon
     McTruth.add_black_item(-21); //gluon
+    */
 
     //nMcTruth.add_to_tuple(tuple,ntrack,"n");
     tuple->addItem("acop",acop);
