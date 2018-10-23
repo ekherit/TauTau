@@ -114,6 +114,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem("l2",lambda2);
     tuple->addItem("l3",lambda3);
     tuple->addIndexedItem("Mpi0", npi0, Mpi0);
+    tuple->addIndexedItem("Mrho", Nrho, Mrho);
   };
 	virtual void init(void) {};
 	virtual void fill(int i,  EvtRecTrack * track);
