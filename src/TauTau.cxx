@@ -293,16 +293,17 @@ StatusCode TauTau::execute()
       for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
       {
         double m = (*(it_pair->first) +  *(it_pair->second)).mag();
-        fEvent.Mpi0[idx++] = m;
+        fEvent.Mpi0[idx] = m;
         select &= fabs(m - PI0_MASS) <  0.03;
         //now create all combination to get pi0 with charged tracks
         for(int i = 0; i<T.size(); ++i);
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
           HepLorentzVector p = T[i]->mdcKalTrack()->p4(PI0_MASS);
-          double Mrho = p + *(it_pair->first) + *(it_pair->second);
-          fEvent.Mrho[i] = Mrho;
+          double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
+          fEvent.Mrho[idx*T.size()+i] = Mrho;
         }
+        idx++;
       }
     }
     for(int i=0;i<T.size();++i)
