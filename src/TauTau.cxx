@@ -291,7 +291,9 @@ StatusCode TauTau::execute()
       int idx=0;
       for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
       {
-        fEvent.Mpi0[idx++] = (*(it_pair->first) +  *(it_pair->second)).mag();
+        double m = (*(it_pair->first) +  *(it_pair->second)).mag();
+        fEvent.Mpi0[idx++] = m;
+        select &= fabs(m - PI0_MASS) <  0.003;
       }
     }
     for(int i=0;i<T.size();++i)
