@@ -205,11 +205,6 @@ StatusCode TauTau::execute()
       {
         fEvent.McTruth.fill(i,T[i],mcParticleCol);
       }
-      else
-      {
-        std::cout << "eventHeader->runNumber = " << eventHeader->runNumber() << std::endl;
-        exit(1);
-      }
     }
     fEvent.M2 = Psum.mag2();
     //total transverse momentum
