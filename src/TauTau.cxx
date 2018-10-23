@@ -312,20 +312,11 @@ StatusCode TauTau::execute()
       for(int i=0;i<emc_good_charged_tracks.size();++i)
       {
         //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-        fEvent.McTruth.pid[i] = 314+i; 
-        fEvent.McTruth.mother_pid[i] = 271+i;
+        //fEvent.McTruth.pid[i] = 314+i; 
+        //fEvent.McTruth.mother_pid[i] = 271+i;
         std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
       }
       fEvent.write();
-      for(int i=0;i<emc_good_charged_tracks.size();++i)
-      {
-        //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-        fEvent.McTruth.pid[i] = 314+i; 
-        fEvent.McTruth.pid[i] = 217+i; 
-        //fEvent.pid[i]=314+i;
-        //fEvent.mother_pid[i] = 271+i;
-        std::cout << emc_good_charged_tracks.size() << "After write pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-      }
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
       //std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
