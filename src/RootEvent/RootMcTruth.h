@@ -33,7 +33,37 @@ struct RootMcTruth
   {
     //ntrack = & ntrk;
     tuple->addIndexedItem (prefix+"pid",  ntrk, pid);
-    tuple->addIndexedItem (prefix+"mpid", ntrk, mother_pid);
+    tuple->addIndexedItem (prefix+"mother_pid", ntrk, mother_pid);
+    //add black item for McTruth
+    //remove quarks
+    add_black_item(1); //d
+    add_black_item(-1); //dbar
+    add_black_item(2); //u
+    add_black_item(-2); //ubar
+    add_black_item(3); //s
+    add_black_item(-3); //sbar
+    add_black_item(4); //c
+    add_black_item(-4); //cbar
+    add_black_item(5); //b
+    add_black_item(-5); //bbar
+    add_black_item(6); //t
+    add_black_item(-6); //tbar
+    add_black_item(7); //bp
+    add_black_item(-7); //bpbar
+    add_black_item(8); //tp
+    add_black_item(-8); //tpbar
+
+    add_black_item(12); //nu_e
+    add_black_item(-12); //anti nu_e
+    add_black_item(14); //nu_mu
+    add_black_item(-14); //anti nu_mu
+    add_black_item(16); //nu_tau
+    add_black_item(-16); //anti nu_tau
+    add_black_item(18); //nu_taup
+    add_black_item(-18); //anti nu_taup
+
+    add_black_item(21); //gluon
+    add_black_item(-21); //gluon
   }
 
 	virtual void init(void){};

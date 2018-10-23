@@ -92,42 +92,12 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("Nc", ngood_charged_track, 0, 6);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
     tuple->addItem ("Npi0", npi0, 0, 4);
-    tuple->addIndexedItem ("xxxpid",  ngood_charged_track, pid);
-    tuple->addIndexedItem ("xxxmpid", ngood_charged_track, mother_pid);
+    //tuple->addIndexedItem ("xxxpid",  ngood_charged_track, pid);
+    //tuple->addIndexedItem ("xxxmpid", ngood_charged_track, mother_pid);
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 
     McTruth.add_to_tuple(tuple,ngood_charged_track);
-    //add black item for McTruth
-    //remove quarks
-    McTruth.add_black_item(1); //d
-    McTruth.add_black_item(-1); //dbar
-    McTruth.add_black_item(2); //u
-    McTruth.add_black_item(-2); //ubar
-    McTruth.add_black_item(3); //s
-    McTruth.add_black_item(-3); //sbar
-    McTruth.add_black_item(4); //c
-    McTruth.add_black_item(-4); //cbar
-    McTruth.add_black_item(5); //b
-    McTruth.add_black_item(-5); //bbar
-    McTruth.add_black_item(6); //t
-    McTruth.add_black_item(-6); //tbar
-    McTruth.add_black_item(7); //bp
-    McTruth.add_black_item(-7); //bpbar
-    McTruth.add_black_item(8); //tp
-    McTruth.add_black_item(-8); //tpbar
-
-    McTruth.add_black_item(12); //nu_e
-    McTruth.add_black_item(-12); //anti nu_e
-    McTruth.add_black_item(14); //nu_mu
-    McTruth.add_black_item(-14); //anti nu_mu
-    McTruth.add_black_item(16); //nu_tau
-    McTruth.add_black_item(-16); //anti nu_tau
-    McTruth.add_black_item(18); //nu_taup
-    McTruth.add_black_item(-18); //anti nu_taup
-
-    McTruth.add_black_item(21); //gluon
-    McTruth.add_black_item(-21); //gluon
 
     //nMcTruth.add_to_tuple(tuple,ntrack,"n");
     tuple->addItem("acop",acop);
