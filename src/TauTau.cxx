@@ -299,7 +299,7 @@ StatusCode TauTau::execute()
         for(int i = 0; i<T.size(); ++i);
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-          HepLorentzVector p = track->mdcKalTrack()->p4(PI0_MASS);
+          HepLorentzVector p = T[i]->mdcKalTrack()->p4(PI0_MASS);
           double Mrho = p + *(it_pair->first) + *(it_pair->second);
           fEvent.Mrho[i] = Mrho;
         }
