@@ -78,6 +78,9 @@ class RootTauTauEvent : public RootTuple
 
   NTuple::Array<double> Mpi0;
 
+	NTuple::Item<long>    Nrho; //number of rho candidates
+  NTuple::Array<double> Mrho; //this mass of rho candidates
+
   //void init_tuple(Algorithm * algo, const char * dir, const char * title)
   //{
   //  RootTuple::init_tuple(algo,dir,title);
@@ -92,6 +95,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("Nc", ngood_charged_track, 0, 6);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
     tuple->addItem ("Npi0", npi0, 0, 4);
+    tuple->addItem ("Nrho", Nrho, 0, 24);
 
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");

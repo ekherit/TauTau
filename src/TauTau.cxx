@@ -286,6 +286,7 @@ StatusCode TauTau::execute()
     fEvent.npi0 = Pn.size()/2;
     //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
     //std::cout << "neutral size = " << Pn.size() << std::endl;
+    fEvent.Nrho = fEvent.npi0*T.size();
     if(pi0_cmb_list.size()!=0)
     {
       int idx=0;
@@ -293,7 +294,15 @@ StatusCode TauTau::execute()
       {
         double m = (*(it_pair->first) +  *(it_pair->second)).mag();
         fEvent.Mpi0[idx++] = m;
-        select &= fabs(m - PI0_MASS) <  0.003;
+        select &= fabs(m - PI0_MASS) <  0.03;
+        //now create all combination to get pi0 with charged tracks
+        for(int i = 0; i<T.size(); ++i);
+        {
+          //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
+          HepLorentzVector p = track->mdcKalTrack()->p4(PI0_MASS);
+          double Mrho = p + *(it_pair->first) + *(it_pair->second);
+          fEvent.Mrho[i] = Mrho;
+        }
       }
     }
     for(int i=0;i<T.size();++i)
