@@ -92,8 +92,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("Nc", ngood_charged_track, 0, 6);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
     tuple->addItem ("Npi0", npi0, 0, 4);
-    //tuple->addIndexedItem ("xxxpid",  ngood_charged_track, pid);
-    //tuple->addIndexedItem ("xxxmpid", ngood_charged_track, mother_pid);
+
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 

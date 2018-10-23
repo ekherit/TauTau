@@ -113,8 +113,6 @@ struct RootMcTruth
         x=y;
         pid[i] = p->particleProperty();
         mother_pid[i] = p->mother().particleProperty();
-        //std::cout << y << " " << mdc->charge() << " " << pid [i] << " " << mdc->p() << " " << p_mc.mag()  << std::endl;
-        //break;
       }
     }
     if (!found) 

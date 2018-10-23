@@ -308,14 +308,6 @@ StatusCode TauTau::execute()
       fEvent.event = eventHeader->eventNumber();
       fEvent.time  = eventHeader->time();
       fEvent.channel = 0;
-      //std::cout << "Before fEvent.write() " << std::endl;
-      for(int i=0;i<emc_good_charged_tracks.size();++i)
-      {
-        //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-        //fEvent.McTruth.pid[i] = 314+i; 
-        //fEvent.McTruth.mother_pid[i] = 271+i;
-        std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-      }
       fEvent.write();
       ntautau_events++;
       //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
