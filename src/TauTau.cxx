@@ -203,7 +203,7 @@ StatusCode TauTau::execute()
       Psum+=P[i];
       if(eventHeader->runNumber() < 0)
       {
-        //fEvent.McTruth.fill(i,T[i],mcParticleCol);
+        fEvent.McTruth.fill(i,T[i],mcParticleCol);
       }
       else
       {
@@ -322,10 +322,11 @@ StatusCode TauTau::execute()
       for(int i=0;i<emc_good_charged_tracks.size();++i)
       {
         //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
-        //fEvent.McTruth.pid[i] = 314; 
-        fEvent.pid[i]=314+i;
-        fEvent.mother_pid[i] = 271+i;
-        //std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
+        fEvent.McTruth.pid[i] = 314+i; 
+        fEvent.McTruth.pid[i] = 217+i; 
+        //fEvent.pid[i]=314+i;
+        //fEvent.mother_pid[i] = 271+i;
+        std::cout << emc_good_charged_tracks.size() << " pid["<<i<<"] = " << fEvent.McTruth.pid[i] << std::endl;
         std::cout << "After wrinte " << i << " " << fEvent.pid[i] << " " << fEvent.mother_pid[i] << std::endl;
       }
       ntautau_events++;

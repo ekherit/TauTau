@@ -61,8 +61,9 @@ class RootTauTauEvent : public RootTuple
 	RootTracks T;  //track information (momentum, vertex, muon depth...)
 	RootTracks Tn; //neutral track
   RootPid Pid;   //particle id for charged track
-	NTuple::Array<double> pid; //particle id
-	NTuple::Array<double> mother_pid;
+	//NTuple::Array<double> pid; //particle id
+	//NTuple::Array<double> mother_pid;
+  RootMcTruth  McTruth; // mc truth for nuetral tracks
   //RootMcTruth nMcTruth; // mc truth for nuetral tracks
   NTuple::Item<double>  ptsum;
   NTuple::Item<double>  ptem;
@@ -96,10 +97,9 @@ class RootTauTauEvent : public RootTuple
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 
-    //McTruth.add_to_tuple(tuple,ngood_charged_track);
+    McTruth.add_to_tuple(tuple,ngood_charged_track);
     //add black item for McTruth
     //remove quarks
-    /*
     McTruth.add_black_item(1); //d
     McTruth.add_black_item(-1); //dbar
     McTruth.add_black_item(2); //u
@@ -128,7 +128,6 @@ class RootTauTauEvent : public RootTuple
 
     McTruth.add_black_item(21); //gluon
     McTruth.add_black_item(-21); //gluon
-    */
 
     //nMcTruth.add_to_tuple(tuple,ntrack,"n");
     tuple->addItem("acop",acop);

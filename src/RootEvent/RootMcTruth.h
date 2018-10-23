@@ -25,8 +25,8 @@
 struct RootMcTruth
 {
 	//NTuple::Item<long> * ntrack; 
-	NTuple::Array<long> pid; //particle id
-	NTuple::Array<long> mother_pid;
+	NTuple::Array<double> pid; //particle id
+	NTuple::Array<double> mother_pid;
   std::set<int> blacklist;
   std::set<int> whitelist;
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
