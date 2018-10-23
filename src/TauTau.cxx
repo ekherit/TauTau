@@ -296,7 +296,7 @@ StatusCode TauTau::execute()
         fEvent.Mpi0[idx] = m;
         select &= fabs(m - PI0_MASS) <  0.03;
         //now create all combination to get pi0 with charged tracks
-        for(int i = 0; i<T.size(); ++i);
+        for(int i = 0; i<T.size(); ++i)
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
           HepLorentzVector p = T[i]->mdcKalTrack()->p4(PI0_MASS);
