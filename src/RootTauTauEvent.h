@@ -61,8 +61,8 @@ class RootTauTauEvent : public RootTuple
 	RootTracks T;  //track information (momentum, vertex, muon depth...)
 	RootTracks Tn; //neutral track
   RootPid Pid;   //particle id for charged track
-	NTuple::Array<long> pid; //particle id
-	NTuple::Array<long> mother_pid;
+	NTuple::Array<double> pid; //particle id
+	NTuple::Array<double> mother_pid;
   //RootMcTruth nMcTruth; // mc truth for nuetral tracks
   NTuple::Item<double>  ptsum;
   NTuple::Item<double>  ptem;
