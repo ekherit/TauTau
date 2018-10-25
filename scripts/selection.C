@@ -615,23 +615,35 @@ auto P = read_data();
 void do_all(void)
 {
   const char * varexp = "ptem:acop";
-  select(P,varexp,"eu_cut","col","add");
-  select(P,varexp,"epi_cut","col","add");
-  select(P,varexp,"upi_cut","col","add");
-
-  select(P,varexp,"ee_cut","col","add");
-  select(P,varexp,"uu_cut","col","add");
-  select(P,varexp,"pipi_cut","col","add");
-
-
-  select(P,varexp,"eK_cut","col","add");
-  select(P,varexp,"uK_cut","col","add");
-  select(P,varexp,"piK_cut","col","add");
-  select(P,varexp,"KK_cut","col","add");
-
-  select(P,varexp,"Xrho_cut","col","add");
-
-  select(P,"ptem:acop","rhorho_cut","col","add");
-
+  std::vector<std::string> channel =
+  {
+    "eu_cut"     ,
+    "epi_cut"    ,
+    "upi_cut"    ,
+    "ee_cut"     ,
+    "uu_cut"     ,
+    "pipi_cut"   ,
+    "eK_cut"     ,
+    "uK_cut"     ,
+    "piK_cut"    ,
+    "KK_cut"     ,
+    "Xrho_cut"   ,
+    "rhorho_cut"
+  };
+  std::vector<long> Ntt(P.size()-1,0);
+  for(int i = 0; i < channel.size(); i++)
+  {
+    select(P, varexp, channel[i].c_str(), "col" , "add");
+    std::cout << setw(10) << channel[i];
+    for(int i=0; i < P.size()-1; i++)
+    {
+      Ntt[i]+=P[i].Ntt;
+      std::cout << setw(5) <<  P[i].Ntt;
+    }
+    std::cout << std::endl;
+  }
+  std::cout << setw(10) << "total";
+  for(int i=0;i<Ntt.size();i++) std::cout  << setw(5) << Ntt[i];
+  std::cout << std::endl;
   fit(P);
 }
