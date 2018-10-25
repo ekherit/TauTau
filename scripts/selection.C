@@ -16,9 +16,9 @@
  * =====================================================================================
  */
 
-TChain * get_chain(const char * name, const char * newname, const char * title, int run_begin, int run_end)
+TChain * get_chain(const char * name, const char * newname, std::string title, int run_begin, int run_end)
 {
-  TChain * chain = new TChain(name, title);
+  TChain * chain = new TChain(name, title.c_str());
   for(int run = run_begin; run<=run_end; ++run)
   {
     char buf[1024];
@@ -31,7 +31,7 @@ TChain * get_chain(const char * name, const char * newname, const char * title, 
 
 struct ScanPoint_t
 {
-  const char * title;
+  std::string title;
   int begin_run;
   int end_run;
   double W;
@@ -44,9 +44,12 @@ struct ScanPoint_t
   int Ngg;
   std::string selection;
   std::map<std::string, int> NttMap;
+  double ppi;
+  double ppi_max;
+  double ppi_min;
 };
 
-std::map<std::string, const char * > SelMap;
+std::map<std::string, std::string > SelMap;
 
 #include <regex>
 const char * make_alias(int channel, const char * templ )
@@ -54,7 +57,13 @@ const char * make_alias(int channel, const char * templ )
   return templ;
 }
 
-const double MTAU=1776.86;
+const double GeV=1.0;
+const double MeV=1e-3*GeV;
+
+const double MTAU=1776.86*MeV;
+const double MPI=0.13957061*GeV; 
+const double MPI0=0.134977*GeV;
+
 void set_alias(TTree * tt, double W)
 {
   tt->SetAlias("MM","(p[0]+p[1])**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
@@ -72,7 +81,7 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("M2KK","(EK0+EK1)**2-psum*psum");
 
   char Eb[1024];
-  sprintf(Eb,"%5.3f*1",W*0.5e-3);
+  sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);
   tt->SetAlias("Emis","(2*Eb-p[0]-p[1])");
   tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
@@ -107,13 +116,65 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("eu", "(e0 && u1) || (u0 && e1)");
 
   //define pions
-  tt->SetAlias("pi0","!u0 && 0.7 < p[0] && p[0] < 1.1 && Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
+  tt->SetAlias("pi0","!u0 && 0.8 < p[0] && p[0] < 1.05 && Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
+  tt->SetAlias("pi1","!u1 && 0.8 < p[1] && p[1] < 1.05 && Ep[1]<0.6 && chi2_dedx_pi[1] < 5 && abs(delta_tof_pi[1])<0.3");
 
-  tt->SetAlias("pi1","!u1 && 0.7 < p[1] && p[1] < 1.1 && Ep[1]<0.6 && chi2_dedx_pi[1] < 5 && abs(delta_tof_pi[1])<0.3");
 
   tt->SetAlias("pipi","pi0 && pi1");
   tt->SetAlias("epi", "(e0 && pi1) || (pi0 && e1)");
   tt->SetAlias("upi", "(u0 && pi1) || (pi0 && u1)");
+
+  tt->SetAlias("pil", "(pi0 && (u1 || e1 ))");
+  tt->SetAlias("lpi", "(pi1 && (u0 || e0 ))");
+
+  //define kaons
+  tt->SetAlias("K0","!u0 && !pi0 && 0.8 < p[0] && p[0] < 1.05 && Ep[0]<0.6 && chi2_dedx_K[0] < 3 && abs(delta_tof_K[0])<0.3");
+  tt->SetAlias("K1","!u1 && !pi1 && 0.8 < p[1] && p[1] < 1.05 && Ep[1]<0.6 && chi2_dedx_K[1] < 3 && abs(delta_tof_K[1])<0.3");
+
+  tt->SetAlias("eK", "(e0 && K1) || (K0 && e1)");
+  tt->SetAlias("uK", "(u0 && K1) || (K0 && u1)");
+  tt->SetAlias("piK","(pi0 && K1) || (K0 && pi1)");
+  tt->SetAlias("KK","K0 && K1");
+
+  //final selection
+  tt->SetAlias("eu_cut",    "Nc==2 && Nn==0 && eu   && ptem>0.25");
+  tt->SetAlias("epi_cut",   "Nc==2 && Nn==0 && epi  && ptem>0.3");
+  tt->SetAlias("upi_cut",   "Nc==2 && Nn==0 && upi  && ptem>0.62");
+
+  tt->SetAlias("ee_cut",    "Nc==2 && Nn==0 && ee   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9");
+  tt->SetAlias("uu_cut",    "Nc==2 && Nn==0 && uu   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9");
+  tt->SetAlias("pipi_cut",  "Nc==2 && Nn==0 && pipi && ptem>0.55");
+
+  tt->SetAlias("eK_cut","Nc==2 && Nn==0 && eK");
+  tt->SetAlias("piK_cut","Nc==2 && Nn==0 && piK && ptem >0.4");
+  tt->SetAlias("uK_cut","Nc==2 && Nn==0 && uK && ptem >0.15");
+  tt->SetAlias("KK_cut","Nc==2 && Nn==0 && KK && ptem >0.15");
+
+  for(int i=0;i<4;i++)
+  {
+    const double MRHO_MIN = 0.5;
+    const double MRHO_MAX = 1.0;
+    char name[128];
+    char cut[65535];
+    sprintf(name, "Mrho%d_cut",i);
+    sprintf(cut,"%.2f < Mrho[%d] && Mrho[%d] < %.2f", MRHO_MIN, i, i, MRHO_MAX);
+    tt->SetAlias(name,cut);
+  }
+
+  tt->SetAlias("rho0", "pi0 && Mrho0_cut && Mpi0[0]>0.1128 && Mpi0[0]<0.1464");
+  tt->SetAlias("rho1", "pi1 && Mrho1_cut && Mpi0[0]>0.1128 && Mpi0[0]<0.1464");
+
+  //tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
+  tt->SetAlias("Xrho", "!rho0 && (e0 || u0 || pi0 || K0) && rho1 && !(e1 || u1 || K0)");
+  tt->SetAlias("rhoX", "!rho1 && (e1 || u1 || pi1 || K1) && rho0 && !(e0 || u0 || K0)");
+  tt->SetAlias("rhorho", "!(e0 || u0 || K0) &&  !(e1 || u1 || K1) && Mpi0[0]>0.1128 && Mpi0[0]<0.1464 && Mpi0[1]>0.1128 && Mpi0[1]<0.1464  && pi0 && pi1  && ((Mrho0_cut && Mrho2_cut) || (Mrho1_cut && Mrho3_cut))");
+
+  tt->SetAlias("Xrho_cut","Nc==2 && Npi0==1 && acop>1.4 && (Xrho || rhoX)");
+  tt->SetAlias("rhorho_cut","Nc==2 && Npi0 ==2 && rhorho && ptem>0.5");
+
+  //tt->SetAlias("pipi0pipi0_cut","Nc==2 && Npi0==2 && pipi && ptem>0.6");
+
+  tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
 }
 
 std::vector<ScanPoint_t> read_data(void)
@@ -137,6 +198,12 @@ std::vector<ScanPoint_t> read_data(void)
   Points.push_back({"Point3", 55200,55231,3553.934,0.08,0,0});
   Points.push_back({"Point4", 55232,55239,3560.356,0.157,0,0});
   Points.push_back({"Point5", 55240,55257, 3599.572,0.117,0,0});
+  //Points energy are in MeV now I need to convert it to GeV
+  for(int i=0;i<Points.size(); i++)
+  {
+    Points[i].W*=MeV;
+    Points[i].dW*=MeV;
+  }
   for(int i=0;i<Points.size(); i++)
   {
     char name_tt[1024];
@@ -329,7 +396,11 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
 
 void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="col", std::string opt="")
 {
-  auto c = new TCanvas;
+  static int canvas_counter=0;
+  char canvas_name[65535];
+  sprintf(canvas_name, "tau_sel_%d",canvas_counter++);
+  auto c = new TCanvas(canvas_name,"selection",0,0,1920,1080);
+  //auto c = new TCanvas();
   c->SetTitle(selection);
   int ny = floor(sqrt(P.size()+1));
   int nx = ny+1;
@@ -345,7 +416,7 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
     if(opt=="clear") p.NttMap.clear();
     if(opt=="add") p.NttMap[selection]=Ntt; 
     char title[1024];
-    sprintf(title, "%s %d events", p.title, p.Ntt);
+    sprintf(title, "%d events - %s", p.Ntt, p.title.c_str());
     p.tt->GetHistogram()->SetTitle(title);
     p.selection = selection;
     if(opt=="save")
@@ -414,6 +485,7 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
   long totalNtt=0;
   long totalNgg = 0;
   double totalL=0;
+  std::string total_title="";
   for(int i=0; i<P.size()-1;++i)
   {
     for(auto & item: P[i].NttMap)
@@ -424,6 +496,7 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     totalNgg+=P[i].Ngg;
     totalL += P[i].L;
   }
+  //total_title = total_title + " " + P[i].selection;
   double sigma_gg = totalNgg/totalL;
   std::ofstream ofs(filename);
   ofs << "#Selection: " << P[0].selection << std::endl;
@@ -440,18 +513,27 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     for(auto & item: P[i].NttMap) Ntt+=item.second;
     int Ngg = P[i].Ngg;
     double L = Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
-    ofs << setw(5) << i <<  setw(15) << P[i].L << "  " << 10 << setw(15) << P[i].W  << setw(15) << P[i].dW;
+    ofs << setw(5) << i <<  setw(15) << P[i].L << "  " << 10 << setw(15) << P[i].W/MeV  << setw(15) << P[i].dW/MeV;
     ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
     ofs << setw(10) << Ntt << setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
   }
   if(!nofit)
   {
     char command[65536];
-    if(title=="") title=P[0].selection;
-    sprintf(command, "taufit --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    //if(title=="") title=total_title;
+    sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename);
     system(command);
   }
 }
+
+void fit_last(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false, std::string title="")
+{
+  set_last(P);
+  fit(P,filename,nofit,title);
+}
+
+
 
 void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const char * cut, const char * his="")
 {
@@ -502,7 +584,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
     g->SetPointError(i, Points[i].dW/2.0, dxs);
     std::cout << i << " " << Points[i].W/2.0-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
     auto & P = Points[i];
-    ofs << setw(5) << i <<  setw(15) << 20000 << "  " << 10 << setw(15) << P.W  << setw(15) << P.dW;
+    ofs << setw(5) << i <<  setw(15) << 20000 << "  " << 10 << setw(15) << P.W/MeV  << setw(15) << P.dW/MeV;
     ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
     ofs << setw(10) << Ntt << setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
   }
@@ -529,3 +611,27 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 auto P = read_data();
+
+void do_all(void)
+{
+  const char * varexp = "ptem:acop";
+  select(P,varexp,"eu_cut","col","add");
+  select(P,varexp,"epi_cut","col","add");
+  select(P,varexp,"upi_cut","col","add");
+
+  select(P,varexp,"ee_cut","col","add");
+  select(P,varexp,"uu_cut","col","add");
+  select(P,varexp,"pipi_cut","col","add");
+
+
+  select(P,varexp,"eK_cut","col","add");
+  select(P,varexp,"uK_cut","col","add");
+  select(P,varexp,"piK_cut","col","add");
+  select(P,varexp,"KK_cut","col","add");
+
+  select(P,varexp,"Xrho_cut","col","add");
+
+  select(P,"ptem:acop","rhorho_cut","col","add");
+
+  fit(P);
+}
