@@ -57,7 +57,7 @@ def proceed_create_file_list(filelist, directory, files):
         filelist += [os.path.join(directory,file)]
     filelist.sort()
 
-#create all file list in directory
+#create all file list in directory (recursively)
 def create_file_list(directory):
     files = []
     os.path.walk(directory, proceed_create_file_list, files)
@@ -85,6 +85,9 @@ for f in file_list:
     else:
         input_file_dict[n[0]]=[f]
 
+
+submit_file = open("submit.csh","w");
+
 for W, flist in input_file_dict.items():
     files=""
     for f in flist:
@@ -94,6 +97,10 @@ for W, flist in input_file_dict.items():
     f = open(cfg_file,'w')
     print "Creating ", cfg_file, "..."
     f.write(template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W)))
+    submit_file.write("boss.condor "+cfg_file)
+
+print "To run signle file: boss.exe <filename.cfg>"
+print "To run all file: source submit.csh"
 #    print template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W))
 
 
