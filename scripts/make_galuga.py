@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import re
+import re,os,sys
 template = """
 #include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
 #include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
