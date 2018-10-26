@@ -72,9 +72,10 @@ def filter_file_list(files, reg):
             filtered_file_list += [file]
     return filtered_file_list
 
+print "Making initial file list"
 file_list = filter_file_list(create_file_list("data"), ".*.dst")
 
-print file_list
+#print file_list
 
 input_file_dict={}
 for f in file_list:
@@ -91,6 +92,7 @@ for W, flist in input_file_dict.items():
     cfg_file = FILE_PREFIX+W+".cfg"
     output_file = FILE_PREFIX+W+".root"
     f = open(cfg_file,'w')
+    print "Creating ", cfg_file, "..."
     f.write(template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W)))
 #    print template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W))
 
