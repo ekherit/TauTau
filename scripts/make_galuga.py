@@ -14,10 +14,7 @@ template = """
 #include "$TAUTAUROOT/share/jobOptions_TauTau.txt"
 
 // Input REC or DST file name 
-EventCnvSvc.digiRootInputFile = 
-{
-%s
-};
+EventCnvSvc.digiRootInputFile = {%s};
 
 // Set output level threshold (2=DEBUG, 3=INFO, 4=WARNING, 5=ERROR, 6=FATAL )
 MessageSvc.OutputLevel = 5;
