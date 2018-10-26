@@ -88,7 +88,7 @@ for W, flist in input_file_dict.items():
     files=""
     for f in flist:
         files=files+'"'+f+'",\n'
-    files=files[:-1]
+    files=files[:-2]
     cfg_file = FILE_PREFIX+W+".cfg"
     output_file = FILE_PREFIX+W+".root"
     f = open(cfg_file,'w')
