@@ -95,7 +95,7 @@ for W, flist in input_file_dict.items():
     print "Creating ", cfg_file, "..."
     config = template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W))
     f.write(config)
-    submit_file.write("boss.condor "+cfg_file)
+    submit_file.write("boss.condor "+cfg_file+"\n")
 
 print "To run signle file: boss.exe <filename.cfg>"
 print "To run all file: source submit.csh"
