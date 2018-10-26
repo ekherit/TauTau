@@ -1,5 +1,11 @@
 #!/usr/bin/python
 import re,os,sys
+
+
+NEVENTS_PER_RUN=10000000
+FILE_PREFIX="galuga_"
+
+
 template = """
 #include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
 #include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
@@ -57,6 +63,7 @@ def create_file_list(directory):
     os.path.walk(directory, proceed_create_file_list, files)
     return files;
 
+#filter file list with specified regular expression reg
 def filter_file_list(files, reg):
     r = re.compile(reg)
     filtered_file_list = []
@@ -81,7 +88,11 @@ for W, flist in input_file_dict.items():
     files=""
     for f in flist:
         files=files+'"'+f+'",\n'
-    print template % (files,  100, "galuga_"+W+".root", float(W))
+    cfg_file = FILE_PREFIX+W+".cfg"
+    output_file = FILE_PREFIX+W+".root"
+    f = open(cfg_file,'w')
+    f.write(template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W)))
+#    print template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W))
 
 
 
