@@ -646,8 +646,9 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 auto P = read_data();
+auto G = read_galuga("galuga");
 
-void do_all(void)
+void do_all(std::vector<ScanPoint_t> & P)
 {
   const char * varexp = "ptem:acop";
   std::vector<std::string> channel =
