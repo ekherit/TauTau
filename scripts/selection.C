@@ -16,6 +16,14 @@
  * =====================================================================================
  */
 
+TChain * get_chain(const char * name, const char * newname, std::string title, const char * file_name)
+{
+  TChain * chain = new TChain(name, title.c_str());
+  chain->AddFile(file_name);
+  chain->SetName(newname);
+  return chain;
+}
+
 TChain * get_chain(const char * name, const char * newname, std::string title, int run_begin, int run_end)
 {
   TChain * chain = new TChain(name, title.c_str());
@@ -180,19 +188,11 @@ void set_alias(TTree * tt, double W)
 std::vector<ScanPoint_t> read_data(void)
 {
   std::vector<ScanPoint_t> Points;
-  
-  //Points.push_back({"Point1", 55115,55119,3538.945,0.3, 0, 0});
-  //Points.push_back({"Point1", 55120,55126,3539.004,0.116, 0, 0});
-  //Points.push_back({"Point1", 55127,55139,3538.646,0.09,0,0});
-  //Points.push_back({"Point1", 55143,55155,3539.482,0.110,0,0});
-  ///combine points above
-  Points.push_back({"Point1", 55116,55155,3539.482,0.110,0,0});
+  Points.push_back({"Point1", 55116, 55155,  3539.482,  0.110,0,0});
 
-  //Points.push_back({"Point test", 55157,55161,3550.872,0.182,0,0});
+  Points.push_back({"Point1p", 55157,55161,3550.872,0.182,0,0});
   //remove points above this is tune EMS
 
-  //Points.push_back({"Point2", 55162,55177,3552.885,0.093,0,0});
-  //Points.push_back({"Point2", 55179,55199,3552.849,0.093,0,0});
   Points.push_back({"Point2", 55162,55199,3552.849,0.093,0,0});
 
   Points.push_back({"Point3", 55200,55231,3553.934,0.08,0,0});
@@ -249,6 +249,41 @@ std::vector<ScanPoint_t> read_data(void)
   Points[pmc].gg = new TNtupleD("ggmc","ggmc","i");
   for(int i=0;i<1000;i++) Points[pmc].gg->Fill();
   return Points;
+}
+
+#include <regex>
+//read monte carlo Galuga
+std::vector<ScanPoint_t> read_galuga(std::string  dirname=".", std::string regexpr=R"(.+\.root)")
+{
+  std::vector<ScanPoint_t> P;
+  TSystemDirectory dir(dirname.c_str(), dirname.c_str());
+  std::regex file_re(regexpr); //regular expression to filter files
+  std::regex energy_re(R"(^\D*(\d+\.?\d+).root$)");
+  std::smatch file_match;
+  std::smatch energy_match; 
+  int point=0;
+  for(auto  file: * dir.GetListOfFiles())
+  {
+    std::string file_name(file->GetName());
+    if(std::regex_match (file_name,file_match,file_re))
+    {
+      //extracting the energy
+      if(std::regex_match(file_name,energy_match,energy_re))
+      {
+        double W = std::stod(energy_match[1]);
+        std::cout << file_name <<  "  W = " << W << std::endl;
+        P.push_back({"P"+to_string(point), 55116, 55155,  W, 0.01,0,0});
+        P.back().tt = get_chain("tt",("tt"+to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
+        set_alias(P.back().tt, P.back().W);
+      }
+      else
+      {
+        std::cout << "Unable to extract energy from filename: " << file_name << std::endl;
+      }
+    }
+  }
+  std::cout << "THE END" << std::endl;
+  return P;
 }
 
 void print(const std::vector<ScanPoint_t> & SPL)
