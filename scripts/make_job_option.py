@@ -1,10 +1,14 @@
 #!/usr/bin/python
 import re,os,sys
+import argparse
+parser = argparse.ArgumentParser(description='Create tau tau selection configuration files.')
+parser.add_argument('dirs',   default="data", nargs="+",help='Input directories where recursivily files will be searched')
+parser.add_argument('--filter', default='.+.dst', help='regexp filter of input file name')
+parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
+parser.add_argument('--prefix', default="", help='prefix for output files')
+parser.add_argument('--N', type=int,default=10000, help='Number of event per job')
 
-
-NEVENTS_PER_RUN=10000000
-FILE_PREFIX="galuga_"
-
+cfg = parser.parse_args()
 
 template = """#include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
 #include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
@@ -28,8 +32,8 @@ TauTau.CENTER_MASS_ENERGY=%f;
 
 #print template % ("test.dst",  100, "test.root", 3.53907)
 
-#default file list for test
-file_list = [
+#default file list for test algorithms...
+test_file_list = [
 "e3.53907_EEee_1.dst",
 "e3.55087_EEee_1.dst",
 "e3.55287_EEee_1.dst",
@@ -69,17 +73,21 @@ def filter_file_list(files, reg):
     return filtered_file_list
 
 print "Making initial file list"
-file_list = filter_file_list(create_file_list("data"), ".*.dst")
-
+file_list = []
+for dir in cfg.dirs:
+    file_list += filter_file_list(create_file_list(dir), cfg.filter)
+#file_list = test_file_list
 #print file_list
 
 input_file_dict={}
 for f in file_list:
-    n = re.findall(r"[-+]?\d*\.\d+|\d+", f)
-    if n[0] in input_file_dict:
-        input_file_dict[n[0]].append(f)
-    else:
-        input_file_dict[n[0]]=[f]
+    #n = re.findall(r"[-+]?\d*\.\d+|\d+", f)
+    n = re.findall(cfg.combine, f)
+    if len(n) != 0:
+        if n[0] in input_file_dict:
+            input_file_dict[n[0]].append(f)
+        else:
+            input_file_dict[n[0]]=[f]
 
 
 submit_file = open("submit.csh","w");
@@ -89,11 +97,11 @@ for W, flist in input_file_dict.items():
     for f in flist:
         files=files+'"'+f+'",\n'
     files=files[:-2]
-    cfg_file = FILE_PREFIX+W+".cfg"
-    output_file = FILE_PREFIX+W+".root"
+    cfg_file = cfg.prefix+W+".cfg"
+    output_file = cfg.prefix + W + ".root"
     f = open(cfg_file,'w')
     print "Creating ", cfg_file, "..."
-    config = template % (files,  NEVENTS_PER_RUN, "galuga_"+W+".root", float(W))
+    config = template % (files, cfg.N, output_file, float(W))
     f.write(config)
     submit_file.write("boss.condor "+cfg_file+"\n")
 
