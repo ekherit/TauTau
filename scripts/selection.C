@@ -55,6 +55,7 @@ struct ScanPoint_t
   double ppi;
   double ppi_max;
   double ppi_min;
+  double eps; //registration efficiency
 };
 
 std::map<std::string, std::string > SelMap;
@@ -272,7 +273,7 @@ std::vector<ScanPoint_t> read_galuga(std::string  dirname=".", std::string regex
       {
         double W = std::stod(energy_match[1]);
         std::cout << file_name <<  "  W = " << W << std::endl;
-        P.push_back({"P"+to_string(point), 55116, 55155,  W, 0.01,0,0});
+        P.push_back({"P"+to_string(point), 55116, 55155,  W, 1e-5,0,0});
         P.back().tt = get_chain("tt",("tt"+to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
         set_alias(P.back().tt, P.back().W);
       }
@@ -647,30 +648,120 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 
 auto P = read_data();
 auto G = read_galuga("galuga");
+auto mc = read_galuga("mctt");
+std::vector<std::string> CHANNELS =
+{
+  "eu_cut"     ,
+  "epi_cut"    ,
+  "upi_cut"    ,
+  "ee_cut"     ,
+  "uu_cut"     ,
+  "pipi_cut"   ,
+  "eK_cut"     ,
+  "uK_cut"     ,
+  "piK_cut"    ,
+  "KK_cut"     ,
+  "Xrho_cut"   ,
+  "rhorho_cut"
+};
+
+void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
+{
+  const char * varexp = "ptem:acop";
+  std::vector<long> Ntt(PNTS.size(),0);
+  std::vector<TGraphErrors *> graphs(CHANNELS.size());
+  for(auto & g : graphs) g = new TGraphErrors;
+  TGraphErrors * total_g = new TGraphErrors;
+  std::cout << setw(15) << "W,MeV";
+  for(int p = 0; p < PNTS.size(); ++p)
+  {
+    std::cout << setw(10) << PNTS[p].W*1e3;
+  }
+  std::cout << std::endl;
+  std::cout << setw(15) << "E-MPDG,MeV";
+  for(int p = 0; p < PNTS.size(); ++p)
+  {
+    std::cout << setw(10) << (PNTS[p].W*0.5-MTAU)*1e3;
+  }
+  std::cout << std::endl;
+  for(int i = 0; i < CHANNELS.size(); i++)
+  {
+    select(PNTS, varexp, CHANNELS[i].c_str(), "col" , "add");
+    std::cout << setw(15) << CHANNELS[i];
+    for(int p = 0; p < PNTS.size(); ++p)
+    {
+      Ntt[p]+=PNTS[p].Ntt;
+      PNTS[p].eps = double(PNTS[p].Ntt)/double(N0);
+      graphs[i]->SetPoint(p,(PNTS[p].W*0.5-MTAU)*1e3, PNTS[p].eps);
+      graphs[i]->SetPointError(p,PNTS[p].dW*1e3*0.5, sqrt(PNTS[p].eps*(1.0 - PNTS[p].eps)/N0));
+      std::cout << setw(10) << PNTS[p].eps;
+    }
+    std::cout << std::endl;
+  }
+  std::cout << setw(15) << "TOTAL";
+  for(int p = 0;p<PNTS.size();++p) 
+  {
+    double eps = double(Ntt[p])/double(N0);
+//    std::cout << setw(10) << PNTS[p].W << setw(10) << PNTS[p].dW;
+    total_g->SetPoint(p, (PNTS[p].W*0.5-MTAU)*1e3, eps);
+    total_g->SetPointError(p, PNTS[p].dW*1e3*0.5, sqrt(eps*(1.0-eps)/N0));
+    std::cout << setw(10) << eps;
+  }
+  std::cout << std::endl;
+  auto * mg = new TMultiGraph;
+  mg->Add(total_g, "lp");
+  total_g->SetLineColor(1);
+  total_g->SetMarkerColor(1);
+  total_g->SetMarkerStyle(20);
+  total_g->SetMarkerSize(2);
+  total_g->SetLineWidth(2);
+  for(int c = 0;c<CHANNELS.size();++c) 
+  {
+    graphs[c]->SetLineColor(c+2);
+    graphs[c]->SetMarkerColor(c+2);
+    graphs[c]->SetMarkerStyle(21+c);
+    graphs[c]->SetMarkerSize(2);
+    graphs[c]->SetLineWidth(2);
+    mg->Add(graphs[c],"lp");
+  }
+  auto eff_c = new TCanvas;
+  eff_c->Divide(1,2);
+  eff_c->cd(1);
+  mg->Draw("apl");
+  mg->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
+  mg->GetYaxis()->SetTitle("efficiency ( #sigma_{vis} / #sigma )");
+  //mg->SetMarkerStyle(21);
+  //mg->SetMarkerSize(2);
+  //mg->SetLineWidth(2);
+  TGraphErrors * eps_cor_g = new TGraphErrors;
+  std::cout << setw(15) << "COR";
+  for(int p = 0; p<PNTS.size();++p)
+  {
+    eps_cor_g->SetPoint(p, total_g->GetX()[p], total_g->GetY()[p]/total_g->GetY()[0]);
+    eps_cor_g->SetPointError(p, total_g->GetErrorX(p), total_g->GetErrorY(p)/total_g->GetY()[0]);
+    std::cout << setw(10) << eps_cor_g->GetY()[p];
+  }
+  std::cout << std::endl;
+  eff_c->cd(2);
+  eps_cor_g->Draw("ap");
+  eps_cor_g->Draw("apl");
+  eps_cor_g->SetMarkerStyle(21);
+  eps_cor_g->SetMarkerSize(2);
+  eps_cor_g->SetLineWidth(2);
+  eps_cor_g->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
+  eps_cor_g->GetYaxis()->SetTitle("efficiency correction");
+  //for (int c =0;c<CHANNELS.size(); ++c) graphs[c]->Draw("pl");
+
+}
 
 void do_all(std::vector<ScanPoint_t> & P)
 {
   const char * varexp = "ptem:acop";
-  std::vector<std::string> channel =
-  {
-    "eu_cut"     ,
-    "epi_cut"    ,
-    "upi_cut"    ,
-    "ee_cut"     ,
-    "uu_cut"     ,
-    "pipi_cut"   ,
-    "eK_cut"     ,
-    "uK_cut"     ,
-    "piK_cut"    ,
-    "KK_cut"     ,
-    "Xrho_cut"   ,
-    "rhorho_cut"
-  };
   std::vector<long> Ntt(P.size()-1,0);
-  for(int i = 0; i < channel.size(); i++)
+  for(int i = 0; i < CHANNELS.size(); i++)
   {
-    select(P, varexp, channel[i].c_str(), "col" , "add");
-    std::cout << setw(10) << channel[i];
+    select(P, varexp, CHANNELS[i].c_str(), "goff" , "add");
+    std::cout << setw(10) << CHANNELS[i];
     for(int i=0; i < P.size()-1; i++)
     {
       Ntt[i]+=P[i].Ntt;
