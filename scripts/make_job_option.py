@@ -8,6 +8,7 @@ parser.add_argument('--filter', default='.+.dst', help='regexp filter of input f
 parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
+parser.add_argument('--config', default='')
 
 cfg = parser.parse_args()
 
@@ -105,13 +106,21 @@ for dir in cfg.dirs:
     file_list += filter_file_list(create_file_list(dir), cfg.filter)
 
 input_file_dict={}
-for f in file_list:
-    n = re.findall(cfg.combine, f)
-    if len(n) != 0:
-        if n[0] in input_file_dict:
-            input_file_dict[n[0]].append(f)
-        else:
-            input_file_dict[n[0]]=[f]
+if cfg.config == '':
+    for f in file_list:
+        n = re.findall(cfg.combine, f)
+        if len(n) != 0:
+            if n[0] in input_file_dict:
+                input_file_dict[n[0]].append(f)
+            else:
+                input_file_dict[n[0]]=[f]
+else:
+    #read config file with runtable
+    cfg_file = open(cfg.config, "r")
+    for line in cfg_file:
+        print line
+    #for f in file_list:
+
 
 
 submit_file = open(cfg.output_dir+'/submit.csh',"w");
