@@ -140,16 +140,20 @@ else:
 submit_file = open(cfg.output_dir+'/submit.csh',"w");
 submit_file2 = open(cfg.output_dir+'/submit.sh',"w");
 
-for W, flist in input_file_dict.items():
+for key, flist in input_file_dict.items():
     files=""
     for f in flist:
         files=files+'"'+os.path.abspath(f)+'",\n'
     files=files[:-2]
-    cfg_file = cfg.output_dir+'/'+cfg.prefix+W+".cfg"
-    output_file = cfg.output_dir+'/'+cfg.prefix + W + ".root"
+    try:
+      W=float(key)
+    except ValueError:
+      W=1.77686*2
+    cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
+    output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
     f = open(cfg_file,'w')
     print "Creating ", cfg_file, "..."
-    config = template % (files, cfg.N, output_file, float(W))
+    config = template % (files, cfg.N, output_file, W)
     f.write(config)
     submit_file.write("boss.condor "+cfg_file+"\n")
     submit_file2.write("boss.condor "+cfg_file+"\n")
