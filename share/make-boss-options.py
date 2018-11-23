@@ -53,7 +53,7 @@ def proceed(run, directory, files):
 psi2s2011 = range(25244,25338);
 jpsi2011 = range(24937,24979);
 tau2011 = range(24984,25244);
-tau2018 = range(55115,55257);
+tau2018 = range(55115,55362);
 
 for run in tau2018:
   print "Proceeding run ", run

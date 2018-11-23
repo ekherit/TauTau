@@ -8,6 +8,7 @@ parser.add_argument('--filter', default='.+.dst$', help='regexp filter of input 
 parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
+parser.add_argument('--config', default='')
 
 cfg = parser.parse_args()
 
@@ -97,6 +98,7 @@ for dir in cfg.dirs:
 
 print file_list
 input_file_dict={}
+
 for f in file_list:
     n = re.findall(cfg.combine, f)
     if len(n) != 0:
@@ -107,6 +109,23 @@ for f in file_list:
 if len(input_file_dict) == 0:
   print "Empty file list. Do nothing."
   sys.exit(0)
+#=======
+#if cfg.config == '':
+#    for f in file_list:
+#        n = re.findall(cfg.combine, f)
+#        if len(n) != 0:
+#            if n[0] in input_file_dict:
+#                input_file_dict[n[0]].append(f)
+#            else:
+#                input_file_dict[n[0]]=[f]
+#else:
+#    #read config file with runtable
+#    cfg_file = open(cfg.config, "r")
+#    for line in cfg_file:
+#        print line
+#    #for f in file_list:
+#
+#>>>>>>> e0365af6d8ac8e978fc8e3adb1812c8205379006
 
 print "Output dir: ", cfg.output_dir
 
