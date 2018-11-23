@@ -4,7 +4,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Create tau tau selection configuration files.')
 parser.add_argument('dirs',   default="data", nargs="+",help='Input directories where recursivily files will be searched. Last one will be output dir')
 parser.add_argument('--output_dir', default='', help='Output dir')
-parser.add_argument('--filter', default='.+.dst', help='regexp filter of input file name')
+parser.add_argument('--filter', default='.+.dst$', help='regexp filter of input file name')
 parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
@@ -89,6 +89,25 @@ if cfg.output_dir == '':
         cfg.dirs.pop();
 
 print "Input dirs: ", cfg.dirs
+
+
+
+for dir in cfg.dirs:
+    file_list += filter_file_list(create_file_list(dir), cfg.filter)
+
+print file_list
+input_file_dict={}
+for f in file_list:
+    n = re.findall(cfg.combine, f)
+    if len(n) != 0:
+        if n[0] in input_file_dict:
+            input_file_dict[n[0]].append(f)
+        else:
+            input_file_dict[n[0]]=[f]
+if len(input_file_dict) == 0:
+  print "Empty file list. Do nothing."
+  sys.exit(0)
+
 print "Output dir: ", cfg.output_dir
 
 if not os.path.exists(cfg.output_dir):
@@ -98,21 +117,6 @@ else:
     if c != 'y': 
         print "exit"
         sys.exit(0)
-
-
-
-for dir in cfg.dirs:
-    file_list += filter_file_list(create_file_list(dir), cfg.filter)
-
-input_file_dict={}
-for f in file_list:
-    n = re.findall(cfg.combine, f)
-    if len(n) != 0:
-        if n[0] in input_file_dict:
-            input_file_dict[n[0]].append(f)
-        else:
-            input_file_dict[n[0]]=[f]
-
 
 submit_file = open(cfg.output_dir+'/submit.csh',"w");
 submit_file2 = open(cfg.output_dir+'/submit.sh',"w");
