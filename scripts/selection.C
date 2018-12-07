@@ -20,6 +20,7 @@
 #include <string>
 #include <list>
 #include <fmt/printf.h>
+#include <algorithm>
 
 const double GeV=1.0;
 const double MeV=1e-3*GeV;
@@ -27,6 +28,18 @@ const double MeV=1e-3*GeV;
 const double MTAU=1776.86*MeV;
 const double MPI=0.13957061*GeV; 
 const double MPI0=0.134977*GeV;
+
+template <class String > 
+size_t count_utf8_symbols( String s )
+{
+  return std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
+}
+template <class String > 
+size_t count_utf8_extra_byte( String s )
+{
+  return s.size() - std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
+}
+
 
 //Get recursive file list
 std::list<std::string> get_recursive_file_list(std::string dirname)
@@ -1097,7 +1110,7 @@ auto HADR = read_galuga("mc/hadrons");
 auto S = read_data("data", read_privalov_runtable("../runtable.txt"));
 
 
-struct SelectionConfig_t
+struct Selection_t
 {
   std::string title; //channel name  (temrinal)
   std::string root_title; //title for root to print on canvas
@@ -1121,7 +1134,7 @@ std::vector<std::string> CHANNELS =
 };
 
 
-std::vector<SelectionConfig_t> SELECTION
+std::vector<Selection_t> SELECTION
 {
   {"eμ", "e#mu"     , "eu_cut"}     ,
   {"eπ", "e#pi"     , "epi_cut"}    ,
@@ -1233,7 +1246,7 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
 
 }
 
-void select_all(std::vector<ScanPoint_t> & P)
+void select_all(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t> & SEL=SELECTION)
 {
   //some printing configuration
   int first_column_width = 15;
@@ -1247,10 +1260,7 @@ void select_all(std::vector<ScanPoint_t> & P)
   //default expression to show
   const char * varexp = "ptem:acop";
   std::vector<long> Ntt;
-  std::vector<long> totalEventInChannel(CHANNELS.size());
-  //if(is_data) Ntt.resize(P.size(),0);
-  //else Ntt.resize(P.size());
-  //for( auto & n : Ntt) n = 0;
+  std::vector<long> totalEventInChannel(SEL.size());
   Ntt.resize(P.size(),0);
   hline('=');
   std::cout << setw(first_column_width) << "CHANNEL/POINT";
@@ -1263,19 +1273,23 @@ void select_all(std::vector<ScanPoint_t> & P)
   std::cout << setw(vline_width) << " | ";
   std::cout << std::endl;
   hline();
-  for(int c = 0; c < CHANNELS.size(); c++)
+  //for(int c = 0; c < CHANNELS.size(); c++)
+  int channel=0;
+  for(auto & sel : SEL)
   {
-    select(P, varexp, CHANNELS[c].c_str(), "goff" , "add");
-    std::cout << setw(first_column_width) << CHANNELS[c];
-    totalEventInChannel[c]=0;
+    select(P, varexp, sel.cut.c_str(), "goff" , "add");
+    //std::cout << setw(first_column_width) << CHANNELS[c];
+    std::cout << setw(first_column_width+count_utf8_extra_byte(sel.title)) << sel.title;
+    totalEventInChannel[channel]=0;
     for(int i=0; i < Ntt.size(); i++)
     {
-      totalEventInChannel[c]+=P[i].Ntt;
+      totalEventInChannel[channel]+=P[i].Ntt;
       Ntt[i]+=P[i].Ntt;
       std::cout << setw(column_width) <<  P[i].Ntt;
     }
-    std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEventInChannel[c];
+    std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEventInChannel[channel];
     std::cout << std::endl;
+    channel++;
   }
   hline('-');
   std::cout << setw(first_column_width) << "total";
