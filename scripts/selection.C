@@ -1117,21 +1117,21 @@ struct Selection_t
   std::string cut;
 };
 
-std::vector<std::string> CHANNELS =
-{
-  "eu_cut"     ,
-  "epi_cut"    ,
-  "upi_cut"    ,
-  "ee_cut"     ,
-  "uu_cut"     ,
-  "pipi_cut"   ,
-  "eK_cut"     ,
-  "uK_cut"     ,
-  "piK_cut"    ,
-  "KK_cut"     ,
-  "Xrho_cut"   ,
-  "rhorho_cut"
-};
+//std::vector<std::string> CHANNELS =
+//{
+//  "eu_cut"     ,
+//  "epi_cut"    ,
+//  "upi_cut"    ,
+//  "ee_cut"     ,
+//  "uu_cut"     ,
+//  "pipi_cut"   ,
+//  "eK_cut"     ,
+//  "uK_cut"     ,
+//  "piK_cut"    ,
+//  "KK_cut"     ,
+//  "Xrho_cut"   ,
+//  "rhorho_cut"
+//};
 
 
 std::vector<Selection_t> SELECTION
@@ -1149,11 +1149,13 @@ std::vector<Selection_t> SELECTION
   {"ρρ", "#rho#rho" , "rhorho_cut"}
 };
 
-void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
+std::vector<Selection_t> & DEFAULT_SELECTION=SELECTION;
+
+void measure_efficiency(std::vector<ScanPoint_t> & PNTS, std::vector<Selection_t> & SEL=DEFAULT_SELECTION, long N0=100000)
 {
   const char * varexp = "ptem:acop";
   std::vector<long> Ntt(PNTS.size(),0);
-  std::vector<TGraphErrors *> graphs(CHANNELS.size());
+  std::vector<TGraphErrors *> graphs(SEL.size());
   for(auto & g : graphs) g = new TGraphErrors;
   TGraphErrors * total_g = new TGraphErrors;
   const int whead = 15;
@@ -1170,10 +1172,11 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
     std::cout << setw(wcol) << (PNTS[p].W*0.5-MTAU)*1e3;
   }
   std::cout << std::endl;
-  for(int i = 0; i < CHANNELS.size(); i++)
+  for(int i = 0; i < SEL.size(); i++)
   {
-    select(PNTS, varexp, CHANNELS[i].c_str(), "col" , "add");
-    std::cout << setw(whead) << CHANNELS[i];
+    select(PNTS, varexp, SEL[i].cut.c_str(), "col" , "add");
+    std::cout << setw(whead+count_utf8_extra_byte(SEL[i].title)) << SEL[i].title;
+    //std::cout << setw(whead) << CHANNELS[i];
     for(int p = 0; p < PNTS.size(); ++p)
     {
       Ntt[p]+=PNTS[p].Ntt;
@@ -1204,7 +1207,7 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
   total_g->SetMarkerStyle(20);
   total_g->SetMarkerSize(2);
   total_g->SetLineWidth(2);
-  for(int c = 0;c<CHANNELS.size();++c) 
+  for(int c = 0;c<graphs.size();++c) 
   {
     graphs[c]->SetLineColor(c+2);
     graphs[c]->SetMarkerColor(c+2);
@@ -1242,8 +1245,6 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
   eps_cor_g->SetLineWidth(2);
   eps_cor_g->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
   eps_cor_g->GetYaxis()->SetTitle("efficiency correction");
-  //for (int c =0;c<CHANNELS.size(); ++c) graphs[c]->Draw("pl");
-
 }
 
 void select_all(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t> & SEL=SELECTION)
@@ -1254,23 +1255,32 @@ void select_all(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t> & SE
   int column_width = 10;
   int vline_width = 10;
   int hline_width = first_column_width + last_column_width + vline_width + P.size()*column_width+3;
-  auto hline = [&hline_width](char  symb='-', int width = 0) { auto c = cout.fill(); std::cout << setfill(symb) << setw(width == 0? (hline_width-1) : (width-1)) << symb << setfill(c) << std::endl; };
-  auto vline = [&vline_width](char  symb='-', int width = 0) { std::cout << setw(width == 0? (vline_width-1) : (width-1)) << symb; };
+  auto hline = [&hline_width](std::string  symb="─", int width = 0) 
+  { 
+    int w = width == 0 ? hline_width : width;
+    for(int i=0;i<w;++i)
+    {
+      std::cout << symb;
+    }
+    std::cout << std::endl;
+    //auto c = cout.fill(); std::cout << setfill(symb) << setw() << symb << setfill(c) << std::endl; 
+  };
+  auto vline = [&vline_width](char symb='-', int width = 0) { std::cout << setw(width == 0? (vline_width-1) : (width-1)) << symb; };
 
   //default expression to show
   const char * varexp = "ptem:acop";
   std::vector<long> Ntt;
   std::vector<long> totalEventInChannel(SEL.size());
   Ntt.resize(P.size(),0);
-  hline('=');
+  hline("━");
   std::cout << setw(first_column_width) << "CHANNEL/POINT";
   for(int i=0;i<Ntt.size();++i) std::cout << setw(column_width)  << P[i].title;
-  std::cout << setw(vline_width) << " | " << setw(last_column_width) << "TOTAL";
+  std::cout << setw(vline_width) << " │ " << setw(last_column_width) << "TOTAL";
   std::cout << std::endl;
   hline();
   std::cout << setw(first_column_width) << "E-MTAU,MeV";
   for(int i=0;i<Ntt.size();++i) std::cout << setw(column_width) << (P[i].W*0.5-MTAU)*1e3;
-  std::cout << setw(vline_width) << " | ";
+  std::cout << setw(vline_width) << " │ ";
   std::cout << std::endl;
   hline();
   //for(int c = 0; c < CHANNELS.size(); c++)
@@ -1287,18 +1297,18 @@ void select_all(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t> & SE
       Ntt[i]+=P[i].Ntt;
       std::cout << setw(column_width) <<  P[i].Ntt;
     }
-    std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEventInChannel[channel];
+    std::cout << setw(vline_width) << " │ " << setw(last_column_width) << totalEventInChannel[channel];
     std::cout << std::endl;
     channel++;
   }
-  hline('-');
+  hline();
   std::cout << setw(first_column_width) << "total";
   for(int i=0;i<Ntt.size();i++) std::cout  << setw(column_width) << Ntt[i];
   long totalEvent=0;
   for(auto n :totalEventInChannel) totalEvent+=n;
-  std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEvent;
+  std::cout << setw(vline_width) << " │ " << setw(last_column_width) << totalEvent;
   std::cout << std::endl;
-  hline('=');
+  hline("━");
   fit(P, "scan.txt", 1);
 }
 
