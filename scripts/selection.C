@@ -19,6 +19,14 @@
 #include <regex>
 #include <string>
 #include <list>
+#include <fmt/printf.h>
+
+const double GeV=1.0;
+const double MeV=1e-3*GeV;
+
+const double MTAU=1776.86*MeV;
+const double MPI=0.13957061*GeV; 
+const double MPI0=0.134977*GeV;
 
 //Get recursive file list
 std::list<std::string> get_recursive_file_list(std::string dirname)
@@ -102,6 +110,13 @@ void print(const std::map<std::string, std::list<std::string> > & fmap)
   }
 }
 
+TChain * get_chain(std::string name, std::string newname, std::string title, std::string filename)
+{
+  TChain * chain = new TChain(name.c_str(), title.c_str());
+  chain->AddFile(filename.c_str());
+  chain->SetName(newname.c_str());
+  return chain;
+}
 
 TChain * get_chain(const char * name, const char * newname, std::string title, const char * file_name)
 {
@@ -146,8 +161,21 @@ struct ScanPoint_t
   double eps=1.0; //registration efficiency
   double eps_error=1.0; //registration efficiency error
   double effcor=1.0; //registration efficiency correction
+  double Sw, dSw; //energy spread
   std::list<int> run_list;
+  std::list<std::string> file_list;
+  std::string scan_title;
 };
+void print(const std::vector<ScanPoint_t> & SPL)
+{
+  int point_number = 1;
+  std::cout << setw(5) << "n/n" << setw(10) << "begin run" << setw(10) <<  "end_run" << setw(15) << "IL, nb^-1" << setw(20) << "W/2-MTAU, MeV" << setw(20) << "dE, MeV" << std::endl;
+  for (const auto & p : SPL)
+  {
+    std::cout << setw(5) << point_number << setw(10) << p.begin_run << setw(10) <<  p.end_run << setw(15) << p.L << setw(20) << (p.W/2-MTAU)/MeV << setw(20) << p.dW/2/MeV << std::endl;
+    point_number++;
+  }
+}
 
 typedef std::vector<ScanPoint_t>  Scan_t;
 std::map<std::string, std::string > SelMap;
@@ -207,12 +235,6 @@ std::string get_run_formula(std::list<int> & runs)
   return formula;
 }
 
-const double GeV=1.0;
-const double MeV=1e-3*GeV;
-
-const double MTAU=1776.86*MeV;
-const double MPI=0.13957061*GeV; 
-const double MPI0=0.134977*GeV;
 
 void print_runs(const Scan_t  & scan)
 {
@@ -221,6 +243,41 @@ void print_runs(const Scan_t  & scan)
   {
     std::cout << setw(10) << s.title << setw(10) << s.W/MeV << setw(15) << (s.W*0.5-MTAU)/MeV << "       " << get_run_formula(s.run_list) << std::endl;
   }
+}
+
+//create run list from single line, where runs in format [run1] [run2] [run3-run4] [run5]
+std::list<int> get_run_list(std::string line)
+{
+  std::list<int> run_list;
+  if(line.empty()) return run_list;
+  std::string str = line;
+  bool is_match=true;
+  static std::regex run_range_re(R"(^\s*(\d+)\s*-\s*(\d+))"); //look for the run range
+  static std::regex run_re(R"(^\s*\d+)"); //look for the single run
+  std::smatch match;
+  while(is_match)
+  {
+    is_match = false;
+    if(std::regex_search(str,match,run_range_re)) 
+    {
+      is_match = true;
+      //match[0] -- <begin_run>-<end_run>
+      //match[1] -- <begin_run>
+      //match[2] -- <end_run>
+      std::cout << match[1] << '-'<<match[2] << std::endl;
+      int begin_run = stod(match[1]);
+      int end_run = stod(match[2]);
+      for(int run = begin_run; run<=end_run; ++run) run_list.push_back(run);
+      str = match.suffix();
+    }
+    else if( std::regex_search(str,match,run_re))
+    {
+      is_match = true;
+      run_list.push_back(stod(match[0]));
+      str = match.suffix();
+    }
+  }
+  return run_list;
 }
 
 Scan_t read_privalov_runtable(std::string filename)
@@ -232,52 +289,99 @@ Scan_t read_privalov_runtable(std::string filename)
   std::string point_energy; //beam energy in GeV
   std::string point_runs;
   //std::regex re(R"((\d+-\d+)");
-  std::regex run_range_re(R"(^\s*(\d+)\s*-\s*(\d+))"); //look for the run range
-  std::regex run_re(R"(^\s*\d+)"); //look for the single run
+  //std::regex run_range_re(R"(^\s*(\d+)\s*-\s*(\d+))"); //look for the run range
+  //std::regex run_re(R"(^\s*\d+)"); //look for the single run
   std::regex energy_re(R"(\d+\.?\d+)"); //for extract energy
   std::smatch match;
   while( ifs >> point_name >> point_energy) 
   { 
     std::getline(ifs,point_runs); 
-    if(!point_runs.empty())
+    ScanPoint_t sp;
+    sp.run_list = get_run_list(point_runs);
+    if(sp.run_list.empty()) continue;
+    sp.title = point_name;
+    if(std::regex_search(point_energy, match, energy_re))
     {
-      std::string str = point_runs;
-      //std::cout << point_name << " " << point_energy << " " << point_runs << std::endl;
-      theScan.emplace_back(ScanPoint_t());
-      ScanPoint_t & sp = theScan.back();
-      bool is_match=true;
-      while(is_match)
-      {
-        is_match = false;
-        if(std::regex_search(str,match,run_range_re)) 
-        {
-          is_match = true;
-          //match[0] -- <begin_run>-<end_run>
-          //match[1] -- <begin_run>
-          //match[2] -- <end_run>
-          //std::cout << match[1] << '-'<<match[2] << std::endl;
-          int begin_run = stod(match[1]);
-          int end_run = stod(match[2]);
-          for(int run = begin_run; run<=end_run; ++run) sp.run_list.push_back(run);
-          str = match.suffix();
-        }
-        else if( std::regex_search(str,match,run_re))
-        {
-          is_match = true;
-          sp.run_list.push_back(stod(match[0]));
-          str = match.suffix();
-        }
-      }
-      sp.title = point_name;
-      if(std::regex_search(point_energy, match, energy_re))
-      {
-        sp.W = stod(match[0])*2.0;
-      }
-      else
-      {
-        sp.W = 0;
-      }
+      sp.W = stod(match[0])*2.0;
     }
+    else
+    {
+      sp.W = 0;
+    }
+    theScan.emplace_back(std::move(sp));
+  };
+  return theScan;
+}
+
+Scan_t read_my_runtable(std::string filename)
+{
+  Scan_t theScan;
+  std::fstream ifs(filename);
+  if(!ifs) { std::cerr << "Unable to open file: " << filename << std::endl; return theScan; }
+  std::string point_name;
+  std::string point_runs;
+  double point_energy; //beam energy in GeV
+  double point_energy_error;
+  double point_spread;
+  double point_spread_error;
+  double point_lum;
+  while( ifs >> point_name >> point_energy >> point_energy_error >> point_spread >> point_spread_error >> point_lum) 
+  { 
+    std::getline(ifs,point_runs); 
+    ScanPoint_t sp;
+    sp.run_list = get_run_list(point_runs);
+    if(sp.run_list.empty()) continue;
+    sp.title = point_name;
+    sp.W = point_energy;
+    sp.dW = point_energy_error;
+    sp.Sw = point_spread;
+    sp.dSw = point_spread_error;
+    sp.L = point_lum;
+    theScan.emplace_back(std::move(sp));
+  };
+  return theScan;
+}
+
+Scan_t read_simple_runtable(std::string filename)
+{
+  Scan_t theScan;
+  std::fstream ifs(filename);
+  if(!ifs) { std::cerr << "Unable to open file: " << filename << std::endl; return theScan; }
+  std::string point_name;
+  std::string point_runs;
+  double point_energy; //beam energy in GeV
+  double point_energy_error;
+  double point_spread;
+  double point_spread_error;
+  double point_lum;
+  std::smatch sm;
+  std::regex sharp_re(R"(^\s*#.*)"); //for extract energy
+  std::regex files_re(R"(\w+\.root)");
+  std::string line;
+  while(std::getline(ifs,line)) 
+  { 
+    if(regex_match(line,sm,sharp_re)) continue;
+    std::stringstream iss(line);
+    //std::cout << point_name << std::endl;
+    iss >> point_name >> point_energy >> point_energy_error >> point_spread >> point_spread_error >> point_lum;
+    std::getline(iss,point_runs); 
+    ScanPoint_t sp;
+    for (sregex_iterator it(point_runs.begin(), point_runs.end(), files_re); it != sregex_iterator(); ++it)
+    {
+      sp.file_list.push_back(it->str());
+    }
+    sp.begin_run=-1;
+    sp.end_run=-1;
+    //std::cout << point_name << " " << point_energy << " " << std::endl;
+    //sp.run_list = get_run_list(point_runs);
+    //if(sp.run_list.empty()) continue;
+    sp.title = point_name;
+    sp.W = point_energy;
+    sp.dW = point_energy_error;
+    sp.Sw = point_spread;
+    sp.dSw = point_spread_error;
+    sp.L = point_lum;
+    theScan.emplace_back(std::move(sp));
   };
   return theScan;
 }
@@ -403,6 +507,114 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
 }
 
+std::vector<ScanPoint_t> read_data(std::string data_dir, const Scan_t & cfg)
+{
+  //auto cfg = read_privalov_runtable(privalov_runtable); //read scan configuration
+  auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
+  auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
+  Scan_t scan;
+  scan.reserve(cfg.size());
+  for(auto & point : cfg ) 
+  {
+    ScanPoint_t sp;
+    sp = point;
+    sp.file_list = ml[point.title];
+    if(sp.file_list.empty()) 
+    {
+      std::cout << "WARNING: no data for point: " << point.title << std::endl;
+      continue;
+    }
+    scan.push_back(sp);
+  }
+  //read TChain
+  int index = 0;
+  for(auto & sp : scan)
+  {
+    //create chain
+    //sp.tt= new TChain((, sp.title.c_str());
+    //read tau tau events
+    auto tt = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) tt->AddFile(file.c_str());
+    //read gamma gamma events
+    auto gg = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) gg->AddFile(file.c_str());
+    //change chain names
+    tt->SetName(("tt"+to_string(index)).c_str());
+    gg->SetName(("gg"+to_string(index)).c_str());
+    set_alias(tt,sp.W);
+    sp.tt = tt;
+    sp.gg = gg;
+  }
+  return scan;
+}
+
+std::vector<ScanPoint_t> read_data2(std::string data_dir, std::string privalov_runtable)
+{
+  auto cfg = read_privalov_runtable(privalov_runtable); //read scan configuration
+  auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
+  auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
+  Scan_t scan;
+  scan.reserve(cfg.size());
+  for(auto & point : cfg ) 
+  {
+    ScanPoint_t sp;
+    sp = point;
+    sp.file_list = ml[point.title];
+    if(sp.file_list.empty()) 
+    {
+      std::cout << "WARNING: no data for point: " << point.title << std::endl;
+      continue;
+    }
+    scan.push_back(sp);
+  }
+  //read TChain
+  int index = 0;
+  for(auto & sp : scan)
+  {
+    //create chain
+    //sp.tt= new TChain((, sp.title.c_str());
+    //read tau tau events
+    auto tt = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) tt->AddFile(file.c_str());
+    //read gamma gamma events
+    auto gg = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) gg->AddFile(file.c_str());
+    //change chain names
+    tt->SetName(("tt"+to_string(index)).c_str());
+    gg->SetName(("gg"+to_string(index)).c_str());
+    set_alias(tt,sp.W);
+    sp.tt = tt;
+    sp.gg = gg;
+  }
+  return scan;
+}
+
+std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
+{
+  Scan_t scan = read_simple_runtable(cfg_file); //read scan configuration
+  print(scan);
+  int index = 0;
+  for(auto & sp : scan)
+  {
+    //create chain
+    //sp.tt= new TChain((, sp.title.c_str());
+    //read tau tau events
+    auto tt = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) tt->AddFile((data_dir+"/"+file).c_str());
+    //read gamma gamma events
+    auto gg = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) gg->AddFile((data_dir+"/"+file).c_str());
+    //change chain names
+    tt->SetName(("tt"+to_string(index)).c_str());
+    gg->SetName(("gg"+to_string(index)).c_str());
+    set_alias(tt,sp.W);
+    sp.tt = tt;
+    sp.gg = gg;
+  }
+  return scan;
+}
+
+
 std::vector<ScanPoint_t> read_data(const char * dir)
 {
   std::vector<ScanPoint_t> Points;
@@ -509,16 +721,6 @@ std::vector<ScanPoint_t> read_galuga(std::string  dirname=".", std::string regex
   return P;
 }
 
-void print(const std::vector<ScanPoint_t> & SPL)
-{
-  int point_number = 1;
-  std::cout << setw(5) << "n/n" << setw(10) << "begin run" << setw(10) <<  "end_run" << setw(15) << "IL, nb^-1" << setw(20) << "W/2-MTAU, MeV" << setw(20) << "dE, MeV" << std::endl;
-  for (const auto & p : SPL)
-  {
-    std::cout << setw(5) << point_number << setw(10) << p.begin_run << setw(10) <<  p.end_run << setw(15) << p.L << setw(20) << p.W/2-MTAU << setw(20) << p.dW/2 << std::endl;
-    point_number++;
-  }
-}
 
 void draw_lum_per_run2(const std::vector<ScanPoint_t> & SPL)
 {
@@ -661,12 +863,12 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
   TCanvas * c = nullptr;
   if(!goff)
   {
-    c = new TCanvas(canvas_name,"selection",0,0,1920,1080);
+    c = new TCanvas(canvas_name,"selection",0,0,1920*2/5.0*P.size(),1080*0.5);
     //auto c = new TCanvas();
     c->SetTitle(selection);
-    int ny = floor(sqrt(P.size()+1));
-    int nx = ny+1;
-    c->Divide(nx,ny);
+    //int ny = floor(sqrt(P.size()+1));
+    //int nx = ny+1;
+    c->Divide(P.size(),1);
   }
   int i = 1;
   bool add_to_prev_selection=false;
@@ -883,6 +1085,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 auto DATA = read_data("data");
+auto DATA11 = read_data3("tau2011","tau2011/runtable.txt");
 auto MC = read_galuga("mc/signal");
 auto EEee = read_galuga("mc/EEee");
 auto EEuu = read_galuga("mc/EEuu");
@@ -891,6 +1094,15 @@ auto EEpipi = read_galuga("mc/EEpipi");
 auto BB = read_galuga("mc/BB");
 auto UU = read_galuga("mc/uu");
 auto HADR = read_galuga("mc/hadrons");
+auto S = read_data("data", read_privalov_runtable("../runtable.txt"));
+
+
+struct SelectionConfig_t
+{
+  std::string title; //channel name  (temrinal)
+  std::string root_title; //title for root to print on canvas
+  std::string cut;
+};
 
 std::vector<std::string> CHANNELS =
 {
@@ -908,6 +1120,22 @@ std::vector<std::string> CHANNELS =
   "rhorho_cut"
 };
 
+
+std::vector<SelectionConfig_t> SELECTION
+{
+  {"eμ", "e#mu"     , "eu_cut"}     ,
+  {"eπ", "e#pi"     , "epi_cut"}    ,
+  {"μπ", "#mu#pi"   , "upi_cut"}    ,
+  {"ee", "ee"       , "ee_cut"}     ,
+  {"μμ", "#mu#mu"   , "uu_cut"}     ,
+  {"ππ", "#pi#pi"   , "pipi_cut"}   ,
+  {"eK", "eK"       , "eK_cut"}     ,
+  {"πK", "#piK"     , "piK_cut"}    ,
+  {"KK", "KK"       , "KK_cut"}     ,
+  {"Xρ", "X#rho"    , "Xrho_cut"}   ,
+  {"ρρ", "#rho#rho" , "rhorho_cut"}
+};
+
 void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
 {
   const char * varexp = "ptem:acop";
@@ -915,40 +1143,45 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
   std::vector<TGraphErrors *> graphs(CHANNELS.size());
   for(auto & g : graphs) g = new TGraphErrors;
   TGraphErrors * total_g = new TGraphErrors;
-  std::cout << setw(15) << "W,MeV";
+  const int whead = 15;
+  const int wcol = 20;
+  std::cout << setw(whead) << "W,MeV";
   for(int p = 0; p < PNTS.size(); ++p)
   {
-    std::cout << setw(10) << PNTS[p].W*1e3;
+    std::cout << setw(wcol) << PNTS[p].W*1e3;
   }
   std::cout << std::endl;
-  std::cout << setw(15) << "E-MPDG,MeV";
+  std::cout << setw(whead) << "E-MPDG,MeV";
   for(int p = 0; p < PNTS.size(); ++p)
   {
-    std::cout << setw(10) << (PNTS[p].W*0.5-MTAU)*1e3;
+    std::cout << setw(wcol) << (PNTS[p].W*0.5-MTAU)*1e3;
   }
   std::cout << std::endl;
   for(int i = 0; i < CHANNELS.size(); i++)
   {
     select(PNTS, varexp, CHANNELS[i].c_str(), "col" , "add");
-    std::cout << setw(15) << CHANNELS[i];
+    std::cout << setw(whead) << CHANNELS[i];
     for(int p = 0; p < PNTS.size(); ++p)
     {
       Ntt[p]+=PNTS[p].Ntt;
       PNTS[p].eps = double(PNTS[p].Ntt)/double(N0);
       graphs[i]->SetPoint(p,(PNTS[p].W*0.5-MTAU)*1e3, PNTS[p].eps);
       graphs[i]->SetPointError(p,PNTS[p].dW*1e3*0.5, sqrt(PNTS[p].eps*(1.0 - PNTS[p].eps)/N0));
-      std::cout << setw(10) << PNTS[p].eps;
+      std::cout << setw(wcol) << PNTS[p].eps;
     }
     std::cout << std::endl;
   }
-  std::cout << setw(15) << "TOTAL";
+  std::cout << setw(whead) << "TOTAL";
   for(int p = 0;p<PNTS.size();++p) 
   {
     double eps = double(Ntt[p])/double(N0);
 //    std::cout << setw(10) << PNTS[p].W << setw(10) << PNTS[p].dW;
     total_g->SetPoint(p, (PNTS[p].W*0.5-MTAU)*1e3, eps);
-    total_g->SetPointError(p, PNTS[p].dW*1e3*0.5, sqrt(eps*(1.0-eps)/N0));
-    std::cout << setw(10) << eps;
+    double deps = sqrt(eps*(1.0-eps)/N0);
+    total_g->SetPointError(p, PNTS[p].dW*1e3*0.5, deps);
+    char buf[1024];
+    sprintf(buf, "%7.5f±%7.5f", eps,deps);
+    std::cout << setw(wcol)<<buf;
   }
   std::cout << std::endl;
   auto * mg = new TMultiGraph;
@@ -1000,45 +1233,58 @@ void measure_efficiency(std::vector<ScanPoint_t> & PNTS, long N0=100000)
 
 }
 
-void select_all(std::vector<ScanPoint_t> & P, bool is_data=true)
+void select_all(std::vector<ScanPoint_t> & P)
 {
+  //some printing configuration
+  int first_column_width = 15;
+  int last_column_width = 10;
+  int column_width = 10;
+  int vline_width = 10;
+  int hline_width = first_column_width + last_column_width + vline_width + P.size()*column_width+3;
+  auto hline = [&hline_width](char  symb='-', int width = 0) { auto c = cout.fill(); std::cout << setfill(symb) << setw(width == 0? (hline_width-1) : (width-1)) << symb << setfill(c) << std::endl; };
+  auto vline = [&vline_width](char  symb='-', int width = 0) { std::cout << setw(width == 0? (vline_width-1) : (width-1)) << symb; };
+
+  //default expression to show
   const char * varexp = "ptem:acop";
   std::vector<long> Ntt;
   std::vector<long> totalEventInChannel(CHANNELS.size());
-  if(is_data) Ntt.resize(P.size(),0);
-  else Ntt.resize(P.size());
-  for( auto & n : Ntt) n = 0;
-  std::cout << setw(10) << "channel";
-  for(int i=0;i<Ntt.size();++i) std::cout << setw(10)  << P[i].title;
-  std::cout << setw(10) << "total";
+  //if(is_data) Ntt.resize(P.size(),0);
+  //else Ntt.resize(P.size());
+  //for( auto & n : Ntt) n = 0;
+  Ntt.resize(P.size(),0);
+  hline('=');
+  std::cout << setw(first_column_width) << "CHANNEL/POINT";
+  for(int i=0;i<Ntt.size();++i) std::cout << setw(column_width)  << P[i].title;
+  std::cout << setw(vline_width) << " | " << setw(last_column_width) << "TOTAL";
   std::cout << std::endl;
-  std::cout << setw(10) << "DE,MeV";
-  for(int i=0;i<Ntt.size();++i) std::cout << setw(10) << (P[i].W*0.5-MTAU)*1e3;
+  hline();
+  std::cout << setw(first_column_width) << "E-MTAU,MeV";
+  for(int i=0;i<Ntt.size();++i) std::cout << setw(column_width) << (P[i].W*0.5-MTAU)*1e3;
+  std::cout << setw(vline_width) << " | ";
   std::cout << std::endl;
+  hline();
   for(int c = 0; c < CHANNELS.size(); c++)
   {
     select(P, varexp, CHANNELS[c].c_str(), "goff" , "add");
-    std::cout << setw(10) << CHANNELS[c];
+    std::cout << setw(first_column_width) << CHANNELS[c];
     totalEventInChannel[c]=0;
     for(int i=0; i < Ntt.size(); i++)
     {
       totalEventInChannel[c]+=P[i].Ntt;
       Ntt[i]+=P[i].Ntt;
-      std::cout << setw(10) <<  P[i].Ntt;
+      std::cout << setw(column_width) <<  P[i].Ntt;
     }
-    std::cout << setw(10) << totalEventInChannel[c];
+    std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEventInChannel[c];
     std::cout << std::endl;
   }
-  for(int i=0;i<10*(Ntt.size()+2);++i) std::cout << '-';
-  std::cout << std::endl;
-  std::cout << setw(10) << "total";
-  for(int i=0;i<Ntt.size();i++) std::cout  << setw(10) << Ntt[i];
+  hline('-');
+  std::cout << setw(first_column_width) << "total";
+  for(int i=0;i<Ntt.size();i++) std::cout  << setw(column_width) << Ntt[i];
   long totalEvent=0;
   for(auto n :totalEventInChannel) totalEvent+=n;
-  std::cout << setw(10) << totalEvent;
+  std::cout << setw(vline_width) << " | " << setw(last_column_width) << totalEvent;
   std::cout << std::endl;
-  for(int i=0;i<10*(Ntt.size()+2);++i) std::cout << '-';
-  std::cout << std::endl;
+  hline('=');
   fit(P, "scan.txt", 1);
 }
 
@@ -1105,3 +1351,53 @@ void correct_efficiency(Scan_t & D /*  data  */, Scan_t & MC /*  MC signal */)
     std::cout << setw(5) << i+1 << setw(10) << D[i].W/MeV << setw(10) << D[i].W*0.5/MeV << setw(15) << (D[i].W*0.5-MTAU)/MeV <<  setw(10) << D[i].Ntt << setw(10) << D[i].effcor << std::endl;
   }
 }
+
+void set_color_and_line(TAttLine *obj, int index)
+{
+  std::vector<int> color={kBlack, kRed, kBlue,kGreen+2};
+  std::vector<int> line = {1,2,3};
+  int c = index % color.size();
+  int l = index / color.size();
+  obj->SetLineColor(color[c]);
+  obj->SetLineStyle(line[l]);
+}
+
+void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, const char * selection, std::string gopt)
+{
+  auto  c = new TCanvas;
+  int win_size=600;
+  c->SetWindowSize(win_size*(SP.size()+1), win_size*varexp.size());
+  int index =0;
+  c->Divide(SP.size()+1,varexp.size());
+  for(auto & ve : varexp)
+  {
+    TLegend * l = new TLegend(0.8,0.9,1.0,1.0);
+    auto hs = new THStack(ve.c_str(),ve.c_str());
+    int draw_index=0;
+    for(auto sp :  SP)
+    {
+      std::string  gopt_tmp = gopt;
+      sp->tt->SetLineWidth(1);
+      set_color_and_line(sp->tt, draw_index);
+      c->cd(index+1);
+      sp->tt->Draw(ve.c_str(),selection, gopt.c_str());
+      auto h = sp->tt->GetHistogram();
+      h->SetName(("h"+sp->title+to_string(index)).c_str());
+      h->SetTitle((sp->title).c_str());
+      hs->Add(h);
+      index++;
+      l->AddEntry(sp->tt,sp->title.c_str());
+      draw_index++;
+    }
+    c->cd(index+1);
+    hs->Draw();
+    l->Draw();
+    index++;
+  }
+}
+
+void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char * selection, std::string gopt)
+{
+  compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
+}
+
