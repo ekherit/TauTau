@@ -433,88 +433,118 @@ void set_alias(TTree * tt, double W)
   //particles id
 
   //define electrons
-  for(int i=0;i<2;i++)
+  //for(int i=0;i<2;i++)
+  //{
+  //  //electron id
+  //  char alias[65535];
+  //  sprintf(alias,"0.8 < Ep[%1$d] && Ep[%1$d]<1.05 && chi2_dedx_e[%1$d]<5 && abs(delta_tof_e[%1$d])<0.3",i);
+  //  char particle[16];
+  //  sprintf(particle,"e%d",i);
+  //  std::cout << particle << "=" << alias << std::endl;
+  //  tt->SetAlias(particle,alias);
+  //}
+
+
+  //substitute s/#/<track>/g
+  auto insert_track_number = [](int track, std::string selection_template) -> std::string
   {
-    //electron id
-    char alias[65535];
-    sprintf(alias,"0.8 < Ep[%1$d] && Ep[%1$d]<1.05 && chi2_dedx_e[%1$d]<5 && abs(delta_tof_e[%1$d])<0.3",i);
-    char particle[16];
-    sprintf(particle,"e%d",i);
-    std::cout << particle << "=" << alias << std::endl;
-    tt->SetAlias(particle,alias);
-    //muon id
+    std::string track_str = std::to_string(track);
+    std::regex re(R"(#)");
+    std::string selection;
+    std::regex_replace(std::back_inserter(selection), selection_template.begin(), selection_template.end(), re,track_str);
+    return selection;
+  };
+  // tt->MakeAlias("<track_prefix><track>","<selection s/#/<track>")
+  auto make_alias = [&insert_track_number](TTree * tt, std::string track_name_prefix, int track, std::string selection_template) -> void
+  {
+    std::string track_name = track_name_prefix + std::to_string(track);
+    tt->SetAlias(track_name.c_str(), insert_track_number(track, selection_template).c_str());
+  };
+
+
+  //Now setup particle id's
+  for(int track=0;track<2;++track)
+  {
+    make_alias(tt, "e",  track, "0.8 < Ep[#] && Ep[#]<1.05 && chi2_dedx_e[#]<5 && abs(delta_tof_e[#])<0.3");
+    //tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0]>(80*p[0]-50) || depth[0]>40) && Nmuhit[0]>1 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
+    make_alias(tt, "u",  track, "0.1 < E[#] && E[#] < 0.3 && depth[#]>0 && chi2_dedx_mu[#] < 5  && abs(delta_tof_mu[#]) < 0.3 && Ep[#]<0.8");
+    make_alias(tt, "pi", track, "!u# && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_pi[#] < 5 && abs(delta_tof_pi[#])<0.3");
+    //tt->SetAlias("pi0","!u0 &&   Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
+    make_alias(tt, "K",  track, "!e# !u# && !pi# && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_K[#] < 3 && abs(delta_tof_K[#])<0.3");
   }
-  //tt->SetAlias("e0","0.8 < Ep[0] && Ep[0]<1.05 && chi2_dedx_e[0]<5 && abs(delta_tof_e[0])<0.3");
-  //tt->SetAlias("e1","0.8 < Ep[1] && Ep[1]<1.05 && chi2_dedx_e[1]<5 && abs(delta_tof_e[0])<0.3");
-  tt->SetAlias("ee", "e0 && e1");
-
-  //define muons
-  //tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0]>(80*p[0]-50) || depth[0]>40) && Nmuhit[0]>1 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
-  tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && depth[0]>0 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
-  ///tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && (depth[1]>(80*p[1]-50) || depth[1]>40) && Nmuhit[1]>1 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
-  tt->SetAlias("u1","0.1 < E[1] && E[1] < 0.3 && depth[1]>0 && chi2_dedx_mu[1] < 5  && abs(delta_tof_mu[1]) < 0.3 && Ep[1]<0.8");
-  tt->SetAlias("uu", "u0 && u1");
-  tt->SetAlias("eu", "(e0 && u1) || (u0 && e1)");
-
-  //define pions
-  tt->SetAlias("pi0","!u0 && 0.8 < p[0] && p[0] < 1.05 && Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
-  tt->SetAlias("pi1","!u1 && 0.8 < p[1] && p[1] < 1.05 && Ep[1]<0.6 && chi2_dedx_pi[1] < 5 && abs(delta_tof_pi[1])<0.3");
-  //tt->SetAlias("pi0","!u0 &&   Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
-  //tt->SetAlias("pi1","!u1 &&   Ep[1]<0.6 && chi2_dedx_pi[1] < 5 && abs(delta_tof_pi[1])<0.3");
 
 
-  tt->SetAlias("pipi","pi0 && pi1");
-  tt->SetAlias("epi", "(e0 && pi1) || (pi0 && e1)");
-  tt->SetAlias("upi", "(u0 && pi1) || (pi0 && u1)");
+  
+
+  for(int i=0;i<4;i++)
+  {
+    //const double MRHO_MIN = 0.5;
+    //const double MRHO_MAX = 1.0;
+    //char name[128];
+    //char cut[65535];
+    //sprintf(name, "Mrho%d_cut",i);
+    //sprintf(cut,"%.2f < Mrho[%d] && Mrho[%d] < %.2f", MRHO_MIN, i, i, MRHO_MAX);
+    //tt->SetAlias(name,cut);
+    make_alias(tt,"Mrho_cut", i, "0.5 < Mrho[#] && Mrho[#] < 1.0");
+  }
+
+  for(int track=0;track<2; ++track)
+  {
+    make_alias(tt,"rho", track, "pi# && Mrho_cut# && Mpi0[#]>0.1128 && Mpi0[#]<0.1464");
+  }
+
+
+  auto sub = [](std::string s, std::string regexpr, std::string substr) -> std::string
+  {
+    std::string result;
+    std::regex re(regexpr);
+    std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, substr);
+    return result;
+  };
+
+  //define channels
+  auto make_xy  = [&sub](TTree * tt,  std::string x, std::string y)
+  {
+    auto s1 = sub("(x0 && y1)  ||   (y0  && x1)", "x", x);
+    auto alias = sub(s1, "y", y);
+    tt->SetAlias( (x+y).c_str(), alias.c_str());
+  };
+
+  auto make_xx  = [&sub](TTree * tt,  std::string x)
+  {
+    auto alias = sub("x0 && x1", "x", x);
+    tt->SetAlias((x+x).c_str(), alias.c_str());
+  };
+
+  for (auto & x : {"e","u", "pi", "K"} )
+    for (auto & y : {"e","u", "pi", "K"} )
+      make_xy(tt, x,y);
+
 
   tt->SetAlias("pil", "(pi0 && (u1 || e1 ))");
   tt->SetAlias("lpi", "(pi1 && (u0 || e0 ))");
 
-  //define kaons
-  tt->SetAlias("K0","!u0 && !pi0 && 0.8 < p[0] && p[0] < 1.05 && Ep[0]<0.6 && chi2_dedx_K[0] < 3 && abs(delta_tof_K[0])<0.3");
-  tt->SetAlias("K1","!u1 && !pi1 && 0.8 < p[1] && p[1] < 1.05 && Ep[1]<0.6 && chi2_dedx_K[1] < 3 && abs(delta_tof_K[1])<0.3");
-
-  tt->SetAlias("eK", "(e0 && K1) || (K0 && e1)");
-  tt->SetAlias("uK", "(u0 && K1) || (K0 && u1)");
-  tt->SetAlias("piK","(pi0 && K1) || (K0 && pi1)");
-  tt->SetAlias("KK","K0 && K1");
-
-  //final selection
-  tt->SetAlias("eu_cut",    "Nc==2 && Nn==0 && eu   && ptem>0.25");
-  tt->SetAlias("epi_cut",   "Nc==2 && Nn==0 && epi  && ptem>0.3");
-  tt->SetAlias("upi_cut",   "Nc==2 && Nn==0 && upi  && ptem>0.62");
-
-  tt->SetAlias("ee_cut",    "Nc==2 && Nn==0 && ee   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9");
-  tt->SetAlias("uu_cut",    "Nc==2 && Nn==0 && uu   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9");
-  tt->SetAlias("pipi_cut",  "Nc==2 && Nn==0 && pipi && ptem>0.55");
-
-  tt->SetAlias("eK_cut","Nc==2 && Nn==0 && eK");
-  tt->SetAlias("piK_cut","Nc==2 && Nn==0 && piK && ptem >0.4");
-  tt->SetAlias("uK_cut","Nc==2 && Nn==0 && uK && ptem >0.15");
-  tt->SetAlias("KK_cut","Nc==2 && Nn==0 && KK && ptem >0.15");
-
-  for(int i=0;i<4;i++)
-  {
-    const double MRHO_MIN = 0.5;
-    const double MRHO_MAX = 1.0;
-    char name[128];
-    char cut[65535];
-    sprintf(name, "Mrho%d_cut",i);
-    sprintf(cut,"%.2f < Mrho[%d] && Mrho[%d] < %.2f", MRHO_MIN, i, i, MRHO_MAX);
-    tt->SetAlias(name,cut);
-  }
-
-  tt->SetAlias("rho0", "pi0 && Mrho0_cut && Mpi0[0]>0.1128 && Mpi0[0]<0.1464");
-  tt->SetAlias("rho1", "pi1 && Mrho1_cut && Mpi0[0]>0.1128 && Mpi0[0]<0.1464");
-
-  //tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
-  tt->SetAlias("Xrho", "!rho0 && (e0 || u0 || pi0 || K0) && rho1 && !(e1 || u1 || K0)");
-  tt->SetAlias("rhoX", "!rho1 && (e1 || u1 || pi1 || K1) && rho0 && !(e0 || u0 || K0)");
+  tt->SetAlias("Xrho",   "!rho0 && (e0 || u0 || pi0 || K0) && rho1 && !(e1 || u1 || K0)");
+  tt->SetAlias("rhoX",   "!rho1 && (e1 || u1 || pi1 || K1) && rho0 && !(e0 || u0 || K0)");
   tt->SetAlias("rhorho", "!(e0 || u0 || K0) &&  !(e1 || u1 || K1) && Mpi0[0]>0.1128 && Mpi0[0]<0.1464 && Mpi0[1]>0.1128 && Mpi0[1]<0.1464  && pi0 && pi1  && ((Mrho0_cut && Mrho2_cut) || (Mrho1_cut && Mrho3_cut))");
 
-  tt->SetAlias("Xrho_cut","Nc==2 && Npi0==1 && acop>1.4 && (Xrho || rhoX)");
-  tt->SetAlias("rhorho_cut","Nc==2 && Npi0 ==2 && rhorho && ptem>0.5");
+  //final cuts 
+  //tt->SetAlias("eu_cut",    "");
+  //tt->SetAlias("epi_cut",   "");
+  //tt->SetAlias("upi_cut",   "");
 
+  //tt->SetAlias("ee_cut",    "");
+  //tt->SetAlias("uu_cut",    "");
+  //tt->SetAlias("pipi_cut",  "");
+
+  //tt->SetAlias("eK_cut",    "");
+  //tt->SetAlias("piK_cut",   "");
+  //tt->SetAlias("uK_cut",    "");
+  //tt->SetAlias("KK_cut",    "");
+  //tt->SetAlias("Xrho_cut","");
+  //tt->SetAlias("rhorho_cut","");
+
+  //tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
   //tt->SetAlias("pipi0pipi0_cut","Nc==2 && Npi0==2 && pipi && ptem>0.6");
 
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
@@ -1136,17 +1166,30 @@ struct Selection_t
 
 std::vector<Selection_t> SELECTION
 {
-  {"eμ", "e#mu"     , "eu_cut"}     ,
-  {"eπ", "e#pi"     , "epi_cut"}    ,
-  {"μπ", "#mu#pi"   , "upi_cut"}    ,
-  {"ee", "ee"       , "ee_cut"}     ,
-  {"μμ", "#mu#mu"   , "uu_cut"}     ,
-  {"ππ", "#pi#pi"   , "pipi_cut"}   ,
-  {"eK", "eK"       , "eK_cut"}     ,
-  {"πK", "#piK"     , "piK_cut"}    ,
-  {"KK", "KK"       , "KK_cut"}     ,
-  {"Xρ", "X#rho"    , "Xrho_cut"}   ,
-  {"ρρ", "#rho#rho" , "rhorho_cut"}
+  {"eμ", "e#mu"     , "Nc==2 && Nn==0 && eu   && ptem>0.25"}   ,
+  {"eπ", "e#pi"     , "Nc==2 && Nn==0 && epi  && ptem>0.3"}    ,
+  {"μπ", "#mu#pi"   , "Nc==2 && Nn==0 && upi  && ptem>0.62"}   ,
+  {"ee", "ee"       , "Nc==2 && Nn==0 && ee   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9"}     ,
+  {"μμ", "#mu#mu"   , "Nc==2 && Nn==0 && uu   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9"}     ,
+  {"ππ", "#pi#pi"   , "Nc==2 && Nn==0 && pipi && ptem>0.55"}    ,
+  {"eK", "eK"       , "Nc==2 && Nn==0 && eK"}                   ,
+  {"πK", "#piK"     , "Nc==2 && Nn==0 && piK && ptem >0.4"}     ,
+  {"μK", "#uK"      , "Nc==2 && Nn==0 && uK && ptem >0.15"}     ,
+  {"KK", "KK"       , "Nc==2 && Nn==0 && KK && ptem >0.15"}     ,
+  {"Xρ", "X#rho"    , "Nc==2 && Npi0 ==1 && (Xrho || rhoX) && acop>1.4"}   ,
+  {"ρρ", "#rho#rho" , "Nc==2 && Npi0 ==2 && rhorho && ptem>0.5"}
+};
+
+std::vector<Selection_t> SELECTION2011
+{
+  {"eμ", "e#mu"     , "eu   && Nc==2 && Nn==0 && ptem>0.1 && acop>16./180.*3.1415 && acop<16./180.*3.1415"}     ,
+  {"eπ", "e#pi"     , "epi  && Nc==2 && Nn==0 && ptem>0.22"}    ,
+  {"μπ", "#mu#pi"   , "upi  && Nc==2 && Nn==0 && ptem>0.25 && p[0]<0.94 && p[1]<0.94"}    ,
+  {"ee", "ee"       , "ee   && Nc==2 && Nn==0 && ptem>0.33"}     ,
+  {"μμ", "#mu#mu"   , "uu   && Nc==2 && Nn==0 && ptem>0.35"}     ,
+  {"ππ", "#pi#pi"   , "pipi && Nc==2 && Nn==0 && ptem>0.33 && MM >0.8"}   ,
+  {"eK", "eK"       , "eK   && Nc==2 && Nn==0 && ptem>0.22"}     ,
+  {"πK", "#piK"     , "piK  && Nc==2 && Nn==0 && ptem>0.33 && MM > 0.8"}    
 };
 
 std::vector<Selection_t> & DEFAULT_SELECTION=SELECTION;
@@ -1425,3 +1468,12 @@ void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char *
   compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
 }
 
+ std::string test_replace(std::string particle_name_prefix, std::string selection_template, int track)
+{
+  std::string track_str = std::to_string(track);
+  std::string particle_name = particle_name_prefix + track_str;
+  std::regex re(R"(\[\*\])");
+  std::string selection;
+  std::regex_replace(std::back_inserter(selection), selection_template.begin(), selection_template.end(), re,"["+track_str+"]");
+  return selection;
+};
