@@ -131,6 +131,117 @@ void test_make_combination_list2(int N=3)
 #include <algorithm>
 #include <iomanip>
 
+
+template<class It>
+It ibn_next(const It it)
+{
+  It new_it = it;
+  new_it++;
+  return new_it;
+}
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  make_unique_pairs
+ *  Description:  Make all combination of unique pairs from two arrays of size NA and NB any Sortable type 
+ *  The number of pairs in one combination  is min(NA,NB)
+ *  The total number of all such combinations is NA!/(NA-NB)! if NA<=NB
+ *  My algorithm use swap of objects, do a lot of memory allocations for the temporary result
+ *  and need memory for the final results.
+ *  I could not find the algorithm wich generate unique combinations
+ *  So I need to sort pairs in each combinations then sort all combinations
+ *  and remove duplicated combinations. If you know better algorithm - your wellcome
+ * =====================================================================================
+ */
+template
+< 
+    class ItA,   //iterator in the first container of objects type A
+    class ItB,   //iterator in the second container of object type B
+    class R      //result contains all combinations of pairs:  
+    //   { (a1,b1) (a2,b2) (a3,b3) }
+    //   { (a1,b2) (a2,b1) (a3,b3) }
+    //   ...
+>
+void  make_unique_pairs
+(
+   ItA a_begin, ItA a_end,  //range in first container A
+   ItB b_begin, ItB b_end,  //range in second container B
+   R & result
+)
+{
+  //this is the type of pair's items (A,B)
+  //using A = typename std::iterator_traits<ItA>::value_type; 
+  //using B = typename std::iterator_traits<ItB>::value_type;
+  typedef typename std::iterator_traits<ItA>::value_type A;
+  typedef typename std::iterator_traits<ItB>::value_type B;
+  typedef typename R::iterator ItR;
+  typedef typename R::value_type Comb_t; //combination of pairs
+  //The end of recursion.
+  if( a_begin==a_end || b_begin==b_end) return;
+  //Start of the algorithm
+  if( result.empty() ) result.push_back( Comb_t() );
+  //Save state of total result. 
+  //The reason is:
+  //Current state of the result (stars is note one pair):
+  //n-1: ***************
+  //n  : ******          <- save the state of result
+  //then new combination added
+  //n:   ******xxxxxxxxx
+  //n+1: ******xxxxxxxxx  
+  //where x is the new pairs 
+  Comb_t begin_combination; 
+  std::copy(result.back().begin(),result.back().end(), std::back_inserter(begin_combination));
+  //loop over all pairs
+  for(ItA a = a_begin; a!=a_end; ++a)
+  {
+    //I need swap current pair to separate items from
+    //rest of array which recursively goes to make_unique_pairs
+    if(a != a_begin) std::swap(*a, *a_begin);
+    for(ItB b = b_begin; b!=b_end; ++b)
+    {
+      //this swap is only need to work with
+      //any NA>=NB or NB<=NA
+      if(b!= b_begin) std::swap(*b,*b_begin);
+      R tmp;
+      Comb_t cmb;
+      //add current pair to the combination
+      cmb.push_back(std::pair<A,B> (*a_begin, *b_begin));
+      tmp.push_back(cmb);
+      //and recursively goes to the remains of the arrays
+      make_unique_pairs(ibn_next(a_begin), a_end, ibn_next(b_begin), b_end, tmp);
+      //save the result to final result
+      for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
+      {
+        std::copy(it->begin(), it->end(),std::back_inserter(result.back()));
+        //suppress new combinations at the most end of loops over pairs
+        if(ibn_next(a) != a_end || ibn_next(b) != b_end || ibn_next(it)!=tmp.end()) result.push_back(begin_combination); 
+      }
+      if(b!= b_begin) std::swap(*b,*b_begin);//swap back item of B array
+    }
+    if(a != a_begin) std::swap(*a, *a_begin); //swap back items of A array
+  }
+  //sort each combination
+  for(ItR r=result.begin(); r!=result.end(); ++r) std::sort(r->begin(),r->end());
+  //sort final result
+  std::sort(result.begin(),result.end());
+  //remove duplicated combinations
+  result.erase(std::unique(result.begin(),result.end()), result.end());
+}
+
+
+/*  Some helper function to print the test result */
+template< class Array>
+void print_array(std::string name, const Array & A)
+{
+  std::cout << name << " = {";
+  for(typename Array::const_iterator it = A.begin(); it!=A.end(); ++it)
+  {
+    std::cout << *it;
+    if( ibn_next(it)!=A.end() ) std::cout << ',';
+  }
+  std::cout << "}\n";
+};
+
 template< class Ps>
 void print_pairs( const Ps & P)
 {
@@ -140,6 +251,7 @@ void print_pairs( const Ps & P)
     std::cout << p->first<<p->second<< " ";
   }
 };
+
 template< class Cs>
 void print( const Cs & C)
 {
@@ -153,81 +265,8 @@ void print( const Cs & C)
   }
 };
 
-template<class It>
-It ibn_next(const It it)
-{
-  It new_it = it;
-  new_it++;
-  return new_it;
-}
-
-template
-< 
-    class ItA,   //iterator in the first container of objects type A
-    class ItB,   //iterator in the second container of object type B
-    class R      //result contains all combinations of pairs:  
-    //   { (a1,b1) (a2,b2) (a3,b3) }
-    //   { (a1,b2) (a2,b1) (a3,b3) }
-    //   ...
->
-void  make_unique_pairs
-(
-   ItA a_begin, ItA a_end, 
-   ItB b_begin, ItB b_end, 
-   R & result
-)
-{
-  //this is the type of pair's items (A,B)
-  //using A = typename std::iterator_traits<ItA>::value_type; 
-  //using B = typename std::iterator_traits<ItB>::value_type;
-  typedef typename std::iterator_traits<ItA>::value_type A;
-  typedef typename std::iterator_traits<ItB>::value_type B;
-  typedef typename R::iterator ItR;
-  typedef typename R::value_type Comb_t; //combination of pairs
-  //the end of recursion
-  if( a_begin==a_end || b_begin==b_end) return;
-  if( result.empty() ) result.push_back( Comb_t() ); //initial start
-  Comb_t begin_combination; 
-  std::copy(result.back().begin(),result.back().end(), std::back_inserter(begin_combination));
-  for(ItA a = a_begin; a!=a_end; ++a)
-  {
-    if(a != a_begin) std::swap(*a, *a_begin);
-    for(ItB b = b_begin; b!=b_end; ++b)
-    {
-      if(b!= b_begin) std::swap(*b,*b_begin);
-      R tmp;
-      Comb_t cmb;
-      cmb.push_back(std::pair<A,B> (*a_begin, *b_begin));
-      tmp.push_back(cmb);
-      make_unique_pairs(ibn_next(a_begin), a_end, ibn_next(b_begin), b_end, tmp);
-      for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
-      {
-        std::copy(it->begin(), it->end(),std::back_inserter(result.back()));
-        if(ibn_next(a) != a_end || ibn_next(b) != b_end || ibn_next(it)!=tmp.end()) result.push_back(begin_combination); 
-      }
-      if(b!= b_begin) std::swap(*b,*b_begin);//swap back
-    }
-    if(a != a_begin) std::swap(*a, *a_begin); //swap back
-  }
-  //for(auto & r : result) std::sort(r.begin(),r.end());
-  for(ItR r=result.begin(); r!=result.end(); ++r) std::sort(r->begin(),r->end());
-  std::sort(result.begin(),result.end());
-  result.erase(std::unique(result.begin(),result.end()), result.end());
-}
-
-template< class Array>
-void print_array(std::string name, const Array & A)
-{
-  std::cout << name << " = {";
-  for(typename Array::const_iterator it = A.begin(); it!=A.end(); ++it)
-  {
-    std::cout << *it;
-    if( ibn_next(it)!=A.end() ) std::cout << ',';
-  }
-  std::cout << "}\n";
-};
-
-inline void test_make_pairs(int NA=1, int NB=1)
+//test for algorithm
+inline void test_make_unique_pairs(int NA=1, int NB=1)
 {
   std::vector<int>  A;
   std::vector<char> B;

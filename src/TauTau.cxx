@@ -96,7 +96,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 
 StatusCode TauTau::initialize(void)
 {
-  test_make_pairs(7,3);
+  test_make_pairs(6,5);
   exit(1);
   MsgStream log(msgSvc(), name());
   log << MSG::INFO << "in initialize()" << endmsg;
