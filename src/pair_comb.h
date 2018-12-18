@@ -170,8 +170,11 @@ void  make_unique_pairs
 )
 {
   //this is the type of pair's items (A,B)
-  using A = typename std::iterator_traits<ItA>::value_type; 
-  using B = typename std::iterator_traits<ItB>::value_type;
+  //using A = typename std::iterator_traits<ItA>::value_type; 
+  //using B = typename std::iterator_traits<ItB>::value_type;
+
+  typedef typename std::iterator_traits<ItA>::value_type A;
+  typedef typename std::iterator_traits<ItB>::value_type B;
   //the end of recursion
   if( a_begin==a_end || b_begin==b_end) return;
   if( result.empty() ) result.push_back( typename R::value_type() ); //initial start
