@@ -172,23 +172,24 @@ void  make_unique_pairs
   //this is the type of pair's items (A,B)
   //using A = typename std::iterator_traits<ItA>::value_type; 
   //using B = typename std::iterator_traits<ItB>::value_type;
-
   typedef typename std::iterator_traits<ItA>::value_type A;
   typedef typename std::iterator_traits<ItB>::value_type B;
+  typedef typename R::iterator ItR;
+  typedef typename R::value_type Comb_t; //combination of pairs
   //the end of recursion
   if( a_begin==a_end || b_begin==b_end) return;
-  if( result.empty() ) result.push_back( typename R::value_type() ); //initial start
-  typename R::value_type begin_combination; 
+  if( result.empty() ) result.push_back( Comb_t() ); //initial start
+  Comb_t begin_combination; 
   std::copy(result.back().begin(),result.back().end(), std::back_inserter(begin_combination));
-  for(auto a = a_begin; a!=a_end; ++a)
+  for(ItA a = a_begin; a!=a_end; ++a)
   {
     if(a != a_begin) std::swap(*a, *a_begin);
-    for(auto b = b_begin; b!=b_end; ++b)
+    for(ItB b = b_begin; b!=b_end; ++b)
     {
       if(b!= b_begin) std::swap(*b,*b_begin);
-      R tmp{typename R::value_type({std::pair<A,B> (*a_begin, *b_begin)})};
+      R tmp{Comb_t({std::pair<A,B> (*a_begin, *b_begin)})};
       make_unique_pairs(next(a_begin), a_end, next(b_begin), b_end, tmp);
-      for(auto it = tmp.begin(); it!=tmp.end(); ++it)
+      for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
       {
         std::copy(it->begin(), it->end(),std::back_inserter(result.back()));
         if(std::next(a) != a_end || std::next(b) != b_end || std::next(it)!=tmp.end()) result.push_back(begin_combination); 
@@ -197,7 +198,8 @@ void  make_unique_pairs
     }
     if(a != a_begin) std::swap(*a, *a_begin); //swap back
   }
-  for(auto & r : result) std::sort(r.begin(),r.end());
+  //for(auto & r : result) std::sort(r.begin(),r.end());
+  for(ItR r=result.begin(); r!=result.end(); ++r) std::sort(r->begin(),r->end());
   std::sort(result.begin(),result.end());
   result.erase(std::unique(result.begin(),result.end()), result.end());
 }
