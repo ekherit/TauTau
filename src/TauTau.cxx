@@ -96,6 +96,8 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 
 StatusCode TauTau::initialize(void)
 {
+  test_make_pairs(7,3);
+  exit(1);
   MsgStream log(msgSvc(), name());
   log << MSG::INFO << "in initialize()" << endmsg;
   nproceed_events=0;
@@ -214,8 +216,7 @@ StatusCode TauTau::execute()
     double Entot = 0;
     for(int i=0;i<Tn.size();++i)
     {
-      if(!Tn[i]->isEmcShowerValid()) {
-      }
+      if(!Tn[i]->isEmcShowerValid()) continue;
       RecEmcShower * emc = Tn[i]->emcShower();
       Entot += emc->energy();
     }
@@ -252,7 +253,7 @@ StatusCode TauTau::execute()
       Pn[i].set(emc->energy(), p);
     }
     //if(!select) goto SKIP_TAUTAU;
-    if ( good_neutral_tracks.size() % 2 != 0  ) goto SKIP_TAUTAU;
+    //if ( good_neutral_tracks.size() % 2 != 0  ) goto SKIP_TAUTAU;
 
     //find best pi0 combination
     //create combination list
@@ -260,7 +261,7 @@ StatusCode TauTau::execute()
     typedef std::vector< comb_t > comb_list_t;
     std::vector< std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > > pi0_cmb_list = make_combination_list(Pn); 
     //loop over all combinations
-    comb_list_t::iterator best_comb;
+    comb_list_t::iterator best_comb=pi0_cmb_list.begin();
     double chi2_mass=1e100;
     for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
     {
@@ -287,14 +288,14 @@ StatusCode TauTau::execute()
       int idx=0;
       for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
       {
-        double m = (*(it_pair->first) +  *(it_pair->second)).mag();
+        double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
         fEvent.Mpi0[idx] = m;
-        select &= fabs(m - PI0_MASS) <  0.03;
-        //now create all combination to get pi0 with charged tracks
+        select &= fabs(m - PI0_MASS) <  0.03; //selection of the pi0
+        //now create all combination to tie pi0 with charged tracks
         for(int i = 0; i<T.size(); ++i)
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-          HepLorentzVector p = T[i]->mdcKalTrack()->p4(PI0_MASS);
+          HepLorentzVector p = T[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
           double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
           fEvent.Mrho[idx*T.size()+i] = Mrho;
         }
