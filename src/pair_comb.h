@@ -215,24 +215,26 @@ void  make_unique_pairs
   result.erase(std::unique(result.begin(),result.end()), result.end());
 }
 
+template< class Array>
+void print_array(std::string name, const Array & A)
+{
+  std::cout << name << " = {";
+  for(typename Array::const_iterator it = A.begin(); it!=A.end(); ++it)
+  {
+    std::cout << *it;
+    if( ibn_next(it)!=A.end() ) std::cout << ',';
+  }
+  std::cout << "}\n";
+};
+
 inline void test_make_pairs(int NA=1, int NB=1)
 {
   std::vector<int>  A;
   std::vector<char> B;
   for( int i=0;i<NA;++i) A.push_back(i+1);
   for( int i=0;i<NB;++i) B.push_back('a'+i);
-  //auto print_array = [](std::string name="", const auto & A)
-  //{
-  //  std::cout << name << " = {";
-  //  for(auto it = A.begin(); it!=A.end(); ++it)
-  //  {
-  //    std::cout << *it;
-  //    if( std::next(it)!=A.end() ) std::cout << ',';
-  //  }
-  //  std::cout << "}\n";
-  //};
-  //print_array("A",A);
-  //print_array("B",B);
+  print_array("A",A);
+  print_array("B",B);
   std::vector< std::vector < std::pair<int, char> > > R;
   make_unique_pairs(A.begin(), A.end(), B.begin(), B.end(), R);
   std::cout << "The result of algorithm: " << R.size() << " combinations:" << std::endl;
