@@ -195,7 +195,10 @@ void  make_unique_pairs
     for(ItB b = b_begin; b!=b_end; ++b)
     {
       if(b!= b_begin) std::swap(*b,*b_begin);
-      R tmp{Comb_t({std::pair<A,B> (*a_begin, *b_begin)})};
+      R tmp;
+      Comb_t cmb;
+      cmb.push_back(std::pair<A,B> (*a_begin, *b_begin));
+      tmp.push_back(cmb);
       make_unique_pairs(next(a_begin), a_end, next(b_begin), b_end, tmp);
       for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
       {
