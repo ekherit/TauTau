@@ -153,6 +153,14 @@ void print( const Cs & C)
   }
 };
 
+template<class It>
+It ibn_next(const It it)
+{
+  It new_it = it;
+  new_it++;
+  return new_it;
+}
+
 template
 < 
     class ItA,   //iterator in the first container of objects type A
@@ -192,7 +200,7 @@ void  make_unique_pairs
       for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
       {
         std::copy(it->begin(), it->end(),std::back_inserter(result.back()));
-        if(std::next(a) != a_end || std::next(b) != b_end || std::next(it)!=tmp.end()) result.push_back(begin_combination); 
+        if(ibn_next(a) != a_end || ibn_next(b) != b_end || ibn_next(it)!=tmp.end()) result.push_back(begin_combination); 
       }
       if(b!= b_begin) std::swap(*b,*b_begin);//swap back
     }
@@ -206,10 +214,10 @@ void  make_unique_pairs
 
 inline void test_make_pairs(int NA=1, int NB=1)
 {
-  std::vector<int>  A={1};
-  std::vector<char> B={'a'};
-  for( int i=1;i<NA;++i) A.push_back(i+1);
-  for( int i=1;i<NB;++i) B.push_back('a'+i);
+  std::vector<int>  A;
+  std::vector<char> B;
+  for( int i=0;i<NA;++i) A.push_back(i+1);
+  for( int i=0;i<NB;++i) B.push_back('a'+i);
   //auto print_array = [](std::string name="", const auto & A)
   //{
   //  std::cout << name << " = {";
