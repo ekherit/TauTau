@@ -199,7 +199,7 @@ void  make_unique_pairs
       Comb_t cmb;
       cmb.push_back(std::pair<A,B> (*a_begin, *b_begin));
       tmp.push_back(cmb);
-      make_unique_pairs(next(a_begin), a_end, next(b_begin), b_end, tmp);
+      make_unique_pairs(ibn_next(a_begin), a_end, ibn_next(b_begin), b_end, tmp);
       for(ItR it = tmp.begin(); it!=tmp.end(); ++it)
       {
         std::copy(it->begin(), it->end(),std::back_inserter(result.back()));
