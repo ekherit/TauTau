@@ -134,19 +134,20 @@ void test_make_combination_list2(int N=3)
 template< class Ps>
 void print_pairs( const Ps & P)
 {
-  for( const auto & p: P)
+  //for( const auto & p: P)
+  for( typename Ps::const_iterator p = P.begin(); p!=P.end(); ++p)
   {
-    std::cout << p.first<<p.second<< " ";
+    std::cout << p->first<<p->second<< " ";
   }
 };
 template< class Cs>
 void print( const Cs & C)
 {
   int idx=1;
-  for(const auto & P: C)
+  for(typename Cs::const_iterator P=C.begin();P!=C.end();++P)
   {
     std::cout << std::setw(20) << idx << "  : ";
-    print_pairs(P);
+    print_pairs(*P);
     std::cout << std::endl;
     idx++;
   }
@@ -204,23 +205,22 @@ inline void test_make_pairs(int NA=1, int NB=1)
   std::vector<char> B={'a'};
   for( int i=1;i<NA;++i) A.push_back(i+1);
   for( int i=1;i<NB;++i) B.push_back('a'+i);
-  auto print_array = [](std::string name="", const auto & A)
-  {
-    std::cout << name << " = {";
-    for(auto it = A.begin(); it!=A.end(); ++it)
-    {
-      std::cout << *it;
-      if( std::next(it)!=A.end() ) std::cout << ',';
-    }
-    std::cout << "}\n";
-  };
-  print_array("A",A);
-  print_array("B",B);
+  //auto print_array = [](std::string name="", const auto & A)
+  //{
+  //  std::cout << name << " = {";
+  //  for(auto it = A.begin(); it!=A.end(); ++it)
+  //  {
+  //    std::cout << *it;
+  //    if( std::next(it)!=A.end() ) std::cout << ',';
+  //  }
+  //  std::cout << "}\n";
+  //};
+  //print_array("A",A);
+  //print_array("B",B);
   std::vector< std::vector < std::pair<int, char> > > R;
   make_unique_pairs(A.begin(), A.end(), B.begin(), B.end(), R);
   std::cout << "The result of algorithm: " << R.size() << " combinations:" << std::endl;
   print(R);
 }
-
 
 
