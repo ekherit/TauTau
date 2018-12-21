@@ -24,6 +24,8 @@
 //template<class T> using combination_t =  std::list< std::pair<T, T> >;
 //template<class T> using combination_list_t =  std::vector< std::list< std::pair<T, T> >  >;
 
+#include "combinator.h"
+
 template< class T> 
 inline void make_combination_list(
     std::vector< std::list< std::pair<T, T> >  > & R, 
@@ -140,6 +142,7 @@ It ibn_next(const It it)
   return new_it;
 }
 
+
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  make_unique_pairs
@@ -153,6 +156,7 @@ It ibn_next(const It it)
  *  and remove duplicated combinations. If you know better algorithm - your wellcome
  * =====================================================================================
  */
+/*
 template
 < 
     class ItA,   //iterator in the first container of objects type A
@@ -229,7 +233,7 @@ void  make_unique_pairs
 }
 
 
-/*  Some helper function to print the test result */
+//  Some helper function to print the test result 
 template< class Array>
 void print_array(std::string name, const Array & A)
 {
@@ -264,7 +268,7 @@ void print( const Cs & C)
     idx++;
   }
 };
-
+*/
 //test for algorithm
 inline void test_make_unique_pairs(int NA=1, int NB=1)
 {

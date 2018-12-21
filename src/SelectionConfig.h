@@ -74,6 +74,9 @@ struct SelectionConfig
   bool FILL_MUC;
   bool FILL_NEUTRAL;
 
+
+  int TEST_COMBINATIONS;
+
   void print(void)
   {
     std::cout  << "CENTER_MASS_ENERGY = " << CENTER_MASS_ENERGY << std::endl;      //center mass energy

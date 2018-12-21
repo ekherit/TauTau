@@ -5,6 +5,7 @@ Makefile
 cmt_standalonesetup.make
 constituents.make
 constituents.makecmtsave
-x86_64-slc5-gcc43-opt.make
-x86_64-slc5-gcc43-opt/
+x86_64-*-opt*
+cmt/setup.*
+cmt/cleanup.*
 

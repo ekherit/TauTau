@@ -91,14 +91,44 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   //for tau+ -> pi+pi0
   declareProperty("GAMMA_GAMMA_MIN_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.10);
   declareProperty("GAMMA_GAMMA_MAX_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.20);
+  declareProperty("TEST_COMBINATIONS", cfg.TEST_COMBINATIONS=0);
 
 }
+
 
 
 StatusCode TauTau::initialize(void)
 {
   MsgStream log(msgSvc(), name());
   log << MSG::INFO << "in initialize()" << endmsg;
+
+  if(cfg.TEST_COMBINATIONS==1)
+  {
+    // Test for  pair combination
+    std::vector<int> A;
+    for(int i=1;i<6;++i) A.push_back(i);
+    std::cout << "Test for homogenios array: \n";
+    print_array(" A = ", A);
+    std::cout << "\n";
+    std::vector<std::vector<std::pair<int,int> > > R;
+    make_unique_pairs(A.begin(),A.end(),R);
+    print(R);
+    std::cout << std::flush;
+
+    std::vector<char> B;
+    for(int i=0;i<3;i++) B.push_back('a'+i);
+    std::vector<std::vector<std::pair<int,char> > > Rab;
+    std::cout << "Test for homogenios array: \n";
+    print_array(" A = ", A);
+    std::cout << "\n";
+    print_array(" B = ", B);
+    std::cout << "\n";
+    make_unique_pairs(A.begin(),A.end(),B.begin(),B.end(),Rab);
+    print(Rab);
+    std::cout << std::flush;
+    exit(0);
+  }
+
   nproceed_events=0;
   nwrited_events = 0;
   ntautau_events=0;
