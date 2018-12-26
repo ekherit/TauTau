@@ -64,10 +64,11 @@ inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, doub
     phi = 0;
     return;
   };
+  /*
   ro = -9999;
   z = -9999;
   phi = -9999;
-  /*  Reconstruct the vertex */
+  //  Reconstruct the vertex 
   Hep3Vector xorigin(0,0,0);
   IVertexDbSvc*  vtxsvc;
   Gaudi::svcLocator()->service("VertexDbSvc", vtxsvc);
@@ -79,7 +80,7 @@ inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, doub
     xorigin.setY(dbv[1]);
     xorigin.setZ(dbv[2]);
   }
-  /* Vertex game. copy from rhophi analysis */
+  // Vertex game. copy from rhophi analysis 
   double phi0=mdcTrk->helix(1);
   double xv=xorigin.x();
   double yv=xorigin.y();
@@ -98,6 +99,7 @@ inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, doub
   ro=Rvxy0;
   z=Rvz0;
   phi=Rvphi0;
+  */
 }
 
 
