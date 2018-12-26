@@ -22,7 +22,9 @@
 #include "GaudiKernel/SmartDataPtr.h"
 #include "GaudiKernel/IDataProviderSvc.h"
 #include "GaudiKernel/PropertyMgr.h"
+/*
 #include "VertexFit/IVertexDbSvc.h"
+*/
 #include "GaudiKernel/Bootstrap.h"
 #include "GaudiKernel/ISvcLocator.h"
 
@@ -58,9 +60,12 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #include "Utils.h"
 
 
+/*
 #include "VertexFit/KinematicFit.h"
 #include "VertexFit/VertexFit.h"
 #include "VertexFit/Helix.h"
+*/
+
 #include "ParticleID/ParticleID.h"
 
 #include "pair_comb.h"
