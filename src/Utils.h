@@ -18,6 +18,7 @@
 #pragma once
 
 #include <exception>
+#include <functional>
 
 #include "CLHEP/Vector/ThreeVector.h"
 #include "CLHEP/Vector/LorentzVector.h"
@@ -54,6 +55,15 @@ inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 
 inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
 {
+  if(true) //skip vertex information
+  {
+    double x = mdcTrk->x();
+    double y = mdcTrk->x();
+    z = mdcTrk->z();
+    ro = sqrt(x*x+y*y);
+    phi = 0;
+    return;
+  };
   ro = -9999;
   z = -9999;
   phi = -9999;
@@ -351,3 +361,40 @@ inline double Aplanarity(std::vector<double> & v)
 {
   return 1.5*v[2];
 }
+
+/* Have to write own accumulator - just copy from cppreference.com */
+template<class InputIt, class T, class UnaryOperation, class BinaryOperation>
+T accumulate(InputIt first, InputIt last, const UnaryOperation & F, T init, BinaryOperation op=std::plus)
+{
+    for (; first != last; ++first)
+    {
+        init = op(init, F(*first)); 
+    }
+    return init;
+}
+
+struct  ShiftedInvariantMassOperator
+{
+  InvariantMassOperator(double s=0, double e) : shift(s), error(e) {} 
+  double operator(const HepLorentzVector & v1, const HepLorentzVector &v2)
+  {
+    return (v1+v2).mag()-shift;
+  }
+
+  double operator(const std::pair<HepLorentzVector, HepLorentzVector> & p)
+  {
+    return this->(pair.first, pair.second);
+  }
+
+  double operator(const std::pair<HepLorentzVector*, HepLorentzVector*> & p)
+  {
+    return this->(*(pair.first), *(pair.second));
+  }
+};
+
+
+template< class PairContainer>
+inline double GetPairChi2(const  PairContainers &   pairs, double data_expected=1, double data_error = 1, )
+{
+  return accumulate(pairs.begin(),pairs.end(), ShiftedInvariantMassOperator(Mexp));
+};
