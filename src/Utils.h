@@ -363,6 +363,7 @@ inline double Aplanarity(std::vector<double> & v)
 }
 
 /* Have to write own accumulator - just copy from cppreference.com */
+/*
 template<class InputIt, class T, class UnaryOperation, class BinaryOperation>
 T accumulate(InputIt first, InputIt last, const UnaryOperation & F, T init, BinaryOperation op=std::plus)
 {
@@ -398,3 +399,4 @@ inline double GetPairChi2(const  PairContainers &   pairs, double data_expected=
 {
   return accumulate(pairs.begin(),pairs.end(), ShiftedInvariantMassOperator(Mexp));
 };
+*/
