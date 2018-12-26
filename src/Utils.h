@@ -31,8 +31,10 @@ using CLHEP::HepLorentzVector;
 //#include "GaudiKernel/ISvcLocator.h"
 #include "GaudiKernel/Bootstrap.h"
 
+/* try to remove vertex location
 #include "VertexFit/IVertexDbSvc.h"
 #include "VertexFit/Helix.h"
+*/
 
 #include "EvtRecEvent/EvtRecEvent.h"
 #include "EvtRecEvent/EvtRecTrack.h"
