@@ -289,7 +289,7 @@ StatusCode TauTau::execute()
     typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
     typedef std::vector< comb_t > comb_list_t;
     //std::vector<HepLorentzVector*> 
-    comb_list_t pi0_cmb_list;
+    //comb_list_t pi0_cmb_list;
     //make_unique_pairs(Pn.begin(),Pn.end(),pi0_cmb_list);
     comb_list_t pi0_cmb_list = make_combination_list(Pn); 
     //loop over all combinations
