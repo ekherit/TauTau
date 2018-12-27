@@ -163,6 +163,7 @@ for key, flist in input_file_dict.items():
       W=float(key)
     else:
       run = int(key)
+      if not (55115 <= run <= 55361) : continue
       if 55115 <= run <= 55155: W=3.539068
       if 55157 <= run <= 55161: W=3.550872
       if 55162 <= run <= 55199: W=3.552865
