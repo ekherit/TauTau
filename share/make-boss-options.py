@@ -37,6 +37,7 @@ def proceed(run, directory, files):
     r = "run_0+"+str(run)+"_.+\.dst"
     flist = []
     TEMPLATE_DST_FILES=''
+    files = sorted(files)
     for f in files:
       if re.match(r,f):
         name = os.path.join(directory, f);
