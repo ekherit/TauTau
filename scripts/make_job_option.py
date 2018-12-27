@@ -13,7 +13,7 @@ parser.add_argument('--config', default='')
 cfg = parser.parse_args()
 
 template = """#include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
-#include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
+//#include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
 #include "$MAGNETICFIELDROOT/share/MagneticField.txt"
 #include "$ABSCORROOT/share/jobOptions_AbsCor.txt"
 #include "$TAUTAUROOT/share/jobOptions_TauTau.txt"
@@ -111,6 +111,7 @@ if len(input_file_dict) == 0:
   sys.exit(0)
 #=======
 #if cfg.config == '':
+#    print "epty config file"
 #    for f in file_list:
 #        n = re.findall(cfg.combine, f)
 #        if len(n) != 0:
@@ -121,11 +122,22 @@ if len(input_file_dict) == 0:
 #else:
 #    #read config file with runtable
 #    cfg_file = open(cfg.config, "r")
+#    comment_r = re.compile("\s*#\.$")
 #    for line in cfg_file:
-#        print line
+#        if  not re.match("#",line):
+#            v=line.split();
+#            title = v[0]
+#            W = float(v[1])
+#            dW = float(v[2])
+#            S = float(v[3])
+#            dS = float(v[4])
+#            L = float(v[5])
+#            for i in range (6, len(v)):
+#                print W, v[i];
+#        else:
+#            print "Not match"
 #    #for f in file_list:
-#
-#>>>>>>> e0365af6d8ac8e978fc8e3adb1812c8205379006
+#exit(1)
 
 print "Output dir: ", cfg.output_dir
 
@@ -140,15 +152,24 @@ else:
 submit_file = open(cfg.output_dir+'/submit.csh',"w");
 submit_file2 = open(cfg.output_dir+'/submit.sh',"w");
 
+
 for key, flist in input_file_dict.items():
     files=""
     for f in flist:
         files=files+'"'+os.path.abspath(f)+'",\n'
     files=files[:-2]
-    try:
+    W = 1.77686*2
+    if False:
       W=float(key)
-    except ValueError:
-      W=1.77686*2
+    else:
+      run = int(key)
+      if 55115 <= run <= 55155: W=3.539068
+      if 55157 <= run <= 55161: W=3.550872
+      if 55162 <= run <= 55199: W=3.552865
+      if 55200 <= run <= 55231: W=3.553934
+      if 55232 <= run <= 55239: W=3.560356
+      if 55240 <= run <= 55257: W=3.599572
+      if 55347 <= run <= 55361: W=3.601510
     cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
     output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
     f = open(cfg_file,'w')
