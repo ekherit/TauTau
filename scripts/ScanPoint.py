@@ -1,17 +1,22 @@
 #!/bin/python
 import re
+
+# ScanPoint class hold information about scan point: name, energy, energy spread, luminocity and
+# runlist
 class ScanPoint:
     title=''
-    W = 0
-    dW = 0
-    Sw = 0
-    dSw = 0
-    L = 0
-    runlist = []
+    W = 0   # c.m. energy, GeV
+    dW = 0  # energy error, GeV
+    Sw = 0  # energy spread, MeV
+    dSw = 0 # energy spread error, MeV
+    L = 0   # luminocity
+    runlist = []  #list of the runs
+
     def print_head(self):
         s = "%5s %10s %10s %10s %10s %10s %s" % ("#name","W,GeV", "dW", "Sw", "dSw", "L,pb^-1", "   runs")
         print s
 
+#make string with folder runlist
     def fold(self, rl):
         n = len(rl)
         s = ""
@@ -23,6 +28,7 @@ class ScanPoint:
             if rl[i] != rl[i-1]+1: s+= "-" + str(rl[i-1]) + " "+ str(rl[i])
         return s
 
+#print point ifno
     def prn(self):
         s = "%5s %10.6f %10.6f %10.3f %10.3f %10.3f" % (self.title, self.W, self.dW, self.Sw, self.dSw, self.L)
         print s,"  ",self.fold(self.runlist)
