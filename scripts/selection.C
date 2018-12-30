@@ -273,6 +273,7 @@ class printer
   {
     return add("",f);
   };
+  printer & operator()(std::string h, std::string f) { return add(h,f); }
   template <typename Data>
   printer & operator%(const Data  & d) 
   {
@@ -333,7 +334,7 @@ void print(const std::vector<ScanPoint_t> & SPL)
   pr.add("Sw,MeV",     "%10.3f");
   pr.add("dSw,MeV",    "%10.3f");
   pr.add("L,pb^-1",    "%10.3f");
-  pr.add("  run list", "  %-10s");
+  pr("  run list", "  %-10s");
   std::cout << pr.head() << std::endl;
   for (const auto & p : SPL) 
     std::cout <<  pr 
@@ -354,7 +355,7 @@ struct PointDiscriminatorByRunList
   PointDiscriminatorByRunList(const Scan_t * scan) : scan(scan) {}
   std::string operator()(std::string file)
   {
-    std::regex re(R"(\D+(\d+)\.root)");
+    std::regex re(R"(.*\D+(\d+)\.root)");
     std::smatch match;
     std::string result;
     int run=0;
@@ -659,17 +660,18 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
 }
 
-std::vector<ScanPoint_t> read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
 {
+  std::cout << "Reading data directory \"" << data_dir << "\":\n";
   auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
-  for(auto & f : fl) std::cout << f << std::endl;
+  //for(auto & f : fl) std::cout << f << std::endl;
   auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
-  for(auto & m : ml) 
-  {
-    std::cout << m.first << ": ";
-    for(auto & f: m.second) std::cout << f<<" "; 
-    std::cout << std::endl;
-  }
+  //for(auto & m : ml) 
+  //{
+  //  std::cout << m.first << ": ";
+  //  for(auto & f: m.second) std::cout << f<<" "; 
+  //  std::cout << std::endl;
+  //}
   Scan_t scan;
   scan.reserve(cfg.size());
   for(auto & point : cfg ) 
@@ -703,6 +705,7 @@ std::vector<ScanPoint_t> read_data(std::string data_dir, const Scan_t & cfg, std
     sp.tt = tt;
     sp.gg = gg;
   }
+  print(scan);
   return scan;
 }
 
@@ -773,75 +776,74 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
 }
 
 
-std::vector<ScanPoint_t> read_data(const char * dir)
-{
-  std::vector<ScanPoint_t> Points;
-  Points.push_back({"Point1", 55116, 55155,  3539.482,  0.110,0,0});
-
-  Points.push_back({"Point1p", 55157,55161,3550.872,0.182,0,0});
-  //remove points above this is tune EMS
-
-  Points.push_back({"Point2", 55162,55199,3552.849,0.093,0,0});
-
-  Points.push_back({"Point3", 55200,55231,3553.934,0.08,0,0});
-  Points.push_back({"Point4", 55232,55239,3560.356,0.157,0,0});
-  Points.push_back({"Point5", 55240,55257, 3599.572,0.117,0,0});
-  //Points energy are in MeV now I need to convert it to GeV
-  for(int i=0;i<Points.size(); i++)
-  {
-    Points[i].W*=MeV;
-    Points[i].dW*=MeV;
-  }
-  for(int i=0;i<Points.size(); i++)
-  {
-    char name_tt[1024];
-    char name_gg[1024];
-    sprintf(name_tt,"tt%d", i+1);
-    sprintf(name_gg,"gg%d", i+1);
-    Points[i].tt = get_chain("tt", name_tt, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
-    Points[i].gg = get_chain("gg", name_gg, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
-    set_alias(Points[i].tt, Points[i].W);
-  }
-  ifstream runinfo("tauscan2018_runinfo.txt");
-  if(!runinfo) 
-  { 
-    std::cout << "Unable to open runinfo file" << std::endl;
-  }
-  int run;
-  double lum;
-  while(runinfo >> run >> lum)
-  {
-    char run_root_file[1024];
-    sprintf(run_root_file, "%s/%d.root",dir,run);
-    std::cout << run_root_file << std::endl;
-    if(!gSystem->AccessPathName(run_root_file))
-    {
-      //std::cout << "File " << run_root_file << " exists" << " lum = " << lum << " nb^-1" << std::endl;
-      for(int i=0;i<Points.size();++i)
-      {
-        if( run >= Points[i].begin_run && run<= Points[i].end_run )
-        {
-          Points[i].L += lum;
-          Points[i].runs.push_back({run,lum});
-          cout << "run = " << run <<  " br=" << Points[i].begin_run << " er=" << Points[i].end_run << " point = " << i+1 << "  IL = " << Points[i].L << endl;
-        }
-      }
-    }
-    runinfo.ignore(65535,'\n');
-  }
-  ////add monte carlo
-  //int pmc = Points.size();
-  //Points.push_back({"MC", 55300,55300, 1777*2,0.1,0,0});
-  //Points[pmc].tt = new TChain("tt","monte carlo tau");
-  //((TChain*)Points[pmc].tt)->AddFile("test-sim.root");
-  //set_alias(Points[pmc].tt,Points[pmc].W);
-  //Points[pmc].gg = new TNtupleD("ggmc","ggmc","i");
-  //for(int i=0;i<1000;i++) Points[pmc].gg->Fill();
-  return Points;
-}
+//std::vector<ScanPoint_t> read_data(const char * dir)
+//{
+//  std::vector<ScanPoint_t> Points;
+//  Points.push_back({"Point1", 55116, 55155,  3539.482,  0.110,0,0});
+//
+//  Points.push_back({"Point1p", 55157,55161,3550.872,0.182,0,0});
+//  //remove points above this is tune EMS
+//
+//  Points.push_back({"Point2", 55162,55199,3552.849,0.093,0,0});
+//
+//  Points.push_back({"Point3", 55200,55231,3553.934,0.08,0,0});
+//  Points.push_back({"Point4", 55232,55239,3560.356,0.157,0,0});
+//  Points.push_back({"Point5", 55240,55257, 3599.572,0.117,0,0});
+//  //Points energy are in MeV now I need to convert it to GeV
+//  for(int i=0;i<Points.size(); i++)
+//  {
+//    Points[i].W*=MeV;
+//    Points[i].dW*=MeV;
+//  }
+//  for(int i=0;i<Points.size(); i++)
+//  {
+//    char name_tt[1024];
+//    char name_gg[1024];
+//    sprintf(name_tt,"tt%d", i+1);
+//    sprintf(name_gg,"gg%d", i+1);
+//    Points[i].tt = get_chain("tt", name_tt, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
+//    Points[i].gg = get_chain("gg", name_gg, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
+//    set_alias(Points[i].tt, Points[i].W);
+//  }
+//  ifstream runinfo("tauscan2018_runinfo.txt");
+//  if(!runinfo) 
+//  { 
+//    std::cout << "Unable to open runinfo file" << std::endl;
+//  }
+//  int run;
+//  double lum;
+//  while(runinfo >> run >> lum)
+//  {
+//    char run_root_file[1024];
+//    sprintf(run_root_file, "%s/%d.root",dir,run);
+//    std::cout << run_root_file << std::endl;
+//    if(!gSystem->AccessPathName(run_root_file))
+//    {
+//      //std::cout << "File " << run_root_file << " exists" << " lum = " << lum << " nb^-1" << std::endl;
+//      for(int i=0;i<Points.size();++i)
+//      {
+//        if( run >= Points[i].begin_run && run<= Points[i].end_run )
+//        {
+//          Points[i].L += lum;
+//          Points[i].runs.push_back({run,lum});
+//          cout << "run = " << run <<  " br=" << Points[i].begin_run << " er=" << Points[i].end_run << " point = " << i+1 << "  IL = " << Points[i].L << endl;
+//        }
+//      }
+//    }
+//    runinfo.ignore(65535,'\n');
+//  }
+//  ////add monte carlo
+//  //int pmc = Points.size();
+//  //Points.push_back({"MC", 55300,55300, 1777*2,0.1,0,0});
+//  //Points[pmc].tt = new TChain("tt","monte carlo tau");
+//  //((TChain*)Points[pmc].tt)->AddFile("test-sim.root");
+//  //set_alias(Points[pmc].tt,Points[pmc].W);
+//  //Points[pmc].gg = new TNtupleD("ggmc","ggmc","i");
+//  //for(int i=0;i<1000;i++) Points[pmc].gg->Fill();
+//  return Points;
+//}
 
 #include <regex>
-//read monte carlo Galuga
 std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
@@ -1243,21 +1245,19 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 auto DATA        = read_data("data", read_my_runtable("../scan_points.txt"));
-//auto DATA2       = read_data("data703", read_my_runtable("../scan_points.txt"));
-//auto DATA703     = read_data("data703");
-//auto DATA11      = read_data3("tau2011","tau2011/runtable.txt");
-////auto DATA112      = read_data("tau2011",read_my_runtable("tau2011/runtable.txt"));
-//auto MC          = read_mc("mc/signal");
-///*  GALUGA generator */
-//auto EEee        = read_mc("mc/EEee");
-//auto EEuu        = read_mc("mc/EEuu");
-//auto EEkk        = read_mc("mc/EEkk");
-//auto EEpipi      = read_mc("mc/EEpipi");
-///*  bhabha */
-//auto BB          = read_mc("mc/BB");
-//auto UU          = read_mc("mc/uu");
-//auto HADR        = read_mc("mc/hadrons");
-//auto HADR704     = read_mc("mc/hadrons704");
+auto DATA703     = read_data("data703", read_my_runtable("../scan_points.txt"));
+auto DATA11      = read_data3("tau2011","../tau2011/runtable.txt");
+auto MC          = read_mc("mc/signal");
+/*  GALUGA generator */
+auto EEee        = read_mc("mc/EEee");
+auto EEuu        = read_mc("mc/EEuu");
+auto EEkk        = read_mc("mc/EEkk");
+auto EEpipi      = read_mc("mc/EEpipi");
+/*  bhabha */
+auto BB          = read_mc("mc/BB");
+auto UU          = read_mc("mc/uu");
+auto HADR        = read_mc("mc/hadrons");
+auto HADR704     = read_mc("mc/hadrons704");
 
 
 struct Selection_t
