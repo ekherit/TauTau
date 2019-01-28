@@ -14,7 +14,7 @@ parser.add_argument('--config', default='')
 cfg = parser.parse_args()
 
 template = """#include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
-//#include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
+#include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
 #include "$MAGNETICFIELDROOT/share/MagneticField.txt"
 #include "$ABSCORROOT/share/jobOptions_AbsCor.txt"
 #include "$TAUTAUROOT/share/jobOptions_TauTau.txt"
