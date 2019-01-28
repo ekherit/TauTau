@@ -57,9 +57,9 @@ struct Tracker
     return result;
   }
 
-  long GetNtrackCharged(void) const { return  evtRecEvent->totalCharged(); };
-  long GetNtrackNeutral(void) const { return  evtRecEvent->totalNeutral(); };
-  long GetNtrackTotal(void)   const { return  evtRecEvent->evtRecEvent->totalTracks(); };
+  long GetNtrackCharged(void)  { return  evtRecEvent->totalCharged(); };
+  long GetNtrackNeutral(void)  { return  evtRecEvent->totalNeutral(); };
+  long GetNtrackTotal(void)    { return  evtRecEvent->totalTracks(); };
 
   template<typename Container>
   Container GetNeutralTracks()
@@ -81,9 +81,9 @@ struct Tracker
       bool endcup_good_track = hit_endcup && (E > 0.050);
       if(barrel_good_track  || endcup_good_track) 
       {
-        good_neutral_tracks.push_back(*itTrk);
+        result.push_back(*itTrk);
       }
     }
-    return good_neutral_tracks;
+    return result;
   }
 };
