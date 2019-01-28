@@ -59,7 +59,7 @@ inline std::list<EvtRecTrack*> createGoodChargedTrackList(
     EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
     if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
     RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
-    Vertex_t vtx(mdcTrack);
+    Vertex_t vtx(mdcTrk);
     //calculate interaction point distance
     //double rvxy,rvz,rvphi;
     //calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
