@@ -186,10 +186,8 @@ StatusCode TauTau::execute()
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
-  //typedef std::list<EvtRecTrack*> TrackList_t;
-  //typedef std::vector<EvtRecTrack*> TrackVector_t;
 
-  Tracker tracker; //helper class for excracting information about tracks
+  Tracker tracker(evtRecEvent, evtRecTrkCol); //helper class for excracting information about tracks
 
   Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
   fEvent.nciptrack=central_tracks.size();
