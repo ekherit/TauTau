@@ -22,7 +22,7 @@
 #include "GaudiKernel/SmartDataPtr.h"
 #include "GaudiKernel/IDataProviderSvc.h"
 #include "GaudiKernel/PropertyMgr.h"
-//#include "VertexFit/IVertexDbSvc.h"
+#include "VertexFit/IVertexDbSvc.h"
 #include "GaudiKernel/Bootstrap.h"
 #include "GaudiKernel/ISvcLocator.h"
 
@@ -57,12 +57,11 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #include "combinator.h"
 #include "Utils.h"
 
+#include "Tracker.h"
 
-/*
 #include "VertexFit/KinematicFit.h"
 #include "VertexFit/VertexFit.h"
 #include "VertexFit/Helix.h"
-*/
 
 #include "ParticleID/ParticleID.h"
 
@@ -76,19 +75,23 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
   declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
   declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
+
   //good charged track configuration
   declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
   declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
+  declareProperty("USE_VERTEX_DB", cfg.USE_VERTEX_DB = 1);
   declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.93);
 
+  //good netural tracks
   declareProperty("EMC_ENDCUP_MIN_ENERGY",    cfg.EMC_ENDCUP_MIN_ENERGY = 0.05);
   declareProperty("EMC_BARREL_MIN_ENERGY",    cfg.EMC_BARREL_MIN_ENERGY = 0.025);
 
   //endcup calorimeter
-  declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.86);
+  declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.83); //was 0.86
   declareProperty("EMC_ENDCUP_MAX_COS_THETA", cfg.EMC_ENDCUP_MAX_COS_THETA = 0.92);
+
   //barrel calorimeter
-  declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.8);
+  declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.83); //was 0.8
   declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
 
   //for tau+ -> pi+pi0
@@ -183,9 +186,25 @@ StatusCode TauTau::execute()
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
-	std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+  //typedef std::list<EvtRecTrack*> TrackList_t;
+  //typedef std::vector<EvtRecTrack*> TrackVector_t;
+
+  Tracker tracker;
+
+  Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
+  fEvent.nciptrack=central_tracks.size();
+   
+  Tracker::Vector neutral_tracks = tracker.GetNeutralTracks<Tracker::Vector>();
+
+	//std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+  
+  Tracker::List good_neutral_tracks = tracker.GetNeutralTracks<Tracker::List>();
+
 	std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
   std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
+
+  fEvent.nctrack =  tracker.GetNtrackCharged();
+  fEvent.nntrack =  tracker.GetNtrackNeutral();
 
   //emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   //emc_good_charged_tracks.sort(PtOrder); //sort over transverse momentum

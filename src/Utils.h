@@ -27,22 +27,16 @@ using CLHEP::Hep3Vector;
 using CLHEP::Hep2Vector;
 using CLHEP::HepLorentzVector;
 
-#include "GaudiKernel/IDataProviderSvc.h"
-#include "GaudiKernel/ISvcLocator.h"
-#include "GaudiKernel/Bootstrap.h"
-
-#include "VertexFit/IVertexDbSvc.h"
-#include "VertexFit/Helix.h"
-
 #include "EvtRecEvent/EvtRecEvent.h"
 #include "EvtRecEvent/EvtRecTrack.h"
 
 #include <TMatrixDEigen.h>
 
-//#include "utils.h"
 #include "TypeDefs.h"
 #include "SelectionConfig.h"
 #include "PhysConst.h"
+
+#include "Vertex.h"
 
 template < class T> inline T sq(T value) { return value*value; }
 
@@ -50,53 +44,6 @@ inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 {
   double a_2 = 0.5*BEPC_CROSSING_ANGLE;
 	return HepLorentzVector(Wcm*tan(a_2),0,0,Wcm/cos(a_2)); //check this formula 2019-01-25
-}
-
-inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
-{
-  if(false) //skip vertex information
-  {
-    double x = mdcTrk->x();
-    double y = mdcTrk->x();
-    z = mdcTrk->z();
-    ro = sqrt(x*x+y*y);
-    phi = 0;
-    return;
-  };
-  ro = -9999;
-  z = -9999;
-  phi = -9999;
-  //  Reconstruct the vertex 
-  Hep3Vector xorigin(0,0,0);
-  IVertexDbSvc*  vtxsvc;
-  Gaudi::svcLocator()->service("VertexDbSvc", vtxsvc);
-  if(vtxsvc->isVertexValid())
-  {
-    double* dbv = vtxsvc->PrimaryVertex(); 
-    double*  vv = vtxsvc->SigmaPrimaryVertex();  
-    xorigin.setX(dbv[0]);
-    xorigin.setY(dbv[1]);
-    xorigin.setZ(dbv[2]);
-  }
-  // Vertex game. copy from rhophi analysis 
-  double phi0=mdcTrk->helix(1);
-  double xv=xorigin.x();
-  double yv=xorigin.y();
-  //double Rxy=(mdc.x[i]-xv)*cos(phi0)+(mdc.y[i]-yv)*sin(phi0);
-  //mdc.r[i]=Rxy;
-  HepVector a = mdcTrk->helix();
-  HepSymMatrix Ea = mdcTrk->err();
-  HepPoint3D point0(0.,0.,0.);   // the initial point for MDC recosntruction
-  HepPoint3D IP(xorigin[0],xorigin[1],xorigin[2]); 
-  VFHelix helixip(point0,a,Ea); 
-  helixip.pivot(IP);
-  HepVector vecipa = helixip.a();
-  double  Rvxy0=fabs(vecipa[0]);  //the nearest distance to IP in xy plane
-  double  Rvz0=vecipa[3];         //the nearest distance to IP in z direction
-  double  Rvphi0=vecipa[1];
-  ro=Rvxy0;
-  z=Rvz0;
-  phi=Rvphi0;
 }
 
 
@@ -242,34 +189,6 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
 	return good_neutral_tracks;
 }
 
-inline std::list<EvtRecTrack*> createNeutralTrackList(
-		SmartDataPtr<EvtRecEvent>    & evtRecEvent, 
-		SmartDataPtr<EvtRecTrackCol> & evtRecTrkCol
-		)
-{
-	std::list<EvtRecTrack*> good_neutral_tracks;
-	//collect good neutral track
-	for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
-	{
-		EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
-		if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
-		RecEmcShower *emcTrk = (*itTrk)->emcShower();
-    double theta = emcTrk->theta();
-    double phi = emcTrk->phi();
-		double c =  fabs(cos(theta)); //abs cos theta
-		double E  =  emcTrk->energy();
-		bool hit_barrel = (c < 0.83);
-		bool hit_endcup = (0.83 <=c); //&&(c <= 0.93);
-		//barrel and endcup calorimeters have different energy threshold
-		bool barrel_good_track = hit_barrel && (E > 0.025);
-		bool endcup_good_track = hit_endcup && (E > 0.050);
-		if(barrel_good_track  || endcup_good_track) 
-		{
-			good_neutral_tracks.push_back(*itTrk);
-		}
-	}
-	return good_neutral_tracks;
-}
 
 
 /*  

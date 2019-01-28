@@ -46,18 +46,18 @@ class RootTauTauEvent : public RootTuple
 	NTuple::Item<long>    run; //run number
 	NTuple::Item<long>    event; //event number 
 	NTuple::Item<long>    time; //time of the event
+  NTuple::Item<long>    nctrack; //total number of charged tracks;
+  NTuple::Item<long>    nntrack; //total number of neutral tracks;
+  NTuple::Item<long>    nciptrack; //total number of charged tracks came from interaction points
+
+  //NTuple::Item<double>  Emin_ntrack; //minimal energy of all netural tracks
+
 	NTuple::Item<long>    ngood_charged_track;     //number of good charged tracks in event
 	NTuple::Item<long>    ngood_neutral_track;     //number of good neutral tracks in event
   NTuple::Item<long>    npi0; //number of pi0
 
-  /*
-   *  00 - ee  |  10 - μe  |  20 - Ke
-   *  01 - eμ  |  11 - μμ  |  21 - Kμ
-   *  02 - eπ  |  12 - μπ  |  22 - Kπ
-   *  03 - eK  |  13 - μK  |  23 - KK
-   */ 
 	NTuple::Item<long> channel; //used channel
-	NTuple::Item<long> ntrack;  //number of tracks (must be 2)
+	//NTuple::Item<long> ntrack;  //number of tracks (must be 2)
 	RootTracks T;  //track information (momentum, vertex, muon depth...)
 	RootTracks Tn; //neutral track
   RootPid Pid;   //particle id for charged track
@@ -91,8 +91,9 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("event", event);
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
-    tuple->addItem ("nctrack", ntrack, 0,6);
-    tuple->addItem ("nntrack", ntrack, 0,8);
+    tuple->addItem ("nctrack",   nctrack,   0,6); //total number of charged tracks
+    tuple->addItem ("nntrack",   nntrack,   0,8); //total number of neutral tracks
+    tuple->addItem ("nciptrack", nciptrack, 0,8); //total number of charged tracks come from interaction points
     tuple->addItem ("Nc", ngood_charged_track, 0, 6);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
     tuple->addItem ("Npi0", npi0, 0, 4);

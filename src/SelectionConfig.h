@@ -23,7 +23,10 @@ struct SelectionConfig
 	int MIN_CHARGED_TRACKS; //minimum good charged tracks in selection
 	int MAX_CHARGED_TRACKS; //maximum good charged tracks in selection
 	int MAX_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
-	double IP_MAX_RHO, IP_MAX_Z; //interection point cut
+
+  double IP_MAX_RHO, IP_MAX_Z; //interection point cut
+  int  USE_VERTEX_DB; //user vertex db information
+
   double MAX_COS_THETA; //maximum  cos(theta) for good charged track
 
   double EMC_ENDCUP_MIN_COS_THETA;
