@@ -50,9 +50,8 @@ template < class T> inline T sq(T value) { return value*value; }
 
 inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 {
-	return HepLorentzVector(Wcm*tan(0.5*BEPC_CROSSING_ANGLE),0,0,Wcm/cos(0.5*BEPC_CROSSING_ANGLE));
-	//I think formula below is wrong 
-	//return HepLorentzVector(Wcm*sin(0.5*BEPC_CROSSING_ANGLE),0,0,Wcm);
+  double a2 = 0.5*BEPC_CROSSING_ANGLE;
+	return HepLorentzVector(Wcm*tan(a2),0,0,Wcm/cos()); //check this formula 2019-01-25
 }
 
 inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
@@ -66,7 +65,6 @@ inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, doub
     phi = 0;
     return;
   };
-  /*
   ro = -9999;
   z = -9999;
   phi = -9999;
@@ -101,7 +99,6 @@ inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, doub
   ro=Rvxy0;
   z=Rvz0;
   phi=Rvphi0;
-  */
 }
 
 
@@ -239,6 +236,35 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
 
     if(close_charged_track) continue;
 
+		if(barrel_good_track  || endcup_good_track) 
+		{
+			good_neutral_tracks.push_back(*itTrk);
+		}
+	}
+	return good_neutral_tracks;
+}
+
+inline std::list<EvtRecTrack*> createNeutralTrackList(
+		SmartDataPtr<EvtRecEvent>    & evtRecEvent, 
+		SmartDataPtr<EvtRecTrackCol> & evtRecTrkCol
+		)
+{
+	std::list<EvtRecTrack*> good_neutral_tracks;
+	//collect good neutral track
+	for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+	{
+		EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+		if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+		RecEmcShower *emcTrk = (*itTrk)->emcShower();
+    double theta = emcTrk->theta();
+    double phi = emcTrk->phi();
+		double c =  fabs(cos(theta)); //abs cos theta
+		double E  =  emcTrk->energy();
+		bool hit_barrel = (c < 0.83);
+		bool hit_endcup = (0.83 <=c); //&&(c <= 0.93);
+		//barrel and endcup calorimeters have different energy threshold
+		bool barrel_good_track = hit_barrel && (E > 0.025);
+		bool endcup_good_track = hit_endcup && (E > 0.050);
 		if(barrel_good_track  || endcup_good_track) 
 		{
 			good_neutral_tracks.push_back(*itTrk);
