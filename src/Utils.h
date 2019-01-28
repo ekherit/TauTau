@@ -31,10 +31,8 @@ using CLHEP::HepLorentzVector;
 //#include "GaudiKernel/ISvcLocator.h"
 #include "GaudiKernel/Bootstrap.h"
 
-/* try to remove vertex location
 #include "VertexFit/IVertexDbSvc.h"
-#include "VertexFit/Helix.h"
-*/
+//#include "VertexFit/Helix.h"
 
 #include "EvtRecEvent/EvtRecEvent.h"
 #include "EvtRecEvent/EvtRecTrack.h"
@@ -56,7 +54,7 @@ inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 
 inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
 {
-  if(true) //skip vertex information
+  if(false) //skip vertex information
   {
     double x = mdcTrk->x();
     double y = mdcTrk->x();
