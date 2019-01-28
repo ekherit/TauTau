@@ -186,15 +186,20 @@ StatusCode TauTau::execute()
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
-  typedef std::list<EvtRecTrack*> TrackList_t;
-  typedef std::vector<EvtRecTrack*> TrackVector_t;
+  //typedef std::list<EvtRecTrack*> TrackList_t;
+  //typedef std::vector<EvtRecTrack*> TrackVector_t;
 
   Tracker tracker;
 
-  Tracker::Vector_t  central_tracks  = tracker.GetCentralTrack<Tracker::Vector_t>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
+  Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
   fEvent.nciptrack=central_tracks.size();
    
-	std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+  Tracker::Vector neutral_tracks = tracker.GetNeutralTracks<Tracker::Vector>();
+
+	//std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
+  
+  Tracker::List good_neutral_tracks = tracker.GetNeutralTracks<Tracker::List>();
+
 	std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
   std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 

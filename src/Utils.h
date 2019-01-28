@@ -189,34 +189,6 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
 	return good_neutral_tracks;
 }
 
-inline std::list<EvtRecTrack*> createNeutralTrackList(
-		SmartDataPtr<EvtRecEvent>    & evtRecEvent, 
-		SmartDataPtr<EvtRecTrackCol> & evtRecTrkCol
-		)
-{
-	std::list<EvtRecTrack*> good_neutral_tracks;
-	//collect good neutral track
-	for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
-	{
-		EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
-		if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
-		RecEmcShower *emcTrk = (*itTrk)->emcShower();
-    double theta = emcTrk->theta();
-    double phi = emcTrk->phi();
-		double c =  fabs(cos(theta)); //abs cos theta
-		double E  =  emcTrk->energy();
-		bool hit_barrel = (c < 0.83);
-		bool hit_endcup = (0.83 <=c); //&&(c <= 0.93);
-		//barrel and endcup calorimeters have different energy threshold
-		bool barrel_good_track = hit_barrel && (E > 0.025);
-		bool endcup_good_track = hit_endcup && (E > 0.050);
-		if(barrel_good_track  || endcup_good_track) 
-		{
-			good_neutral_tracks.push_back(*itTrk);
-		}
-	}
-	return good_neutral_tracks;
-}
 
 
 /*  
