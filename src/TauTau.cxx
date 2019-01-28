@@ -189,7 +189,7 @@ StatusCode TauTau::execute()
   //typedef std::list<EvtRecTrack*> TrackList_t;
   //typedef std::vector<EvtRecTrack*> TrackVector_t;
 
-  Tracker tracker;
+  Tracker tracker; //helper class for excracting information about tracks
 
   Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
   fEvent.nciptrack=central_tracks.size();
