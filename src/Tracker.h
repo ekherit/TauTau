@@ -16,6 +16,9 @@
  * =====================================================================================
  */
 
+#include "GaudiKernel/SmartDataPtr.h"
+#include "GaudiKernel/IDataProviderSvc.h"
+
 #include "EventModel/EventModel.h"
 #include "EventModel/Event.h"
 #include "EvtRecEvent/EvtRecEvent.h"
