@@ -50,8 +50,8 @@ template < class T> inline T sq(T value) { return value*value; }
 
 inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 {
-  double a2 = 0.5*BEPC_CROSSING_ANGLE;
-	return HepLorentzVector(Wcm*tan(a2),0,0,Wcm/cos()); //check this formula 2019-01-25
+  double a_2 = 0.5*BEPC_CROSSING_ANGLE;
+	return HepLorentzVector(Wcm*tan(a_2),0,0,Wcm/cos(a_2)); //check this formula 2019-01-25
 }
 
 inline void calculate_vertex(RecMdcTrack *mdcTrk, double & ro, double  & z, double phi)
