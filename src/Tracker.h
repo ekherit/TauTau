@@ -34,10 +34,8 @@ struct Tracker
   typedef std::vector<EvtRecTrack*> Vector;
   SmartDataPtr<EvtRecEvent>    evtRecEvent;
   SmartDataPtr<EvtRecTrackCol> evtRecTrkCol;
-  Tracker(void) : 
-    evtRecEvent(SmartDataPtr<EvtRecEvent>(eventSvc(), EventModel::EvtRec::EvtRecEvent)),
-    evtRecTrkCol(SmartDataPtr<EvtRecTrackCol>(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol)
-
+  Tracker(SmartDataPtr<EvtRecEvent> evt,  SmartDataPtr<EvtRecTrackCol> trk) : 
+    evtRecEvent(evt), evtRecTrkCol (trk)
   {
   };
 

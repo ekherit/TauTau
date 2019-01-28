@@ -54,11 +54,16 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
     T.z[i] = mdc->z(); 
     T.r[i] = 0; 
 
-    double rho,z,phi;
-    calculate_vertex(track->mdcTrack(),rho,z,phi);
-    T.vxy[i] = rho;
-    T.vz[i] = z; 
-    T.vphi[i] = phi; 
+    Vertex_t vtx(track->mdcTrack());
+    vtx.use_db();
+    //double rho,z,phi;
+    //calculate_vertex(track->mdcTrack(),rho,z,phi);
+    //T.vxy[i] = rho;
+    //T.vz[i] = z; 
+    //T.vphi[i] = phi; 
+    T.vxy[i] = vtx.rho;
+    T.z[i] = vtx.z;
+    T.phi[i] = vtx.phi;
   }
   else
   {
