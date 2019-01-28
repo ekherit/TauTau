@@ -32,7 +32,7 @@ using CLHEP::HepLorentzVector;
 #include "GaudiKernel/Bootstrap.h"
 
 #include "VertexFit/IVertexDbSvc.h"
-//#include "VertexFit/Helix.h"
+#include "VertexFit/Helix.h"
 
 #include "EvtRecEvent/EvtRecEvent.h"
 #include "EvtRecEvent/EvtRecTrack.h"
