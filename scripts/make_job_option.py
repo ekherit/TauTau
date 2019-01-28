@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import re,os,sys
 import argparse
+import ScanPoint
 parser = argparse.ArgumentParser(description='Create tau tau selection configuration files.')
 parser.add_argument('dirs',   default="data", nargs="+",help='Input directories where recursivily files will be searched. Last one will be output dir')
 parser.add_argument('--output_dir', default='', help='Output dir')

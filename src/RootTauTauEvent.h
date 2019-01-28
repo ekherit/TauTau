@@ -91,7 +91,8 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("event", event);
     tuple->addItem ("time", time);
     tuple->addItem ("channel", channel);
-    tuple->addItem ("ntrack", ntrack, 0,6);
+    tuple->addItem ("nctrack", ntrack, 0,6);
+    tuple->addItem ("nntrack", ntrack, 0,8);
     tuple->addItem ("Nc", ngood_charged_track, 0, 6);
     tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
     tuple->addItem ("Npi0", npi0, 0, 4);
