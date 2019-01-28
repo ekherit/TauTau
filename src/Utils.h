@@ -59,10 +59,11 @@ inline std::list<EvtRecTrack*> createGoodChargedTrackList(
     EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
     if(!(*itTrk)->isMdcTrackValid()) continue;  //use only valid charged tracks
     RecMdcTrack *mdcTrk = (*itTrk)->mdcTrack();  //main drift chambe
+    Vertex vtx(mdcTrack);
     //calculate interaction point distance
-    double rvxy,rvz,rvphi;
-    calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
-    bool IP_track = fabs(rvz)< cfg.IP_MAX_Z && fabs(rvxy)<cfg.IP_MAX_RHO;  //tracks begin near interaction point
+    //double rvxy,rvz,rvphi;
+    //calculate_vertex(mdcTrk,rvxy,rvz,rvphi); //find distance to interaction point
+    bool IP_track = fabs(vtx.z)< cfg.IP_MAX_Z && fabs(vtx.rho)<cfg.IP_MAX_RHO;  //tracks begin near interaction point
     bool good_track = IP_track && fabs(cos(mdcTrk->theta()))<cfg.MAX_COS_THETA; //track is good
     if(good_track) good_charged_tracks.push_back(*itTrk);
   }
