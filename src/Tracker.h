@@ -68,7 +68,8 @@ struct Tracker
     Container result;
     for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
     {
-      assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
+      //assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
+      assert( (*it)->isMdcTrackValid());
       RecMdcTrack * mdcTrk = (*it)->mdcTrack();
       if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
     }
@@ -143,7 +144,8 @@ struct Tracker
       for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
       {
         //EvtRecTrack * track = *it;
-        assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
+        //assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
+        assert((*it)->isEmcShowerValid());
         RecEmcShower *emcTrk = (*it)->emcShower();
         double E = emcTrk->energy();
         if ( E> Emin ) Etotal+=E;
@@ -161,7 +163,8 @@ std::vector<HepLorentzVector>  GetMdcLorentzVector(const Container & input, doub
   result.reserve(input.size());
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert( (*it)->isMdcTrackValid(), "ERROR: GetMdcLorentzVector: No MDC information in a track");
+    //assert( (*it)->isMdcTrackValid(), "ERROR: GetMdcLorentzVector: No MDC information in a track");
+    assert( (*it)->isMdcTrackValid());
     RecMdcKalTrack * t = (*it)->mdcKalTrack();
     result.push_back( t->p4(mass) );
   }
@@ -175,7 +178,8 @@ std::vector<HepLorentzVector>  GetEmcLorentzVector(const Container & input)
   result.reserve(input.size());
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert((*it)->isEmcShowerValid(), "ERROR: GetEmcLorentzVector: No EMC information in a track");
+    //assert((*it)->isEmcShowerValid(), "ERROR: GetEmcLorentzVector: No EMC information in a track");
+    assert((*it)->isEmcShowerValid());
     RecEmcShower *emcTrk = (*it)->emcShower();
     double E = emcTrk->energy();
     HepLorentzVector p(0,0,E,E);  //px,py,pz, E
@@ -193,7 +197,8 @@ int GetTotalCharge(Container  &  input)
   int charge=0;
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert( (*it)->isMdcTrackValid(), "ERROR: GetTotalCharge: No MDC information in a track");
+    //assert( (*it)->isMdcTrackValid(), "ERROR: GetTotalCharge: No MDC information in a track");
+    assert( (*it)->isMdcTrackValid());
     RecMdcTrack * mdcTrk = (*it)->mdcTrack();
     charge +=  int(mdcTrk->charge());
   }
