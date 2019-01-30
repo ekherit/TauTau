@@ -170,6 +170,10 @@ struct SelectionConfig
     std::cout << "MAX_TRANSVERSE_MOMENTUM = "    << MAX_TRANSVERSE_MOMENTUM    << "\n";      //center mass energy
     std::cout << "MIN_EP_RATIO = "               << MIN_EP_RATIO               << "\n";      //center mass energy
     std::cout << "MAX_EP_RATIO = "               << MAX_EP_RATIO               << "\n";      //center mass energy
+    std::cout << "MIN_PTEM = "                   << MIN_PTEM                   << std::endl;      //center mass energy
+    std::cout << "MAX_PTEM = "                   << MAX_PTEM                   << std::endl;      //center mass energy
+    std::cout << "MIN_TOF = "                    << MIN_TOF                    << std::endl;      //center mass energy
+    std::cout << "MAX_TOF = "                    << MAX_TOF                    << std::endl;      //center mass energy
   };
 
 };
