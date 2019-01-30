@@ -188,10 +188,8 @@ StatusCode TauTau::execute()
   {
     std::cout << "########################################################################################################\n";
     std::cout << "########################################################################################################\n";
-    std::cout << "########################################################################################################\n";
     std::cout << "\n";
     cfg.print_relevant();
-    std::cout << "########################################################################################################\n";
     std::cout << "########################################################################################################\n";
     std::cout << "########################################################################################################\n";
     //std::cout << "Wcm = " << cfg.CENTER_MASS_ENERGY << " GeV" << std::endl;
@@ -259,7 +257,6 @@ StatusCode TauTau::execute()
     HepLorentzVector Psum = GetTotalFourMomentum(Pc);
     Hep3Vector p3sum      = GetTotalMomentum(Pc);
     Hep3Vector ptsum      = GetTotalTransverseMomentum(Pc);
-    //double psum = Psum.e(); //total energy of charged tracks ( electron hypoteza)
 
     for(int i=0;i<Tc.size();++i)
     {
@@ -315,8 +312,6 @@ StatusCode TauTau::execute()
       }
     }
     fEvent.npi0 = Pn.size()/2;
-    //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
-    //std::cout << "neutral size = " << Pn.size() << std::endl;
     fEvent.Nrho = fEvent.npi0*Tc.size();
     if(pi0_cmb_list.size()!=0)
     {
@@ -353,11 +348,6 @@ StatusCode TauTau::execute()
       fEvent.channel = 0;
       fEvent.write();
       ntautau_events++;
-      //std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
-      //std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
-      //std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
-      //std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
-      //std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
     }
   }
 SKIP_TAUTAU:
@@ -394,12 +384,6 @@ SKIP_TAUTAU:
     std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
     std::reverse(Tn.begin(),Tn.end());
 
-    //std::vector<EvtRecTrack*> T
-    //  (
-    //    good_neutral_tracks.begin(), 
-    //    good_neutral_tracks.end()
-    //  );
-    //fGG.Nq = good_charged_tracks.size();
     bool keep=true;
     double E[2];
     double x[2]; //E/Ebeam
@@ -436,6 +420,8 @@ SKIP_TAUTAU:
 
 StatusCode TauTau::finalize()
 {
+  std::cout << "Selection configuration:\n";
+  std::cout << cfg.print_relevant();
   std::cout << "Event proceed: " << nproceed_events << std::endl;
   std::cout << "Event selected: " << nwrited_events << std::endl;
   std::cout << "ττ candidates: " << ntautau_events << endl;
