@@ -621,11 +621,9 @@ void set_alias(TTree * tt, double W)
   //Now setup particle id's
   for(int track=0;track<2;++track)
   {
-    set_alias(tt, "e",   track, "0.8 < Ep[#] && Ep[#]<1.05 && chi2_dedx_e[#]<5 && abs(delta_tof_e[#])<0.3");
-    //tt->SetAlias("u0","0.1 < E[0] && E[0] < 0.3 && (depth[0]>(80*p[0]-50) || depth[0]>40) && Nmuhit[0]>1 && chi2_dedx_mu[0] < 5  && abs(delta_tof_mu[0]) < 0.3 && Ep[0]<0.8");
+    set_alias(tt, "e",   track, "0.8 < Ep[#] && Ep[#]<1.05 && chi2_dedx_e[#]<2 && abs(delta_tof_e[#])<0.2");
     set_alias(tt, "u",   track, "!e# && 0.1 < E[#] && E[#] < 0.3 && depth[#]>0 && chi2_dedx_mu[#] < 5  && abs(delta_tof_mu[#]) < 0.3 && Ep[#]<0.8");
     set_alias(tt, "pi",  track, "!(e#||u#) && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_pi[#] < 5 && abs(delta_tof_pi[#])<0.3");
-    //tt->SetAlias("pi0","!u0 &&   Ep[0]<0.6 && chi2_dedx_pi[0] < 5 && abs(delta_tof_pi[0])<0.3");
     set_alias(tt, "K",   track, "!(e#||u#||pi#) && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_K[#] < 3 && abs(delta_tof_K[#])<0.3");
     set_alias(tt, "rho", track, "pi# && Mrho_cut# && Mpi0[#]>0.1128 && Mpi0[#]<0.1464");
   }
@@ -698,7 +696,7 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     auto tt = new TChain("tt", sp.title.c_str());
     for(auto & file : sp.file_list) tt->AddFile(file.c_str());
     //read gamma gamma events
-    auto gg = new TChain("tt", sp.title.c_str());
+    auto gg = new TChain("gg", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile(file.c_str());
     //change chain names
     tt->SetName(("tt"+to_string(index)).c_str());
@@ -1071,7 +1069,7 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     for(auto & item: P[i].NttMap) Ntt+=item.second;
     int Ngg = P[i].Ngg;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
-    ofs << setw(5) << i <<  setw(15) << L << setw(10) << 10 << setw(15) << P[i].W/MeV  << setw(15) << P[i].dW/MeV;
+    ofs << setw(5) << i <<  setw(15) << L*1000 << setw(10) << 10 << setw(15) << P[i].W/MeV  << setw(15) << P[i].dW/MeV;
     ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
     ofs << setw(10) << Ntt << setw(10) <<  1 << setw(10) << Ngg <<  setw(10) << P[i].effcor << std::endl;
   }
@@ -1223,6 +1221,23 @@ std::vector<Selection_t> SELECTION11
   {"πK", "#piK"     , "piK  && Nc==2 && Nn==0 && ptem>0.33 && MM > 0.8"}    
 };
 
+std::vector<Selection_t> SELECTION2
+{
+  {"eμ", "e#mu"     , "Nc==2 && Nn==0 && eu   && ptem>0.25" }  ,
+  {"eπ", "e#pi"     , "nciptrack ==2 && Nc==2 && Nn==0 && epi  && ptem>0.19"}   ,
+  {"μπ", "#mu#pi"   , "nciptrack ==2 && Nc==2 && Nn==0 && upi  && ptem>0.22"}   ,
+  {"ee", "ee"       , "nntrack==0 && nciptrack ==2 && Nc==2 && Nn==0 && ee   && ptem>0.3"}  ,
+  {"μμ", "#mu#mu"   , "nciptrack ==2 && Nc==2 && Nn==0 && uu   && ptem>0.25"}     ,
+  {"ππ", "#pi#pi"   , "nciptrack ==2 && Nc==2 && Nn==0 && pipi && ptem>0.2"}    ,
+  {"eK", "eK"       , "nciptrack ==2 && Nc==2 && Nn==0 && eK"}                   ,
+  {"πK", "#piK"     , "nntrack==0 && nciptrack ==2 && Nc==2 && Nn==0 && piK  && ptem >1"}    ,
+  {"μK", "#uK"      , "nciptrack ==2 && Nc==2 && Nn==0 && uK   && ptem >0.2"}   ,
+  {"KK", "KK"       , "nciptrack ==2 && Nc==2 && Nn==0 && KK   && ptem >0.16"}   
+};
+
+
+
+
 std::vector<Selection_t> & DEFAULT_SELECTION=SELECTION;
 
 
@@ -1272,7 +1287,7 @@ void print_event_info(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t
   }
 };
 
-void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection="", const char * gopt="col", std::string opt="")
+void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * selection, const char * gopt="col", std::string opt="")
 {
   bool goff  = !(bool(strcmp("goff",gopt)));
   static int canvas_counter=0;
@@ -1304,11 +1319,11 @@ void select(std::vector<ScanPoint_t> & P, const char * varexp, const char * sele
     sprintf(title, "%d events - %s", p.Ntt, p.title.c_str());
     if(!goff) p.tt->GetHistogram()->SetTitle(title);
     p.selection = selection;
-    if(opt=="save")
-    {
+    //if(opt=="save")
+    //{
       p.Ngg = p.gg->GetEntries();
-      std::cout << i-2 << " " << p.Ngg << endl;
-    }
+    //  std::cout << i-2 << " " << p.Ngg << endl;
+   // }
   }
   if(opt=="save")
   {
@@ -1416,11 +1431,11 @@ void select(std::vector<ScanPoint_t> & P=DATA, std::vector<Selection_t> & SEL=SE
   fit(P, "scan.txt", 1);
 }
 
-//void select(std::vector<ScanPoint_t> & P=DATA, std::string cut="")
-//{
-//  std::vector<Selection_t>  sel{{"test","test",cut}};
-//  select_all(P,sel);
-//}
+void select(std::vector<ScanPoint_t> & P=DATA, std::string cut="")
+{
+  std::vector<Selection_t>  sel{{"test","test",cut}};
+  select(P,sel);
+}
 
 void measure_efficiency(std::vector<ScanPoint_t> & PNTS, std::vector<Selection_t> & SEL=DEFAULT_SELECTION, long N0=100000)
 {

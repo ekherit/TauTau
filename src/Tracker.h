@@ -28,6 +28,7 @@
 
 #include <list>
 #include <vector>
+#include <limits>
 struct Tracker
 {
   typedef std::list<EvtRecTrack*> List;
@@ -40,7 +41,7 @@ struct Tracker
   };
 
   template<typename Container>
-  inline Container  GetCentralTracks(const double zmax=10.0, const double rhomax=1.0, const bool use_db=true)
+  inline Container  GetCentralTracks(const double zmax, const double rhomax, const bool use_db)
   {
     Container result;
     for(unsigned i = 0; i < evtRecEvent->totalCharged(); i++)
@@ -57,12 +58,39 @@ struct Tracker
     return result;
   }
 
+  template<typename Container>
+  inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX_COS_THETA)
+  {
+    Container result;
+    for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+    {
+      assert( (*it)->isMdcTrackValid() );
+      RecMdcTrack * mdcTrk = (*it)->mdcTrack();
+      if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
+    }
+    return result;
+  }
+
+  template<typename Container>
+  inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double MIN_EMC_ENERGY /* minimum allowed emc energy for charged tracks */)
+  {
+    Container result;
+    for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+    {
+      if(!(*it)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+      RecEmcShower *emcTrk = (*it)->emcShower();
+      if ( emcTrk->energy() > MIN_EMC_ENERGY ) result.push_back(*it);
+    }
+    return result;
+  }
+
+
   long GetNtrackCharged(void)  { return  evtRecEvent->totalCharged(); };
   long GetNtrackNeutral(void)  { return  evtRecEvent->totalNeutral(); };
   long GetNtrackTotal(void)    { return  evtRecEvent->totalTracks(); };
 
   template<typename Container>
-  Container GetNeutralTracks()
+  Container GetNeutralTracks(double Emin)
   {
     Container result;
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
@@ -70,20 +98,131 @@ struct Tracker
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
       if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      double theta = emcTrk->theta();
-      double phi = emcTrk->phi();
-      double c =  fabs(cos(theta)); //abs cos theta
-      double E  =  emcTrk->energy();
-      bool hit_barrel = (c < 0.83);
-      bool hit_endcup = (0.83 <=c); //&&(c <= 0.93);
-      //barrel and endcup calorimeters have different energy threshold
-      bool barrel_good_track = hit_barrel && (E > 0.025);
-      bool endcup_good_track = hit_endcup && (E > 0.050);
-      if(barrel_good_track  || endcup_good_track) 
-      {
-        result.push_back(*itTrk);
-      }
+      if(emcTrk->energy() > Emin) result.push_back(*itTrk);
     }
     return result;
   }
+
+  //minimum and maximum neutral tracks energy of all reconstructed tracks
+  double MaxNeutralTracksEnergy(void)
+  {
+    double Emax = 0;
+    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+    {
+      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+      double E = emcTrk->energy();
+      if ( E > Emax )  Emax = E;
+    }
+    return Emax;
+  };
+
+  double MinNeutralTracksEnergy(void)
+  {
+    double Emin = std::numeric_limits<double>::max(); //unfound value
+    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+    {
+      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+      double E = emcTrk->energy();
+      if (E < Emin)  Emin = E;
+    }
+    return Emin;
+  };
+
+  template <typename Container>
+    double GetTotalNeutralTracksEnergy(const Container & input, double Emin=0)
+    {
+      double Etotal=0;
+      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+      {
+        //EvtRecTrack * track = *it;
+        assert((*it)->isEmcShowerValid());
+        RecEmcShower *emcTrk = (*it)->emcShower();
+        double E = emcTrk->energy();
+        if ( E> Emin ) Etotal+=E;
+      }
+      return Etotal;
+    }
+};
+
+
+template<typename Container>
+double GetTotalPt(const Container & input)
+{
+}
+
+template<typename Container>
+std::vector<HepLorentzVector>  GetMdcLorentzVector(const Container & input, double mass = 0.5109989461e-3 /* electron mass in GeV*/)
+{
+  std::vector<HepLorentzVector> result;
+  result.reserve(input.size());
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    assert( (*it)->isMdcTrackValid() );
+    RecMdcKalTrack * t = (*it)->mdcKalTrack();
+    result.push_back( t->p4(mass) );
+  }
+  return result;
+};
+
+template<typename Container>
+std::vector<HepLorentzVector>  GetEmcLorentzVector(const Container & input)
+{
+  std::vector<HepLorentzVector> result;
+  result.reserve(input.size());
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    assert((*it)->isEmcShowerValid());
+    RecEmcShower *emcTrk = (*it)->emcShower();
+    double E = emcTrk->energy();
+    HepLorentzVector p(0,0,E,E);  //px,py,pz, E
+    //correct direction
+    p.setTheta(emcTrk->theta()); 
+    p.setPhi(emcTrk->phi());
+    result.push_back(p);
+  }
+  return result;
+};
+
+int GetTotalCharge(Container  &  input)
+{
+  int charge=0;
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    assert( (*it)->isMdcTrackValid() );
+    RecMdcTrack * mdcTrk = (*it)->mdcTrack();
+    charge +=  int(mdcTrk->charge());
+  }
+  return charge;
+}
+
+template <typename Container >
+HepLorentzVector GetTotalFourMomentum( const Container<HepLorentzVector>  & input )
+{
+  HepLorentzVector result(0,0,0,0);
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    result += *it;
+  }
+  return result;
+};
+
+template <typename Container >
+Hep3Vector GetTotalMomentum( const Container<HepLorentzVector>  & input )
+{
+  Hep3Vector result(0,0,0,0);
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    result += it->p3();
+  }
+  return result;
+};
+
+template <typename Container >
+Hep3Vector GetTotalTransverseMomentum( const Container<HepLorentzVector>  & input )
+{
+  Hep3Vector result = GetTotalMomentum(input);
+  result.setZ(0);
+  return result;
 };
