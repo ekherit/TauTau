@@ -421,7 +421,7 @@ SKIP_TAUTAU:
 StatusCode TauTau::finalize()
 {
   std::cout << "Selection configuration:\n";
-  std::cout << cfg.print_relevant();
+  cfg.print_relevant();
   std::cout << "Event proceed: " << nproceed_events << std::endl;
   std::cout << "Event selected: " << nwrited_events << std::endl;
   std::cout << "ττ candidates: " << ntautau_events << endl;
