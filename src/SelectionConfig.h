@@ -156,6 +156,11 @@ struct SelectionConfig
 
   void print_relevant(void)
   {
+    std::cout << "########################################################################################################\n";
+    std::cout << "########################################################################################################\n";
+    std::cout << "                 SELECTION CONFIGURATION                \n";
+    std::cout << "########################################################################################################\n";
+    std::cout << "\n";
     //std::cout << "TEST = " << TEST << std::endl;      //center mass energy
     std::cout << "CENTER_MASS_ENERGY = "         << CENTER_MASS_ENERGY         << "\n";      //center mass energy
     std::cout << "IP_MAX_Z = "                   << IP_MAX_Z                   << "\n"; //std::cout                               << erection point cut
@@ -174,6 +179,9 @@ struct SelectionConfig
     std::cout << "MAX_PTEM = "                   << MAX_PTEM                   << std::endl;      //center mass energy
     std::cout << "MIN_TOF = "                    << MIN_TOF                    << std::endl;      //center mass energy
     std::cout << "MAX_TOF = "                    << MAX_TOF                    << std::endl;      //center mass energy
+
+    std::cout << "########################################################################################################\n";
+    std::cout << "\n";
   };
 
 };
