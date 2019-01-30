@@ -62,32 +62,6 @@ struct Tracker
     return result;
   }
 
-  template<typename Container>
-  inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX_COS_THETA)
-  {
-    Container result;
-    for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
-    {
-      //assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
-      assert( (*it)->isMdcTrackValid());
-      RecMdcTrack * mdcTrk = (*it)->mdcTrack();
-      if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
-    }
-    return result;
-  }
-
-  template<typename Container>
-  inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double MIN_EMC_ENERGY /* minimum allowed emc energy for charged tracks */)
-  {
-    Container result;
-    for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
-    {
-      if(!(*it)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
-      RecEmcShower *emcTrk = (*it)->emcShower();
-      if ( emcTrk->energy() > MIN_EMC_ENERGY ) result.push_back(*it);
-    }
-    return result;
-  }
 
 
   long GetNtrackCharged(void)  { return  evtRecEvent->totalCharged(); };
@@ -237,3 +211,30 @@ Hep3Vector GetTotalTransverseMomentum( const Container  & input )
   result.setZ(0);
   return result;
 };
+
+  template<typename Container>
+inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX_COS_THETA)
+{
+  Container result;
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    //assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
+    assert( (*it)->isMdcTrackValid());
+    RecMdcTrack * mdcTrk = (*it)->mdcTrack();
+    if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
+  }
+  return result;
+}
+
+  template<typename Container>
+inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double MIN_EMC_ENERGY /* minimum allowed emc energy for charged tracks */)
+{
+  Container result;
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    if(!(*it)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
+    RecEmcShower *emcTrk = (*it)->emcShower();
+    if ( emcTrk->energy() > MIN_EMC_ENERGY ) result.push_back(*it);
+  }
+  return result;
+}
