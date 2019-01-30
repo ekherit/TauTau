@@ -72,32 +72,34 @@ inline double sq(double x) { return x*x; }
 TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
-  declareProperty("CENTER_MASS_ENERGY"         , cfg.CENTER_MASS_ENERGY = 1.777*2); //GeV
-  declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z           = 10.0); //cm
-  declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO         = 1.0); //cm
-  declareProperty("USE_VERTEX_DB"              , cfg.USE_VERTEX_DB      = 1);
-  declareProperty("MAX_COS_THETA_FOR_CHARGED"  , cfg.MAX_COS_THETA_FOR_CHARGED = 0.93);
-  declareProperty("MIN_EMC_ENERGY_FOR_CHARGED" , cfg.MIN_EMC_ENERGY_FOR_CHARGED=0.025); //GeV
+  declareProperty("CENTER_MASS_ENERGY"         , cfg.CENTER_MASS_ENERGY         = 1.777*2); //GeV
 
-  declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL=0.025); //GeV
+  declareProperty("MIN_CHARGED_TRACKS"         , cfg.MIN_CHARGED_TRACKS         = 2); 
+  declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 2); 
 
-  declareProperty("MIN_MOMENTUM"               , cfg.MIN_MOMENTUM         = 0.1); //GeV
-  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM         = 1.5); //GeV
+  declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z                   = 10.0); //cm
+  declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO                 = 1.0); //cm
+  declareProperty("USE_VERTEX_DB"              , cfg.USE_VERTEX_DB              = 1);
+  declareProperty("MAX_COS_THETA_FOR_CHARGED"  , cfg.MAX_COS_THETA_FOR_CHARGED  = 0.93);
+  declareProperty("MIN_EMC_ENERGY_FOR_CHARGED" , cfg.MIN_EMC_ENERGY_FOR_CHARGED = 0.025); //GeV
 
-  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM         = 0.1); //GeV
-  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM         = 1.5); //GeV
+  declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL = 0.025); //GeV
+
+  declareProperty("MIN_MOMENTUM"               , cfg.MIN_MOMENTUM               = 0.1); //GeV
+  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.5); //GeV
+
+  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0.1); //GeV
+  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.5); //GeV
 
 
-  declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO         = 0.05); 
-  declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO         = 1.1);
+  declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO               = 0.05);
+  declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO               = 1.1);
 
-  declareProperty("MIN_PTEM"               , cfg.MIN_PTEM         = 0.0); 
-  declareProperty("MAX_PTEM"               , cfg.MAX_PTEM         = 1.5);
+  declareProperty("MIN_PTEM"                   , cfg.MIN_PTEM                   = 0.0);
+  declareProperty("MAX_PTEM"                   , cfg.MAX_PTEM                   = 1.5);
 
-  declareProperty("MIN_TOF"               , cfg.MIN_TOF         = 2.5); 
-  declareProperty("MAX_TOF"               , cfg.MAX_TOF         = 5.5);
-  //declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
-  //declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
+  declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 2.5);
+  declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 5.5);
 
 
   //good netural tracks
@@ -223,6 +225,8 @@ StatusCode TauTau::execute()
   //TAU TAU SELECTION
   if(
       Tc.size() == central_tracks.size()  //all central tracks has energy deposite in EMS
+    &&
+      cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS
     &&
       GetTotalCharge(Tc) == 0  // opposite charge for tracks
     && 
@@ -415,11 +419,10 @@ SKIP_TAUTAU:
 StatusCode TauTau::finalize()
 {
   cfg.print_relevant();
-  std::cout << "Event proceed: " << nproceed_events << std::endl;
-  std::cout << "Event selected: " << nwrited_events << std::endl;
-  std::cout << "ττ candidates: " << ntautau_events << endl;
-  std::cout << "Bhabha candidates: " << nbhabha_events << endl;
-  std::cout << "γγ candidates: " << ngg_events << endl;
+  std::cout << "Event proceed: "        << nproceed_events                        << std::endl;
+  std::cout << "ττ candidates: "        << ntautau_events                         << endl;
+  std::cout << "Bhabha candidates: "    << nbhabha_events                         << endl;
+  std::cout << "γγ candidates: "        << ngg_events                             << endl;
   std::cout << "Selection efficiency: " << ntautau_events/double(nproceed_events) << std::endl;
   return StatusCode::SUCCESS;
 }
