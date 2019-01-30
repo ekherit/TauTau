@@ -186,13 +186,7 @@ StatusCode TauTau::execute()
   if(nproceed_events<10) isprint=true;
   if(nproceed_events==0) 
   {
-    std::cout << "########################################################################################################\n";
-    std::cout << "########################################################################################################\n";
-    std::cout << "\n";
     cfg.print_relevant();
-    std::cout << "########################################################################################################\n";
-    std::cout << "########################################################################################################\n";
-    //std::cout << "Wcm = " << cfg.CENTER_MASS_ENERGY << " GeV" << std::endl;
   }
   if(10 <= nproceed_events && nproceed_events < 100 && nproceed_events % 10 ==0) isprint=true;
   if(100 <= nproceed_events && nproceed_events < 1000 && nproceed_events % 100 ==0) isprint = true;
@@ -420,7 +414,6 @@ SKIP_TAUTAU:
 
 StatusCode TauTau::finalize()
 {
-  std::cout << "Selection configuration:\n";
   cfg.print_relevant();
   std::cout << "Event proceed: " << nproceed_events << std::endl;
   std::cout << "Event selected: " << nwrited_events << std::endl;
