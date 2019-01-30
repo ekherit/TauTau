@@ -47,6 +47,7 @@ inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 }
 
 
+/*
 inline std::list<EvtRecTrack*> createGoodChargedTrackList(
 		SelectionConfig & cfg, 
 		SmartDataPtr<EvtRecEvent>    & evtRecEvent, 
@@ -190,6 +191,7 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
 	return good_neutral_tracks;
 }
 
+*/
 
 
 /*  
