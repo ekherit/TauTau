@@ -221,7 +221,7 @@ template <typename Container >
 Hep3Vector GetTotalMomentum( const Container  & input )
 {
   //assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
-  Hep3Vector result(0,0,0,0);
+  Hep3Vector result(0.0,0.0,0.0,0.0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
     result += it->p3();
