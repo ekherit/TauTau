@@ -29,6 +29,8 @@
 #include <list>
 #include <vector>
 #include <limits>
+#include <type_traits>
+
 struct Tracker
 {
   typedef std::list<EvtRecTrack*> List;
@@ -149,10 +151,6 @@ struct Tracker
 };
 
 
-template<typename Container>
-double GetTotalPt(const Container & input)
-{
-}
 
 template<typename Container>
 std::vector<HepLorentzVector>  GetMdcLorentzVector(const Container & input, double mass = 0.5109989461e-3 /* electron mass in GeV*/)
@@ -201,8 +199,9 @@ int GetTotalCharge(Container  &  input)
 }
 
 template <typename Container >
-HepLorentzVector GetTotalFourMomentum( const Container<HepLorentzVector>  & input )
+HepLorentzVector GetTotalFourMomentum( const Container  & input )
 {
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
   HepLorentzVector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -212,8 +211,9 @@ HepLorentzVector GetTotalFourMomentum( const Container<HepLorentzVector>  & inpu
 };
 
 template <typename Container >
-Hep3Vector GetTotalMomentum( const Container<HepLorentzVector>  & input )
+Hep3Vector GetTotalMomentum( const Container  & input )
 {
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
   Hep3Vector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -223,8 +223,9 @@ Hep3Vector GetTotalMomentum( const Container<HepLorentzVector>  & input )
 };
 
 template <typename Container >
-Hep3Vector GetTotalTransverseMomentum( const Container<HepLorentzVector>  & input )
+Hep3Vector GetTotalTransverseMomentum( const Container  & input )
 {
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
   Hep3Vector result = GetTotalMomentum(input);
   result.setZ(0);
   return result;
