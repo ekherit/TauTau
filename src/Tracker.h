@@ -111,6 +111,7 @@ struct Tracker
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
       if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+      RecEmcShower *emcTrk = (*itTrk)->emcShower();
       double E = emcTrk->energy();
       if ( E > Emax )  Emax = E;
     }
@@ -123,6 +124,7 @@ struct Tracker
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      RecEmcShower *emcTrk = (*itTrk)->emcShower();
       if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
       double E = emcTrk->energy();
       if (E < Emin)  Emin = E;
@@ -185,6 +187,7 @@ std::vector<HepLorentzVector>  GetEmcLorentzVector(const Container & input)
   return result;
 };
 
+template<typename Container>
 int GetTotalCharge(Container  &  input)
 {
   int charge=0;
