@@ -388,8 +388,8 @@ StatusCode TauTau::execute()
   }
 SKIP_TAUTAU:
   //GAMMA GAMMA LUMINOCITY SELECTION
-  fGG.N0 = good_neutral_tracks.size();
-  fGG.Nq = good_charged_tracks.size();
+  fGG.N0 = Tn.size();
+  fGG.Nq = Tc.size();
   if
   ( 
         2 <= fGG.N0 && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
