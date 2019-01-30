@@ -29,7 +29,7 @@
 #include <list>
 #include <vector>
 #include <limits>
-#include <type_traits>
+//#include <type_traits>
 
 struct Tracker
 {
@@ -201,7 +201,7 @@ int GetTotalCharge(Container  &  input)
 template <typename Container >
 HepLorentzVector GetTotalFourMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalFourMomentum: Expect conatainer with HepLorentzVector");
+  //assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalFourMomentum: Expect conatainer with HepLorentzVector");
   HepLorentzVector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -213,7 +213,7 @@ HepLorentzVector GetTotalFourMomentum( const Container  & input )
 template <typename Container >
 Hep3Vector GetTotalMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
+  //assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
   Hep3Vector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -225,7 +225,7 @@ Hep3Vector GetTotalMomentum( const Container  & input )
 template <typename Container >
 Hep3Vector GetTotalTransverseMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
+  //assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
   Hep3Vector result = GetTotalMomentum(input);
   result.setZ(0);
   return result;
