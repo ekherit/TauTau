@@ -66,7 +66,7 @@ struct Tracker
     Container result;
     for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
     {
-      assert( (*it)->isMdcTrackValid() );
+      assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
       RecMdcTrack * mdcTrk = (*it)->mdcTrack();
       if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
     }
@@ -141,7 +141,7 @@ struct Tracker
       for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
       {
         //EvtRecTrack * track = *it;
-        assert((*it)->isEmcShowerValid());
+        assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
         RecEmcShower *emcTrk = (*it)->emcShower();
         double E = emcTrk->energy();
         if ( E> Emin ) Etotal+=E;
@@ -159,7 +159,7 @@ std::vector<HepLorentzVector>  GetMdcLorentzVector(const Container & input, doub
   result.reserve(input.size());
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert( (*it)->isMdcTrackValid() );
+    assert( (*it)->isMdcTrackValid(), "ERROR: GetMdcLorentzVector: No MDC information in a track");
     RecMdcKalTrack * t = (*it)->mdcKalTrack();
     result.push_back( t->p4(mass) );
   }
@@ -173,7 +173,7 @@ std::vector<HepLorentzVector>  GetEmcLorentzVector(const Container & input)
   result.reserve(input.size());
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert((*it)->isEmcShowerValid());
+    assert((*it)->isEmcShowerValid(), "ERROR: GetEmcLorentzVector: No EMC information in a track");
     RecEmcShower *emcTrk = (*it)->emcShower();
     double E = emcTrk->energy();
     HepLorentzVector p(0,0,E,E);  //px,py,pz, E
@@ -191,7 +191,7 @@ int GetTotalCharge(Container  &  input)
   int charge=0;
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    assert( (*it)->isMdcTrackValid() );
+    assert( (*it)->isMdcTrackValid(), "ERROR: GetTotalCharge: No MDC information in a track");
     RecMdcTrack * mdcTrk = (*it)->mdcTrack();
     charge +=  int(mdcTrk->charge());
   }
@@ -201,7 +201,7 @@ int GetTotalCharge(Container  &  input)
 template <typename Container >
 HepLorentzVector GetTotalFourMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalFourMomentum: Expect conatainer with HepLorentzVector");
   HepLorentzVector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -213,7 +213,7 @@ HepLorentzVector GetTotalFourMomentum( const Container  & input )
 template <typename Container >
 Hep3Vector GetTotalMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
   Hep3Vector result(0,0,0,0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
@@ -225,7 +225,7 @@ Hep3Vector GetTotalMomentum( const Container  & input )
 template <typename Container >
 Hep3Vector GetTotalTransverseMomentum( const Container  & input )
 {
-  assert(std::is_same<typename Container::value_type, HepLorentzVector>);
+  assert(std::is_same<typename Container::value_type, HepLorentzVector>, "ERROR: GetTotalMomentum: Expect container with HepLorentzVector");
   Hep3Vector result = GetTotalMomentum(input);
   result.setZ(0);
   return result;
