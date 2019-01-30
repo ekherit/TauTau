@@ -224,7 +224,7 @@ Hep3Vector GetTotalMomentum( const Container  & input )
   Hep3Vector result(0.0,0.0,0.0);
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    result += it->p3();
+    result += it->vect();
   }
   return result;
 };
