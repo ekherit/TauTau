@@ -75,6 +75,11 @@ class RootTauTauEvent : public RootTuple
   NTuple::Item<double>  lambda1; //eigen values of sphericity tenzor
   NTuple::Item<double>  lambda2; //
   NTuple::Item<double>  lambda3; //
+  NTuple::Item<double>  Emis; //
+
+  NTuple::Item<double>  Enmin; //minimum energy of all neutral tracks (not only selected)
+  NTuple::Item<double>  Enmax; //maximum energy of all neutral tracks (not only selected)
+  NTuple::Item<double>  Entot; //total energy of neutral tracks
 
   NTuple::Array<double> Mpi0;
 
@@ -99,6 +104,11 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem ("Npi0", npi0, 0, 4);
     tuple->addItem ("Nrho", Nrho, 0, 24);
 
+
+    tuple->addItem ("Enmin",Enmin);
+    tuple->addItem ("Enmax",Enmax);
+    tuple->addItem ("Entot",Entot);
+
     T.add_to_tuple (tuple,ngood_charged_track); 
     Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
     Pid.add_to_tuple(tuple,ngood_charged_track); 
@@ -109,6 +119,7 @@ class RootTauTauEvent : public RootTuple
     tuple->addItem("acol",acol);
     tuple->addItem("ptem",ptem);
     tuple->addItem("ptsum",ptsum);
+    tuple->addItem("Emis",Emis);
     tuple->addItem("M2",M2);
     tuple->addItem("S",S);
     tuple->addItem("A",A);

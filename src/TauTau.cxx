@@ -190,96 +190,105 @@ StatusCode TauTau::execute()
   Tracker tracker(evtRecEvent, evtRecTrkCol); //helper class for excracting information about tracks
 
   Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
-  fEvent.nciptrack=central_tracks.size();
-   
-  Tracker::Vector neutral_tracks = tracker.GetNeutralTracks<Tracker::Vector>();
+
+  fEvent.nciptrack=central_tracks.size(); //fill the total number of central tracks
+
+  Tracker::Vector barrel_tracks = tracker.FilterMdcTracksByCosTheta<Tracker::Vector>( central_tracks, cfg.MAX_COS_THETA);
+
+  Tracker::Vector Tc = tracker.FilterMdcTracksByEmcEnergy<Tracker::Vector>(barrel_tracks, 0.025);
+
+  Tracker::Vector Tn = tracker.GetNeutralTracks<Tracker::Vector>(0.025);
+
+  std::sort(Tc.begin(),Tc.end(), ChargeOrder);
+
+  //Tracker::Vector neutral_tracks = tracker.GetNeutralTracks<Tracker::Vector>();
 
 	//std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
   
-  Tracker::List good_neutral_tracks = tracker.GetNeutralTracks<Tracker::List>();
+  //Tracker::List good_neutral_tracks = tracker.GetNeutralTracks<Tracker::List>();
 
-	std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
-  std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
+	//std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
+  //std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
 
-  fEvent.nctrack =  tracker.GetNtrackCharged();
-  fEvent.nntrack =  tracker.GetNtrackNeutral();
+  fEvent.nctrack =  tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks 
+  fEvent.nntrack =  tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
+  fEvent.Enmin   = tracker.MinNeutralTracksEnergy(); 
+  fEvent.Enmax   = tracker.MaxNeutralTracksEnergy();
 
   //emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
   //emc_good_charged_tracks.sort(PtOrder); //sort over transverse momentum
   //emc_good_charged_tracks.reverse(); //begin from high transverse momentum
-  emc_good_charged_tracks.sort(ChargeOrder);
+  //emc_good_charged_tracks.sort(ChargeOrder);
 
   //TAU TAU SELECTION
-  if( (  2 == emc_good_charged_tracks.size()  || 
-         4 == emc_good_charged_tracks.size()  ||
-         6 == emc_good_charged_tracks.size()  //till 3 charged particle decay for each tau
+  if(
+      (  Tc.size() == 2 || 
+         Tc.size() == 4 ||
+         Tc.size() == 6 //till 3 charged particle decay for each tau
       ) 
       && 
-      (  0 == good_neutral_tracks.size()  ||
-         2 == good_neutral_tracks.size()  ||
-         4 == good_neutral_tracks.size()  ||
-         6 == good_neutral_tracks.size()  ||
-         8 == good_neutral_tracks.size()  //till 2pi0 for each tau decay
+      (  Tn.size() == 0 ||
+         Tn.size() == 2 ||
+         Tn.size() == 4 ||
+         Tn.size() == 6 ||
+         Tn.size() == 8 //till 2pi0 for each tau decay
       )
+      &&
+      GetTotalCharge(Tc) == 0
     )
   {
     bool select=true;
-    fEvent.ngood_charged_track = emc_good_charged_tracks.size();
-    fEvent.ngood_neutral_track = good_neutral_tracks.size();
-
-    //use vectors becase it is more usefull to use index instead of iterators over the list
-    //ohhh I need the C++11 standard and more 
-    std::vector<EvtRecTrack*> T ( emc_good_charged_tracks.begin(), emc_good_charged_tracks.end() );
-    std::vector<EvtRecTrack*> Tn( good_neutral_tracks.begin(), good_neutral_tracks.end() );
-
-    double charge=1;
-    for( int i=0; i< T.size(); ++i) charge *= T[i]->mdcTrack()->charge();
-    if ( charge >= 0) goto SKIP_TAUTAU; //total charge must be negative
+    fEvent.ngood_charged_track = Tc.size();
+    fEvent.ngood_neutral_track = Tn.size();
 
     fEvent.Pid.init();
 
-    std::vector<HepLorentzVector> P(T.size()); //lorentz vector for charged tracks (electron hypoteza)
-    HepLorentzVector Psum;
-    //calculate total transverse momentum
-    Hep3Vector p3sum;
-    double psum=0;
-    for(int i=0;i<T.size();++i)
+    std::vector<HepLorentzVector> Pc = GetMdcLorentzVector(Tc); //lorentz vector for charged tracks (electron hypoteza)
+    std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tn);
+
+    HepLorentzVector Psum = GetTotalFourMomentum(Pc);
+    Hep3Vector p3sum = GetTotalMomentum(Pc);
+    Hep3Vector ptsum = GetTotalTransverseMomentum(Pc);
+    double psum = Psum.e(); //total energy of charged tracks ( electron hypoteza)
+
+    for(int i=0;i<Tc.size();++i)
     {
-      fEvent.Pid.fill(i, T[i]);
-      fEvent.fill(i, T[i]);
-      RecMdcKalTrack * mdcKal = T[i]->mdcKalTrack();
-      p3sum += mdcKal->p3();
-      psum  += mdcKal->p();
-      P[i].set(mdcKal->p(), mdcKal->p3());
-      Psum+=P[i];
+      fEvent.Pid.fill(i, Tc[i]);
+      fEvent.fill(i, Tc[i]);
+      //RecMdcKalTrack * mdcKal = Tc[i]->mdcKalTrack();
+      //p3sum += mdcKal->p3();
+      //psum  += mdcKal->p();
+      ////Pc[i].set(mdcKal->p(), mdcKal->p3());
+      //Psum+=Pc[i];
       if(eventHeader->runNumber() < 0)
       {
-        fEvent.McTruth.fill(i,T[i],mcParticleCol);
+        fEvent.McTruth.fill(i,Tc[i],mcParticleCol);
       }
     }
     fEvent.M2 = Psum.mag2();
     //total transverse momentum
-    Hep3Vector ptsum(p3sum.x(), p3sum.y(), 0);
+    //Hep3Vector ptsum(p3sum.x(), p3sum.y(), 0);
 
     //calculate total deposited energy from neutral tracks
-    double Entot = 0;
-    for(int i=0;i<Tn.size();++i)
-    {
-      if(!Tn[i]->isEmcShowerValid()) continue;
-      RecEmcShower * emc = Tn[i]->emcShower();
-      Entot += emc->energy();
-    }
+    //double Entot = 0;
+    //for(int i=0;i<Tn.size();++i)
+    //{
+    //  if(!Tn[i]->isEmcShowerValid()) continue;
+    //  RecEmcShower * emc = Tn[i]->emcShower();
+    //  Entot += emc->energy();
+    //}
 
     //calculate missing energy
-    double Emis = cfg.CENTER_MASS_ENERGY - psum - Entot;
+    fEvent.Entot =  tracker.GetTotalNeutralTracksEnergy(Tn);
+    fEvent.Emis  =  cfg.CENTER_MASS_ENERGY - psum - fEvent.Entot;
     fEvent.ptsum =  ptsum.mag();
-    fEvent.ptem  =  ptsum.mag() / Emis;
+    fEvent.ptem  =  ptsum.mag() / fEvent.Emis;
 
     //acoplanarity and acolinearity for momentum with higher transverse momentum
-    fEvent.acop = Acoplanarity(T[0], T[1]);
-    fEvent.acol = Acolinearity(T[0], T[1]);
+    fEvent.acop = Acoplanarity(Tc[0], Tc[1]);
+    fEvent.acol = Acolinearity(Tc[0], Tc[1]);
 
-    std::vector<double> V = getSphericityEigenvalues(T);
+    std::vector<double> V = getSphericityEigenvalues(Tc);
     fEvent.S = Sphericity(V);
     fEvent.A = Aplanarity(V);
     fEvent.lambda1 = V[0];
@@ -287,20 +296,20 @@ StatusCode TauTau::execute()
     fEvent.lambda3 = V[2];
 
 
-    std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
-    for( int i=0; i<Tn.size(); ++i)
-    {
-      Hep3Vector p;
-      RecEmcShower * emc = Tn[i]->emcShower();
-      select &= fabs(cos(emc->theta())) < 0.8; //goes to barrel
-      p.setX(emc->energy());
-      p.setY(0);
-      p.setZ(0);
-      p.setTheta(emc->theta());
-      p.setPhi(emc->phi());
-      //p.setMag(emc->energy());
-      Pn[i].set(emc->energy(), p);
-    }
+    //std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
+    //for( int i=0; i<Tn.size(); ++i)
+    //{
+    //  Hep3Vector p;
+    //  RecEmcShower * emc = Tn[i]->emcShower();
+    //  select &= fabs(cos(emc->theta())) < 0.8; //goes to barrel
+    //  p.setX(emc->energy());
+    //  p.setY(0);
+    //  p.setZ(0);
+    //  p.setTheta(emc->theta());
+    //  p.setPhi(emc->phi());
+    //  //p.setMag(emc->energy());
+    //  Pn[i].set(emc->energy(), p);
+    //}
     //if(!select) goto SKIP_TAUTAU;
     //if ( good_neutral_tracks.size() % 2 != 0  ) goto SKIP_TAUTAU;
 
@@ -334,7 +343,7 @@ StatusCode TauTau::execute()
     fEvent.npi0 = Pn.size()/2;
     //std::cout << "Before fEvent.Mpi0 filling " << std::endl;
     //std::cout << "neutral size = " << Pn.size() << std::endl;
-    fEvent.Nrho = fEvent.npi0*T.size();
+    fEvent.Nrho = fEvent.npi0*Tc.size();
     if(pi0_cmb_list.size()!=0)
     {
       int idx=0;
@@ -347,14 +356,14 @@ StatusCode TauTau::execute()
         for(int i = 0; i<T.size(); ++i)
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-          HepLorentzVector p = T[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
+          HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
           double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
-          fEvent.Mrho[idx*T.size()+i] = Mrho;
+          fEvent.Mrho[idx*Tc.size()+i] = Mrho;
         }
         idx++;
       }
     }
-    for(int i=0;i<T.size();++i)
+    for(int i=0;i<Tc.size();++i)
     {
       select &=                     fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
       select &=  0.2  < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.1;
