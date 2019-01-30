@@ -392,8 +392,9 @@ SKIP_TAUTAU:
   fGG.Nq = Tc.size();
   if
   ( 
-        2 <= fGG.N0 && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
-      && fGG.Nq <= fGG.CHARGED_TRACKS_NUMBER
+                2 <= fGG.N0 
+        && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
+        && fGG.Nq <= fGG.CHARGED_TRACKS_NUMBER
   )
   {
 
@@ -416,14 +417,15 @@ SKIP_TAUTAU:
     */
 
 
-    good_neutral_tracks.sort(EmcEnergyOrder);
-    good_neutral_tracks.reverse();
-    std::vector<EvtRecTrack*> T
-      (
-        good_neutral_tracks.begin(), 
-        good_neutral_tracks.end()
-      );
-    fGG.Nq = good_charged_tracks.size();
+    std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
+    std::reverse(Tn.begin(),Tn.end());
+
+    //std::vector<EvtRecTrack*> T
+    //  (
+    //    good_neutral_tracks.begin(), 
+    //    good_neutral_tracks.end()
+    //  );
+    //fGG.Nq = good_charged_tracks.size();
     bool keep=true;
     double E[2];
     double x[2]; //E/Ebeam
@@ -431,7 +433,7 @@ SKIP_TAUTAU:
     double phi[2];
     for(int i=0;i<2;i++)
     {
-      RecEmcShower * emc = T[i]->emcShower();
+      RecEmcShower * emc = Tn[i]->emcShower();
       E[i] = emc->energy();
       x[i] = 2.0*E[i] / cfg.CENTER_MASS_ENERGY;
       phi[i] = emc->phi();
