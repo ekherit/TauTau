@@ -334,7 +334,7 @@ StatusCode TauTau::execute()
         idx++;
       }
     }
-    select &=( MIN_PTEM < fEvent.ptem  && fEvent.ptem   < MAX_PTEM);
+    select &=( cfg.MIN_PTEM < fEvent.ptem  && fEvent.ptem   < cfg.MAX_PTEM);
     for(int i=0;i<Tc.size();++i)
     {
       select &= ( cfg.MIN_MOMENTUM             < fEvent.T.p[i]      && fEvent.T.p[i]      < cfg.MAX_MOMENTUM);
