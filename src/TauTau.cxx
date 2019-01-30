@@ -420,7 +420,7 @@ StatusCode TauTau::finalize()
   std::cout << "ττ candidates: " << ntautau_events << endl;
   std::cout << "Bhabha candidates: " << nbhabha_events << endl;
   std::cout << "γγ candidates: " << ngg_events << endl;
-  std::cout << "Selection efficiency: " << nwrited_events/double(nproceed_events) << std::endl;
+  std::cout << "Selection efficiency: " << ntautau_events/double(nproceed_events) << std::endl;
   return StatusCode::SUCCESS;
 }
 // for particle id look /ihepbatch/bes/alex/workarea/Analysis/Physics/PsiPrime/G2MuMuAlg-00-00-01/PipiJpsiAlg/src
