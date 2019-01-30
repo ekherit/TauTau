@@ -353,7 +353,7 @@ StatusCode TauTau::execute()
         fEvent.Mpi0[idx] = m;
         select &= fabs(m - PI0_MASS) <  0.03; //selection of the pi0
         //now create all combination to tie pi0 with charged tracks
-        for(int i = 0; i<T.size(); ++i)
+        for(int i = 0; i<Tc.size(); ++i)
         {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
           HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
