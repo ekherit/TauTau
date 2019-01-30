@@ -72,27 +72,42 @@ inline double sq(double x) { return x*x; }
 TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   Algorithm(name, pSvcLocator)
 {
-  declareProperty("CENTER_MASS_ENERGY", cfg.CENTER_MASS_ENERGY=1.777*2); //GeV
-  declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
-  declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
+  declareProperty("CENTER_MASS_ENERGY"         , cfg.CENTER_MASS_ENERGY = 1.777*2); //GeV
+  declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z           = 10.0); //cm
+  declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO         = 1.0); //cm
+  declareProperty("USE_VERTEX_DB"              , cfg.USE_VERTEX_DB      = 1);
+  declareProperty("MAX_COS_THETA_FOR_CHARGED"  , cfg.MAX_COS_THETA_FOR_CHARGED = 0.93);
+  declareProperty("MIN_EMC_ENERGY_FOR_CHARGED" , cfg.MIN_EMC_ENERGY_FOR_CHARGED=0.025); //GeV
 
-  //good charged track configuration
-  declareProperty("IP_MAX_Z",      cfg.IP_MAX_Z = 10.0); //cm
-  declareProperty("IP_MAX_RHO",    cfg.IP_MAX_RHO = 1.0); //cm
-  declareProperty("USE_VERTEX_DB", cfg.USE_VERTEX_DB = 1);
-  declareProperty("MAX_COS_THETA", cfg.MAX_COS_THETA = 0.93);
+  declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL=0.025); //GeV
+
+  declareProperty("MIN_MOMENTUM"               , cfg.MIN_MOMENTUM         = 0.1); //GeV
+  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM         = 1.5); //GeV
+
+  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM         = 0.1); //GeV
+  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM         = 1.5); //GeV
+
+
+  declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO         = 0.05); 
+  declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO         = 1.1);
+
+  declareProperty("MIN_PTEM"               , cfg.MIN_PTEM         = 0.0); 
+  declareProperty("MAX_PTEM"               , cfg.MAX_PTEM         = 1.5);
+  //declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
+  //declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
+
 
   //good netural tracks
-  declareProperty("EMC_ENDCUP_MIN_ENERGY",    cfg.EMC_ENDCUP_MIN_ENERGY = 0.05);
-  declareProperty("EMC_BARREL_MIN_ENERGY",    cfg.EMC_BARREL_MIN_ENERGY = 0.025);
+  //declareProperty("EMC_ENDCUP_MIN_ENERGY",    cfg.EMC_ENDCUP_MIN_ENERGY = 0.05);
+  //declareProperty("EMC_BARREL_MIN_ENERGY",    cfg.EMC_BARREL_MIN_ENERGY = 0.025);
 
-  //endcup calorimeter
-  declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.83); //was 0.86
-  declareProperty("EMC_ENDCUP_MAX_COS_THETA", cfg.EMC_ENDCUP_MAX_COS_THETA = 0.92);
+  ////endcup calorimeter
+  //declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.83); //was 0.86
+  //declareProperty("EMC_ENDCUP_MAX_COS_THETA", cfg.EMC_ENDCUP_MAX_COS_THETA = 0.92);
 
-  //barrel calorimeter
-  declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.83); //was 0.8
-  declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
+  ////barrel calorimeter
+  //declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.83); //was 0.8
+  //declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
 
   //for tau+ -> pi+pi0
   declareProperty("GAMMA_GAMMA_MIN_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.10);
@@ -166,7 +181,18 @@ StatusCode TauTau::execute()
   time_t t=eventHeader->time();
   bool isprint=false;
   if(nproceed_events<10) isprint=true;
-  if(nproceed_events==0) std::cout << "Wcm = " << cfg.CENTER_MASS_ENERGY << " GeV" << std::endl;
+  if(nproceed_events==0) 
+  {
+    std::cout << "########################################################################################################\n";
+    std::cout << "########################################################################################################\n";
+    std::cout << "########################################################################################################\n";
+    std::cout << "\n";
+    cfg.print_relevant();
+    std::cout << "########################################################################################################\n";
+    std::cout << "########################################################################################################\n";
+    std::cout << "########################################################################################################\n";
+    //std::cout << "Wcm = " << cfg.CENTER_MASS_ENERGY << " GeV" << std::endl;
+  }
   if(10 <= nproceed_events && nproceed_events < 100 && nproceed_events % 10 ==0) isprint=true;
   if(100 <= nproceed_events && nproceed_events < 1000 && nproceed_events % 100 ==0) isprint = true;
   if(1000 <= nproceed_events && nproceed_events < 10000 && nproceed_events % 1000 ==0) isprint = true;
@@ -182,59 +208,40 @@ StatusCode TauTau::execute()
   nproceed_events++;
 
   //  Get information about reconstructed events
-  SmartDataPtr<EvtRecEvent> evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
-  SmartDataPtr<EvtRecTrackCol> evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
+  SmartDataPtr<EvtRecEvent>            evtRecEvent(eventSvc(), EventModel::EvtRec::EvtRecEvent);
+  SmartDataPtr<EvtRecTrackCol>        evtRecTrkCol(eventSvc(),  EventModel::EvtRec::EvtRecTrackCol);
   SmartDataPtr<Event::McParticleCol> mcParticleCol(eventSvc(),  EventModel::MC::McParticleCol);
 
 
   Tracker tracker(evtRecEvent, evtRecTrkCol); //helper class for excracting information about tracks
-
-  Tracker::Vector  central_tracks  = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, true);
-
-  fEvent.nciptrack=central_tracks.size(); //fill the total number of central tracks
-
-  Tracker::Vector barrel_tracks = tracker.FilterMdcTracksByCosTheta<Tracker::Vector>( central_tracks, cfg.MAX_COS_THETA);
-
-  Tracker::Vector Tc = tracker.FilterMdcTracksByEmcEnergy<Tracker::Vector>(barrel_tracks, 0.025);
-
-  Tracker::Vector Tn = tracker.GetNeutralTracks<Tracker::Vector>(0.025);
-
+  Tracker::Vector  central_tracks = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
+  Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks, cfg.MIN_EMC_ENERGY_FOR_CHARGED);
+  Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(cfg.MIN_EMC_ENERGY_FOR_NEUTRAL);
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
-  //Tracker::Vector neutral_tracks = tracker.GetNeutralTracks<Tracker::Vector>();
-
-	//std::list<EvtRecTrack*> good_neutral_tracks=createGoodNeutralTrackList2(cfg, evtRecEvent, evtRecTrkCol);
-  
-  //Tracker::List good_neutral_tracks = tracker.GetNeutralTracks<Tracker::List>();
-
-	//std::list<EvtRecTrack*> good_charged_tracks=createGoodChargedTrackList(cfg, evtRecEvent, evtRecTrkCol);
-  //std::list<EvtRecTrack*> emc_good_charged_tracks=createGoodEmcChargedTrackList(cfg, good_charged_tracks);
-
-  fEvent.nctrack =  tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks 
-  fEvent.nntrack =  tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
-  fEvent.Enmin   = tracker.MinNeutralTracksEnergy(); 
-  fEvent.Enmax   = tracker.MaxNeutralTracksEnergy();
-
-  //emc_good_charged_tracks.sort(EmcEnergyOrder); //sort over deposited energy in EMC
-  //emc_good_charged_tracks.sort(PtOrder); //sort over transverse momentum
-  //emc_good_charged_tracks.reverse(); //begin from high transverse momentum
-  //emc_good_charged_tracks.sort(ChargeOrder);
+  fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
+  fEvent.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
+  fEvent.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
+  fEvent.Enmin     = tracker.MinNeutralTracksEnergy();
+  fEvent.Enmax     = tracker.MaxNeutralTracksEnergy();
 
   //TAU TAU SELECTION
   if(
-      (  Tc.size() == 2 || 
-         Tc.size() == 4 ||
-         Tc.size() == 6 //till 3 charged particle decay for each tau
+      Tc.size() == central_tracks.size()  //all central tracks has energy deposite in EMS
+    &&
+      GetTotalCharge(Tc) == 0  // opposite charge for tracks
+    && 
+      (    Tc.size() == 2  
+        || Tc.size() == 4 
+        || Tc.size() == 6 //till 3 charged particle decay for each tau
       ) 
-      && 
-      (  Tn.size() == 0 ||
-         Tn.size() == 2 ||
-         Tn.size() == 4 ||
-         Tn.size() == 6 ||
-         Tn.size() == 8 //till 2pi0 for each tau decay
+    && 
+      (    Tn.size() == 0 
+        || Tn.size() == 2 
+        || Tn.size() == 4 
+        || Tn.size() == 6 
+        || Tn.size() == 8 //till 2pi0 for each tau decay
       )
-      &&
-      GetTotalCharge(Tc) == 0
     )
   {
     bool select=true;
@@ -247,42 +254,24 @@ StatusCode TauTau::execute()
     std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tn);
 
     HepLorentzVector Psum = GetTotalFourMomentum(Pc);
-    Hep3Vector p3sum = GetTotalMomentum(Pc);
-    Hep3Vector ptsum = GetTotalTransverseMomentum(Pc);
-    double psum = Psum.e(); //total energy of charged tracks ( electron hypoteza)
+    Hep3Vector p3sum      = GetTotalMomentum(Pc);
+    Hep3Vector ptsum      = GetTotalTransverseMomentum(Pc);
+    //double psum = Psum.e(); //total energy of charged tracks ( electron hypoteza)
 
     for(int i=0;i<Tc.size();++i)
     {
       fEvent.Pid.fill(i, Tc[i]);
       fEvent.fill(i, Tc[i]);
-      //RecMdcKalTrack * mdcKal = Tc[i]->mdcKalTrack();
-      //p3sum += mdcKal->p3();
-      //psum  += mdcKal->p();
-      ////Pc[i].set(mdcKal->p(), mdcKal->p3());
-      //Psum+=Pc[i];
       if(eventHeader->runNumber() < 0)
       {
         fEvent.McTruth.fill(i,Tc[i],mcParticleCol);
       }
     }
-    fEvent.M2 = Psum.mag2();
-    //total transverse momentum
-    //Hep3Vector ptsum(p3sum.x(), p3sum.y(), 0);
-
-    //calculate total deposited energy from neutral tracks
-    //double Entot = 0;
-    //for(int i=0;i<Tn.size();++i)
-    //{
-    //  if(!Tn[i]->isEmcShowerValid()) continue;
-    //  RecEmcShower * emc = Tn[i]->emcShower();
-    //  Entot += emc->energy();
-    //}
-
-    //calculate missing energy
-    fEvent.Entot =  tracker.GetTotalNeutralTracksEnergy(Tn);
-    fEvent.Emis  =  cfg.CENTER_MASS_ENERGY - psum - fEvent.Entot;
-    fEvent.ptsum =  ptsum.mag();
-    fEvent.ptem  =  ptsum.mag() / fEvent.Emis;
+    fEvent.M2    = Psum.mag2();
+    fEvent.Entot = tracker.GetTotalNeutralTracksEnergy(Tn);
+    fEvent.Emis  = cfg.CENTER_MASS_ENERGY - Psum.e() - fEvent.Entot;
+    fEvent.ptsum = ptsum.mag();
+    fEvent.ptem  = fEvent.ptsum / fEvent.Emis;
 
     //acoplanarity and acolinearity for momentum with higher transverse momentum
     fEvent.acop = Acoplanarity(Tc[0], Tc[1]);
@@ -294,24 +283,6 @@ StatusCode TauTau::execute()
     fEvent.lambda1 = V[0];
     fEvent.lambda2 = V[1];
     fEvent.lambda3 = V[2];
-
-
-    //std::vector<HepLorentzVector> Pn(Tn.size()); //4-momentum of neutral tracks
-    //for( int i=0; i<Tn.size(); ++i)
-    //{
-    //  Hep3Vector p;
-    //  RecEmcShower * emc = Tn[i]->emcShower();
-    //  select &= fabs(cos(emc->theta())) < 0.8; //goes to barrel
-    //  p.setX(emc->energy());
-    //  p.setY(0);
-    //  p.setZ(0);
-    //  p.setTheta(emc->theta());
-    //  p.setPhi(emc->phi());
-    //  //p.setMag(emc->energy());
-    //  Pn[i].set(emc->energy(), p);
-    //}
-    //if(!select) goto SKIP_TAUTAU;
-    //if ( good_neutral_tracks.size() % 2 != 0  ) goto SKIP_TAUTAU;
 
     //find best pi0 combination
     //create combination list
@@ -363,13 +334,13 @@ StatusCode TauTau::execute()
         idx++;
       }
     }
+    select &=( MIN_PTEM < fEvent.ptem  && fEvent.ptem   < MAX_PTEM);
     for(int i=0;i<Tc.size();++i)
     {
-      select &=                     fabs(cos(fEvent.T.theta[i])) < 0.8; //goes to barrel
-      select &=  0.2  < fEvent.T.p[i]      && fEvent.T.p[i]      < 1.1;
-      select &=  0.05 < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < 1.1;
-      select &=   2.5 < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < 5.5;
-      select &=  0.00 < fEvent.ptem        && fEvent.ptem        < 1.1;
+      select &= ( cfg.MIN_MOMENTUM             < fEvent.T.p[i]      && fEvent.T.p[i]      < cfg.MAX_MOMENTUM);
+      select &= ( cfg.MIN_TRANSVERSE_MOMENTUM  < fEvent.T.pt[i]     && fEvent.T.pt[i]     < cfg.MAX_TRANSVERSE_MOMENTUM);
+      select &= ( cfg.MIN_EP_RATIO             < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < cfg.MAX_EP_RATIO);
+      select &= ( cfg.MIN_TOF                  < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < cfg.MAX_TOF);
     }
     if(select)
     {
