@@ -93,6 +93,9 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 
   declareProperty("MIN_PTEM"               , cfg.MIN_PTEM         = 0.0); 
   declareProperty("MAX_PTEM"               , cfg.MAX_PTEM         = 1.5);
+
+  declareProperty("MIN_TOF"               , cfg.MIN_TOF         = 2.5); 
+  declareProperty("MAX_TOF"               , cfg.MAX_TOF         = 5.5);
   //declareProperty("MIN_CHARGED_TRACKS", cfg.MIN_CHARGED_TRACKS=2); 
   //declareProperty("MAX_CHARGED_TRACKS", cfg.MAX_CHARGED_TRACKS=2); 
 
