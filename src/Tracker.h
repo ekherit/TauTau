@@ -110,24 +110,23 @@ struct Tracker
     }
     return Emin;
   };
-
-  template <typename Container>
-    double GetTotalNeutralTracksEnergy(const Container & input, double Emin=0)
-    {
-      double Etotal=0;
-      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
-      {
-        //EvtRecTrack * track = *it;
-        //assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
-        assert((*it)->isEmcShowerValid());
-        RecEmcShower *emcTrk = (*it)->emcShower();
-        double E = emcTrk->energy();
-        if ( E> Emin ) Etotal+=E;
-      }
-      return Etotal;
-    }
 };
 
+template <typename Container>
+double GetTotalNeutralTracksEnergy(const Container & input, double Emin=0)
+{
+  double Etotal=0;
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    //EvtRecTrack * track = *it;
+    //assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
+    assert((*it)->isEmcShowerValid());
+    RecEmcShower *emcTrk = (*it)->emcShower();
+    double E = emcTrk->energy();
+    if ( E> Emin ) Etotal+=E;
+  }
+  return Etotal;
+}
 
 
 template<typename Container>
@@ -212,7 +211,7 @@ Hep3Vector GetTotalTransverseMomentum( const Container  & input )
   return result;
 };
 
-  template<typename Container>
+template<typename Container>
 inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX_COS_THETA)
 {
   Container result;
@@ -226,7 +225,7 @@ inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX
   return result;
 }
 
-  template<typename Container>
+template<typename Container>
 inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double MIN_EMC_ENERGY /* minimum allowed emc energy for charged tracks */)
 {
   Container result;

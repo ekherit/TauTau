@@ -266,7 +266,7 @@ StatusCode TauTau::execute()
       }
     }
     fEvent.M2    = Psum.mag2();
-    fEvent.Entot = tracker.GetTotalNeutralTracksEnergy(Tn);
+    fEvent.Entot = GetTotalNeutralTracksEnergy(Tn);
     fEvent.Emis  = cfg.CENTER_MASS_ENERGY - Psum.e() - fEvent.Entot;
     fEvent.ptsum = ptsum.mag();
     fEvent.ptem  = fEvent.ptsum / fEvent.Emis;

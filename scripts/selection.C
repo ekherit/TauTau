@@ -17,6 +17,8 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <regex>
 #include <string>
@@ -1174,22 +1176,22 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
   return g;
 }
 
-auto DATA        = read_data("data", read_my_runtable("../scan_points.txt"));
-auto DATAp        = read_data("data-old", read_my_runtable("../scan_points.txt"));
-auto DATA5        = read_data("../sel5/data", read_my_runtable("../scan_points.txt"));
-auto DATA703     = read_data("data703", read_my_runtable("../scan_points.txt"));
-auto DATA11      = read_data3("../tau2011","../tau2011/runtable.txt");
-auto MC          = read_mc("mc/signal");
-/*  GALUGA generator */
-auto EEee        = read_mc("mc/EEee");
-auto EEuu        = read_mc("mc/EEuu");
-auto EEkk        = read_mc("mc/EEkk");
-auto EEpipi      = read_mc("mc/EEpipi");
-/*  bhabha */
-auto BB          = read_mc("mc/BB");
-auto UU          = read_mc("mc/uu");
-auto HADR        = read_mc("mc/hadrons");
-auto HADR704     = read_mc("mc/hadrons704");
+//auto DATA        = read_data("data", read_my_runtable("../scan_points.txt"));
+//auto DATAp        = read_data("data-old", read_my_runtable("../scan_points.txt"));
+//auto DATA5        = read_data("../sel5/data", read_my_runtable("../scan_points.txt"));
+//auto DATA703     = read_data("data703", read_my_runtable("../scan_points.txt"));
+//auto DATA11      = read_data3("../tau2011","../tau2011/runtable.txt");
+//auto MC          = read_mc("mc/signal");
+///*  GALUGA generator */
+//auto EEee        = read_mc("mc/EEee");
+//auto EEuu        = read_mc("mc/EEuu");
+//auto EEkk        = read_mc("mc/EEkk");
+//auto EEpipi      = read_mc("mc/EEpipi");
+///*  bhabha */
+//auto BB          = read_mc("mc/BB");
+//auto UU          = read_mc("mc/uu");
+//auto HADR        = read_mc("mc/hadrons");
+//auto HADR704     = read_mc("mc/hadrons704");
 
 
 struct ChannelSelection_t
@@ -1202,19 +1204,27 @@ struct ChannelSelection_t
 struct ChannelSelectionResult_t : public ChannelSelection_t
 {
   long Ntt=0; //total number of events for all points
+  long Ngg=0; //total number of gg events
   std::vector<PointSelectionResult_t> Points;
   ChannelSelectionResult_t(void){}
   ChannelSelectionResult_t(const ChannelSelection_t & cs, const std::vector<PointSelectionResult_t> & p) : ChannelSelection_t(cs)
   {
     Points = p;
-  }
-  ChannelSelection_t & operator=(const std::vector<PointSelectionResult_t> & P)
-  {
-    Points = P;
-    Ntt=0;
     for(auto & p : Points)
     {
       Ntt+=p.Ntt;
+      Ngg+=p.Ngg;
+    } 
+  }
+  ChannelSelection_t & operator=(const std::vector<PointSelectionResult_t> & P)
+  {
+    Ntt=0;
+    Ngg=0;
+    Points = P;
+    for(auto & p : Points)
+    {
+      Ntt+=p.Ntt;
+      Ngg+=p.Ngg;
     } 
     return *this;
   }
@@ -1351,7 +1361,7 @@ void print_event_info(std::vector<ScanPoint_t> & P, const char * selection, cons
   }
 };
 
-void print_event_info(std::vector<ScanPoint_t> & P=DATA, std::vector<ChannelSelection_t> & SEL=SELECTION)
+void print_event_info(std::vector<ScanPoint_t> & P, std::vector<ChannelSelection_t> & SEL)
 {
   for( auto & s : SEL)
   {
@@ -1501,46 +1511,54 @@ void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_wid
   if(opt<0) hline("━");
 };
 
-void print_total(const std::vector<ChannelSelectionResult_t> & R)
+ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
 {
-  if(R.empty()) return;
-  ChannelSelectionResult_t total;
-  total.title = "TOTAL";
-  total.Points.resize(R[0].Points.size());
-  total.Ntt=0;
-  for(int i=0;i<total.Points.size();++i) 
-    for(const auto & r : R )  
+  ChannelSelectionResult_t result;
+  result.title = name;
+  if(SR.empty()) return result;
+  result.Points.resize(SR[0].Points.size());
+  result.Ntt=0;
+  for(int i=0;i<result.Points.size();++i) 
+  {
+    for(const auto & r : SR )  
     {
-      long n = r.Points[i].Ntt;
-      total.Points[i].Ntt += n;
-//      std::cout << "i = " << i <<  " Ntt = " << n << " " << total.Ntt << std::endl;
-      total.Ntt += n;
+      auto & p    = r.Points[i];
+      auto & rp   = result.Points[i];
+      result.Ntt += p.Ntt;
+      rp.Ntt     += p.Ntt;
+      rp.Ngg      = p.Ngg;
+      rp.L        = p.L;
+      rp.dL       = p.dL;
+      rp.W        = p.W;
+      rp.dW       = p.dW;
     }
-  print(total,-1);
+  }
+  return result;
 };
 
 void print(const  std::vector<ChannelSelectionResult_t> & SR )
 {
   for(int i=0;i<SR.size();++i) print(SR[i],i);
-  print_total(SR);
+  print(fold(SR,"all"),-1);
 };
 
-std::vector<ChannelSelectionResult_t> new_select( std::vector<ScanPoint_t> & P = DATA, std::vector<ChannelSelection_t> & S=SELECTION )
+std::vector<ChannelSelectionResult_t> new_select( std::vector<ScanPoint_t> & P, std::vector<ChannelSelection_t> & S, std::string extra_cut="")
 {
   std::vector<ChannelSelectionResult_t> R(S.size());
+  if(extra_cut!="") extra_cut = " && " + extra_cut;
   for(int i=0; i<S.size(); ++i)
   {
     auto & s = S[i];
     auto & r = R[i];
     r = s; //save current selection for channel
-    r = new_select(P, s.cut);
+    r = new_select(P, s.cut + extra_cut);
     print(r,i);
   };
-  print_total(R);
+  print(fold(R,"all"),-1);
   return R;
 };
 
-void select(std::vector<ScanPoint_t> & P=DATA, std::vector<ChannelSelection_t> & SEL=SELECTION, std::string global_cut="")
+void select(std::vector<ScanPoint_t> & P, std::vector<ChannelSelection_t> & SEL, std::string global_cut="")
 {
   //some printing configuration
   int first_column_width = 10;
@@ -1611,11 +1629,11 @@ void select(std::vector<ScanPoint_t> & P=DATA, std::vector<ChannelSelection_t> &
   fit(P, "scan.txt", 1);
 }
 
-void select(std::vector<ScanPoint_t> & P=DATA, std::string cut="")
-{
-  std::vector<ChannelSelection_t>  sel{{"test","test",cut}};
-  select(P,sel);
-}
+//void select(std::vector<ScanPoint_t> & P, std::string cut="")
+//{
+//  std::vector<ChannelSelection_t>  sel{{"test","test",cut}};
+//  select(P,sel);
+//}
 
 void measure_efficiency(std::vector<ScanPoint_t> & PNTS, std::vector<ChannelSelection_t> & SEL=DEFAULT_SELECTION, long N0=100000)
 {
@@ -1835,3 +1853,33 @@ void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char *
   std::regex_replace(std::back_inserter(selection), selection_template.begin(), selection_template.end(), re,"["+track_str+"]");
   return selection;
 };
+
+
+void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt")
+{
+  std::cout << "Saving selection: " << sr.title << " to file: " << filename << std::endl;
+  std::stringstream os;
+  os << "#" << std::setw(4) << " " << std::setw(15) << "L, nb-1" << std::setw(10) << "dL, nb-1" << std::setw(15) << "W, MeV" << std::setw(15) << "dW, MeV" << std::setw(10) << "SW, MeV" << std::setw(10) << "dSW, MeV";
+  os << std::setw(10) << "Ntt" << std::setw(10) << "Nee" << std::setw(10) << "Ngg" << std::setw(10) << "effcor" << "\n";
+  int idx=0;
+  for(const auto & p : sr.Points)
+  {
+    idx++;
+    if(p.name=="") os << std::setw(5) << idx;
+    else           os << std::setw(5) << p.name;
+    os << std::setw(15) << p.L*1000 << std::setw(10) << 10 << std::setw(15) << p.W/MeV  << std::setw(15) << p.dW/MeV;
+    os << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
+    os << std::setw(10) << p.Ntt << std::setw(10) <<  1 << std::setw(10) << p.Ngg <<  std::setw(10) << p.effcor << "\n";
+  }
+  std::cout << os.str();
+  std::ofstream ofs(filename);
+  ofs << os.str();
+}
+
+void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="")
+{
+  save(sr,filename);
+  char command[65536];
+  sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
+  system(command);
+}
