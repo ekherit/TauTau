@@ -30,12 +30,22 @@
 #include "time.h"
 #include "stdlib.h"
 
-#include <TTree.h>
+#include <TSystem.h>
+#include <TSystemDirectory.h>
 #include <TCanvas.h>
+#include <TChain.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TMultiGraph.h>
+#include <TAxis.h>
+#include <TH1.h>
+#include <THStack.h>
+#include <TLegend.h>
+#include <TLine.h>
+#include <TTree.h>
 
 
-//#include <TSystem.h>
+
 //gSystem->AddLinkedLibs("-lfmt");
 
 const double GeV=1.0;
@@ -44,6 +54,8 @@ const double MeV=1e-3*GeV;
 const double MTAU=1776.86*MeV;
 const double MPI=0.13957061*GeV; 
 const double MPI0=0.134977*GeV;
+
+/* ==================== WORKING WITH UTF-8 ================================================== */
 
 template <class String > 
 size_t count_utf8_symbols( String s )
@@ -55,7 +67,26 @@ size_t count_utf8_extra_byte( String s )
 {
   return s.size() - std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
 }
+template< typename D>
+void print_utf(int width, D d)
+{
+  std::cout << std::setw(width) << d;
+};
 
+template<>
+void print_utf(int width, std::string s)
+{
+
+  std::cout << std::setw(width+count_utf8_extra_byte(std::string(s))) << s;
+};
+
+template<>
+void print_utf(int width, const char * s)
+{
+  print_utf(width, std::string(s));
+};
+
+/* ========================================================================================== */
 
 //Get recursive file list
 std::list<std::string> get_recursive_file_list(std::string dirname)
@@ -206,6 +237,7 @@ struct PointSelectionResult_t
   double eps=1.0; //registration efficiencey
   double eps_error=0; //registration efficiencey error
   double effcor = 1.0; // efficiency correction
+  double effcor_error = 0; //error of the efficiency correction
 };
 
 //struct SelectionResult_t
@@ -737,8 +769,8 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     auto gg = new TChain("gg", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile(file.c_str());
     //change chain names
-    tt->SetName(("tt"+to_string(index)).c_str());
-    gg->SetName(("gg"+to_string(index)).c_str());
+    tt->SetName(("tt"+std::to_string(index)).c_str());
+    gg->SetName(("gg"+std::to_string(index)).c_str());
     set_alias(tt,sp.W);
     sp.tt = tt;
     sp.gg = gg;
@@ -779,8 +811,8 @@ std::vector<ScanPoint_t> read_data2(std::string data_dir, std::string privalov_r
     auto gg = new TChain("tt", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile(file.c_str());
     //change chain names
-    tt->SetName(("tt"+to_string(index)).c_str());
-    gg->SetName(("gg"+to_string(index)).c_str());
+    tt->SetName(("tt"+std::to_string(index)).c_str());
+    gg->SetName(("gg"+std::to_string(index)).c_str());
     set_alias(tt,sp.W);
     sp.tt = tt;
     sp.gg = gg;
@@ -804,82 +836,14 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
     auto gg = new TChain("tt", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile((data_dir+"/"+file).c_str());
     //change chain names
-    tt->SetName(("tt"+to_string(index)).c_str());
-    gg->SetName(("gg"+to_string(index)).c_str());
+    tt->SetName(("tt"+std::to_string(index)).c_str());
+    gg->SetName(("gg"+std::to_string(index)).c_str());
     set_alias(tt,sp.W);
     sp.tt = tt;
     sp.gg = gg;
   }
   return scan;
 }
-
-
-//std::vector<ScanPoint_t> read_data(const char * dir)
-//{
-//  std::vector<ScanPoint_t> Points;
-//  Points.push_back({"Point1", 55116, 55155,  3539.482,  0.110,0,0});
-//
-//  Points.push_back({"Point1p", 55157,55161,3550.872,0.182,0,0});
-//  //remove points above this is tune EMS
-//
-//  Points.push_back({"Point2", 55162,55199,3552.849,0.093,0,0});
-//
-//  Points.push_back({"Point3", 55200,55231,3553.934,0.08,0,0});
-//  Points.push_back({"Point4", 55232,55239,3560.356,0.157,0,0});
-//  Points.push_back({"Point5", 55240,55257, 3599.572,0.117,0,0});
-//  //Points energy are in MeV now I need to convert it to GeV
-//  for(int i=0;i<Points.size(); i++)
-//  {
-//    Points[i].W*=MeV;
-//    Points[i].dW*=MeV;
-//  }
-//  for(int i=0;i<Points.size(); i++)
-//  {
-//    char name_tt[1024];
-//    char name_gg[1024];
-//    sprintf(name_tt,"tt%d", i+1);
-//    sprintf(name_gg,"gg%d", i+1);
-//    Points[i].tt = get_chain("tt", name_tt, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
-//    Points[i].gg = get_chain("gg", name_gg, Points[i].title, Points[i].begin_run, Points[i].end_run, dir);
-//    set_alias(Points[i].tt, Points[i].W);
-//  }
-//  ifstream runinfo("tauscan2018_runinfo.txt");
-//  if(!runinfo) 
-//  { 
-//    std::cout << "Unable to open runinfo file" << std::endl;
-//  }
-//  int run;
-//  double lum;
-//  while(runinfo >> run >> lum)
-//  {
-//    char run_root_file[1024];
-//    sprintf(run_root_file, "%s/%d.root",dir,run);
-//    std::cout << run_root_file << std::endl;
-//    if(!gSystem->AccessPathName(run_root_file))
-//    {
-//      //std::cout << "File " << run_root_file << " exists" << " lum = " << lum << " nb^-1" << std::endl;
-//      for(int i=0;i<Points.size();++i)
-//      {
-//        if( run >= Points[i].begin_run && run<= Points[i].end_run )
-//        {
-//          Points[i].L += lum;
-//          Points[i].runs.push_back({run,lum});
-//          cout << "run = " << run <<  " br=" << Points[i].begin_run << " er=" << Points[i].end_run << " point = " << i+1 << "  IL = " << Points[i].L << endl;
-//        }
-//      }
-//    }
-//    runinfo.ignore(65535,'\n');
-//  }
-//  ////add monte carlo
-//  //int pmc = Points.size();
-//  //Points.push_back({"MC", 55300,55300, 1777*2,0.1,0,0});
-//  //Points[pmc].tt = new TChain("tt","monte carlo tau");
-//  //((TChain*)Points[pmc].tt)->AddFile("test-sim.root");
-//  //set_alias(Points[pmc].tt,Points[pmc].W);
-//  //Points[pmc].gg = new TNtupleD("ggmc","ggmc","i");
-//  //for(int i=0;i<1000;i++) Points[pmc].gg->Fill();
-//  return Points;
-//}
 
 #include <regex>
 std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R"(.+\.root)")
@@ -903,9 +867,9 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R
         //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
         if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
         {
-          P.push_back({"P"+to_string(point), 55116, 55155,  W, 1e-5,0,0});
-          P.back().tt = get_chain("tt",("tt"+to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
-          P.back().gg = get_chain("gg",("gg"+to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
+          P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
+          P.back().tt = get_chain("tt",("tt"+std::to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
+          P.back().gg = get_chain("gg",("gg"+std::to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
           set_alias(P.back().tt, P.back().W);
         }
       }
@@ -1099,17 +1063,17 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
   ofs << "#    u1 = " << P[0].tt->GetAlias("u1") << std::endl;
   ofs << "#    pi0 = " << P[0].tt->GetAlias("pi0") << std::endl;
   ofs << "#    pi1 = " << P[0].tt->GetAlias("pi1") << std::endl;
-  ofs << "#" << setw(4) << " " << setw(15) << "L, nb-1" << setw(10) << "dL, nb-1" << setw(15) << "W, MeV" << setw(15) << "dW, MeV" << setw(10) << "SW, MeV" << setw(10) << "dSW, MeV";
-  ofs << setw(10) << "Ntt" << setw(10) << "Nee" << setw(10) << "Ngg" << setw(10) << "effcor" << std::endl;
+  ofs << "#" << std::setw(4) << " " << std::setw(15) << "L, nb-1" << std::setw(10) << "dL, nb-1" << std::setw(15) << "W, MeV" << std::setw(15) << "dW, MeV" << std::setw(10) << "SW, MeV" << std::setw(10) << "dSW, MeV";
+  ofs << std::setw(10) << "Ntt" << std::setw(10) << "Nee" << std::setw(10) << "Ngg" << std::setw(10) << "effcor" << std::endl;
   for(int i=0; i<P.size();++i)
   {
     int Ntt=0;
     for(auto & item: P[i].NttMap) Ntt+=item.second;
     int Ngg = P[i].Ngg;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
-    ofs << setw(5) << i <<  setw(15) << L*1000 << setw(10) << 10 << setw(15) << P[i].W/MeV  << setw(15) << P[i].dW/MeV;
-    ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
-    ofs << setw(10) << Ntt << setw(10) <<  1 << setw(10) << Ngg <<  setw(10) << P[i].effcor << std::endl;
+    ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << 10 << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
+    ofs << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
+    ofs << std::setw(10) << Ntt << std::setw(10) <<  1 << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
   }
   if(!nofit)
   {
@@ -1178,9 +1142,9 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
     g->SetPointError(i, Points[i].dW/2.0, dxs);
     std::cout << i << " " << Points[i].W/2.0-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
     auto & P = Points[i];
-    ofs << setw(5) << i <<  setw(15) << 20000 << "  " << 10 << setw(15) << P.W/MeV  << setw(15) << P.dW/MeV;
-    ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
-    ofs << setw(10) << Ntt << setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
+    ofs << std::setw(5) << i <<  std::setw(15) << 20000 << "  " << 10 << std::setw(15) << P.W/MeV  << std::setw(15) << P.dW/MeV;
+    ofs << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
+    ofs << std::setw(10) << Ntt << std::setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
   }
   std::cout << "Total number of tau-tau candidates:" << totalNtt << std::endl;
   TCanvas * c = new TCanvas("cross","cross");
@@ -1203,23 +1167,6 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
   }
   return g;
 }
-
-//auto DATA        = read_data("data", read_my_runtable("../scan_points.txt"));
-//auto DATAp        = read_data("data-old", read_my_runtable("../scan_points.txt"));
-//auto DATA5        = read_data("../sel5/data", read_my_runtable("../scan_points.txt"));
-//auto DATA703     = read_data("data703", read_my_runtable("../scan_points.txt"));
-//auto DATA11      = read_data3("../tau2011","../tau2011/runtable.txt");
-//auto MC          = read_mc("mc/signal");
-///*  GALUGA generator */
-//auto EEee        = read_mc("mc/EEee");
-//auto EEuu        = read_mc("mc/EEuu");
-//auto EEkk        = read_mc("mc/EEkk");
-//auto EEpipi      = read_mc("mc/EEpipi");
-///*  bhabha */
-//auto BB          = read_mc("mc/BB");
-//auto UU          = read_mc("mc/uu");
-//auto HADR        = read_mc("mc/hadrons");
-//auto HADR704     = read_mc("mc/hadrons704");
 
 
 struct ChannelSelection_t
@@ -1271,6 +1218,8 @@ struct Selection
   std::string common_cut;
   std::vector<ParticleID_t> pid;
   std::vector<ChannelSelection_t> sel;
+  ChannelSelection_t       & operator[](int i)         { return sel[i]; }
+  const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
 };
 
 
@@ -1334,19 +1283,6 @@ std::vector<ChannelSelection_t> SELECTION3
   {"μK", "#uK"      , "uK   && ptem > 0.3"},
   {"KK", "KK"       , "KK   && ptem > 0.1"}   
 };
-//std::vector<ChannelSelection_t> SELECTION3
-//{
-//  {"eμ", "e#mu"     , "eu   &&  ptem>0.15"}     ,
-//  {"eπ", "e#pi"     , "epi  && Nc==2 && Nn==0 && ptem>0.22"}    ,
-//  {"μπ", "#mu#pi"   , "upi  && Nc==2 && Nn==0 && ptem>0.25 && p[0]<0.94 && p[1]<0.94"}    ,
-////  {"ee", "ee"       , "ee   && Nc==2 && Nn==0 && ptem>0.33"}     ,
-//  {"μμ", "#mu#mu"   , "uu   && Nc==2 && Nn==0 && ptem>0.35"}     ,
-//  {"ππ", "#pi#pi"   , "pipi && Nc==2 && Nn==0 && ptem>0.33 && MM2 >0.8"}   ,
-//  {"KK", "KK"       , "KK   && Nc==2 && Nn==0 && ptem>0.33 && MM2 >0.8"}   ,
-//  {"eK", "eK"       , "eK   && Nc==2 && Nn==0 && ptem>0.22"}     ,
-//  {"πK", "#piK"     , "piK  && Nc==2 && Nn==0 && ptem>0.33 && MM2 > 0.8"}    
-//};
-
 
 
 std::vector<ChannelSelection_t> & DEFAULT_SELECTION=SELECTION;
@@ -1369,15 +1305,13 @@ void print_event_info(ScanPoint_t  & p, const char * selection, const char * tit
   auto events = p.tt->GetV2();
   auto times  = p.tt->GetV3();
   std::ofstream file("tau_events.txt",std::ios_base::app);
-  std::cout << '#' << setw(7) << "run" << setw(20)<< "eventId" << setw(10) << "point" << setw(10) << "channel" << setw(10) << "pnt_evt" << setw(30) << " time" << std::endl;;
-  file << '#' << setw(7) << "run" << setw(20)<< "eventId" << setw(10) << "point" << setw(10) << "channel" << setw(10) << "pnt_evt" << setw(30) << " time" << std::endl;;
+  std::cout << '#' << std::setw(7) << "run" << std::setw(20)<< "eventId" << std::setw(10) << "point" << std::setw(10) << "channel" << std::setw(10) << "pnt_evt" << std::setw(30) << " time" << std::endl;;
+  file << '#' << std::setw(7) << "run" << std::setw(20)<< "eventId" << std::setw(10) << "point" << std::setw(10) << "channel" << std::setw(10) << "pnt_evt" << std::setw(30) << " time" << std::endl;;
   for(int i=0;i<n;++i)
   {
     time_t t = time_t(times[i]);
-    //std::cout << setw(5) << p.title << setw(10) << title << setw(10) << i << setw(8) << runs[i] << setw(20) << long(events[i]) << setw(30) << ctime(&t); 
-    //std::cout << setw(5) << p.title << setw(10) << title << setw(10) << i << setw(8) << runs[i] << setw(20) << long(events[i]) << setw(30) << ctime(&t); 
-    std::cout << setw(8) << runs[i] << setw(20)<< long(events[i]) << setw(10) << p.title << setw(10) << title << setw(10) << i<< setw(30) << ctime(&t);
-    file <<  setw(8) << runs[i] << setw(20)<< long(events[i]) << setw(10) << p.title << setw(10) << title << setw(10) << i<< setw(30) << ctime(&t);
+    std::cout << std::setw(8) << runs[i] << std::setw(20)<< long(events[i]) << std::setw(10) << p.title << std::setw(10) << title << std::setw(10) << i<< std::setw(30) << ctime(&t);
+    file <<  std::setw(8) << runs[i] << std::setw(20)<< long(events[i]) << std::setw(10) << p.title << std::setw(10) << title << std::setw(10) << i<< std::setw(30) << ctime(&t);
   }
   unsetenv("TZ");
 }
@@ -1398,89 +1332,6 @@ void print_event_info(std::vector<ScanPoint_t> & P, std::vector<ChannelSelection
   }
 };
 
-std::vector<PointSelectionResult_t> select(std::vector<ScanPoint_t> & P, std::string varexp, std::string selection, const char * gopt="col", std::string opt="")
-{
-  std::vector<PointSelectionResult_t> result(P.size());
-  bool goff  = !(bool(strcmp("goff",gopt)));
-  static int canvas_counter=0;
-  char canvas_name[65535];
-  sprintf(canvas_name, "tau_sel_%d",canvas_counter++);
-  TCanvas * c = nullptr;
-  if(!goff)
-  {
-    c = new TCanvas(canvas_name,"selection",0,0,1920*2/5.0*P.size(),1080*0.5);
-    //auto c = new TCanvas();
-    c->SetTitle(selection.c_str());
-    //int ny = floor(sqrt(P.size()+1));
-    //int nx = ny+1;
-    c->Divide(P.size(),1);
-  }
-  int i = 1;
-  bool add_to_prev_selection=false;
-  if(opt=="add") add_to_prev_selection=true;
-  int idx=0;
-  for (auto & p : P)
-  {
-    if(!goff) c->cd(i++);
-    long Ntt; 
-    if(!goff) Ntt=p.tt->Draw(varexp.c_str(),selection.c_str(),gopt);
-    else Ntt = p.tt->GetEntries(selection.c_str());
-    p.Ntt=Ntt;
-    if(opt=="clear") p.NttMap.clear();
-    if(opt=="add") p.NttMap[selection]=Ntt; 
-    char title[1024];
-    sprintf(title, "%d events - %s", p.Ntt, p.title.c_str());
-    if(!goff) p.tt->GetHistogram()->SetTitle(title);
-    p.selection = selection;
-    long Ngg= p.gg->GetEntries();
-    p.Ngg = Ngg;
-    result[idx].name      = p.title;
-    result[idx].root_name = p.title;
-    result[idx].tex_name  = p.title;
-    result[idx].Ntt = Ntt;
-    result[idx].Ngg = Ngg;
-  }
-  if(opt=="save")
-  {
-    TGraphErrors * g = new TGraphErrors;
-    long totalNtt=0;
-    long totalNgg = 0;
-    std::ofstream ofs("scan.txt");
-    double Ltot=0;
-    for(int i=0; i<P.size();++i)
-    {
-      totalNtt += P[i].Ntt;
-      totalNgg+=P[i].Ngg;
-      Ltot += P[i].L;
-    }
-    double sigma_gg = totalNgg/Ltot;
-    for(int i=0; i<P.size();++i)
-    {
-      double xs  = 0;
-      double dxs = 0;
-      int Ntt = P[i].Ntt;
-      int Ngg = P[i].Ngg;
-      double L = Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
-      if(Ngg != 0 )
-      {
-        xs = Ntt/L;
-        dxs = xs*sqrt( 1./Ntt + 1./Ngg);
-      }
-      g->SetPoint(i, P[i].W/2.0-MTAU, xs);
-      g->SetPointError(i, P[i].dW/2.0, dxs);
-      ofs << setw(5) << i <<  setw(15) << P[i].L << "  " << 10 << setw(15) << P[i].W  << setw(15) << P[i].dW;
-      ofs << setw(10) << 1.256 << " " << setw(10) << 0.019;
-      ofs << setw(10) << Ntt << setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
-    }
-    if(!goff)
-    {
-      new TCanvas;
-      g->SetMarkerStyle(21);
-      g->Draw("ap");
-    }
-  }
-  return result;
-}
 
 void set_pid(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & PID)
 {
@@ -1541,7 +1392,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   return R;
 }
 
-std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & P, const std::string & sel, const std::string & var, std::string gopt="")
+std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, const std::string & sel, const std::string & var, std::string gopt="")
 {
   auto c = new TCanvas;
   int canvas_pos_x = 0;
@@ -1574,6 +1425,79 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   return R;
 }
 
+std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection & S, int i, const std::string & var,  std::string extracut="", std::string gopt="")
+{
+  set_pid(DATA, S.pid);
+  std::string cut = S[i].cut;
+  if(S.common_cut!="") cut += " && " + S.common_cut;
+  if(extracut!="")     cut += " && " + extracut;
+  return draw(DATA, cut, var, gopt);
+};
+
+
+template<typename Iterator, typename Func>
+Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
+{
+  using ItemType = typename Iterator::value_type;
+  using Type = typename std::result_of<Func(ItemType)>::type;
+  Type chi2  = std::numeric_limits<Type>::max();
+  Iterator result=it_end;
+  for(auto it = it_begin; it!=it_end; ++it)
+  {
+    auto x = F(*it);
+    if( x < chi2 ) 
+    {
+      result = it;
+      chi2 = x;
+    }
+  }
+  return result;
+};
+
+template<typename Container, typename Func>
+typename Container::iterator find_best(Container & c, Func F)
+{
+  return find_best(std::begin(c), std::end(c), F);
+}
+
+ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
+{
+  ChannelSelectionResult_t result;
+  result.title = name;
+  if(SR.empty()) return result;
+  result.Points.resize(SR[0].Points.size());
+  result.Ntt=0;
+  for(int i=0;i<result.Points.size();++i) 
+  {
+    auto & rp   = result.Points[i];
+    rp.eps = 0;
+    double eps_error2=0;
+    for(const auto & r : SR )  
+    {
+      auto & p    = r.Points[i];
+      result.Ntt += p.Ntt;
+      rp.eps     += p.eps;
+      eps_error2 += p.eps_error*p.eps_error;
+      rp.Ntt     += p.Ntt;
+      rp.Ngg      = p.Ngg;
+      rp.L        = p.L;
+      rp.dL       = p.dL;
+      rp.W        = p.W;
+      rp.dW       = p.dW;
+    }
+    rp.eps_error = sqrt(eps_error2);
+  }
+  auto & reference_point = * find_best(result.Points, [](const auto & p) { return  std::abs(p.W*0.5-MTAU); } );
+  //normalize efficiency correction to threshold efficiency
+  for(int i=0;i<result.Points.size();++i)
+  {
+    auto & rp   = result.Points[i];
+    rp.effcor = rp.eps / reference_point.eps;
+    rp.effcor_error = rp.eps_error / reference_point.eps;
+  }
+  reference_point.effcor_error = 0;
+  return result;
+};
 
 void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 {
@@ -1614,6 +1538,196 @@ void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_wid
   if(opt<0) hline("━");
 };
 
+
+struct PrintConfig_t
+{
+  int title_width=10;
+  int data_width=15;
+  int total_width=5;
+  int vline_width=6;
+  std::string thline=""; //top horizontal line
+  std::string bhline=""; //bottom horizontal line
+  PrintConfig_t() = default;
+  void hline(int N, std::string symb="─")
+  {
+    int hline_width = title_width + total_width + vline_width + N*data_width+3;
+    //int w = width == 0 ? hline_width : width;
+    for(int i=0;i<hline_width;++i)
+    {
+      std::cout << symb;
+    }
+    std::cout << std::endl;
+  }
+};
+
+PrintConfig_t PCFG;
+
+template < typename Item, typename Ftitle , typename Fdata, typename Ftotal>
+void print_smth(const std::vector<Item> pts, PrintConfig_t cfg, Ftitle ftitle, Fdata fdata, Ftotal ftotal)
+{
+  int N = pts.size(); //number of points
+  int hline_width = cfg.title_width + cfg.total_width + cfg.vline_width + N*cfg.data_width+3;
+  auto hline = [&hline_width](std::string  symb="─", int width = 0) 
+  { 
+    int w = width == 0 ? hline_width : width;
+    for(int i=0;i<w;++i)
+    {
+      std::cout << symb;
+    }
+    std::cout << std::endl;
+  };
+  auto vline_width = cfg.vline_width;
+  auto vline = [&vline_width](char symb='-', int width = 0) { std::cout << std::setw(width == 0? (vline_width-1) : (width-1)) << symb; };
+  print_utf(cfg.title_width,ftitle());
+  for(int i=0;i<N;++i) print_utf(cfg.data_width, fdata(pts[i]));
+  std::cout << std::setw(vline_width) << " │ ";
+  print_utf(cfg.total_width, ftotal(pts));
+  std::cout << std::endl;
+};
+
+void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg)
+{
+  print_smth(pts, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "TOTAL"; } );
+};
+
+void print_eps(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg=PrintConfig_t())
+{
+  print_smth(pts, cfg, [](){ return "ε"; }, [](auto & p) { return p.eps; }, [](auto & s) { return ""; } );
+};
+
+void print_Ntt(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg, std::string title="Ntt")
+{
+  print_smth(pts, cfg, 
+      [&title](){ return title; }, 
+      [](auto & p) { return p.Ntt; }, 
+      [](auto & s) { 
+        long N=0; 
+        for(auto & x: s)  N+=x.Ntt;  
+        return N; 
+        } 
+      );
+};
+
+template<typename Fdata, typename Ftotal>
+void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
+{
+  if(SR.empty()) return;
+  auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].Points.size(),s); };
+  hline("━");
+  print_head(SR[0].Points,cfg);
+  hline();
+  auto prn = [&](std::string title, auto & sr) {
+    print_smth(sr.Points, cfg, 
+        [&title](){ return title; }, 
+        fd, 
+        ft
+        );
+  };
+  for( auto &  sr : SR) 
+     prn(sr.title,sr);
+  hline();
+  auto f = fold(SR);
+  prn("all", f);
+  hline("━");
+};
+
+void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+{
+  print_smth(SR,cfg, 
+      [](auto & p) { 
+        return p.Ntt; 
+      },
+      [](auto & s) { 
+        double sum=0;
+        for(auto & x: s)  sum+=x.Ntt;  
+        return sum; 
+      } 
+  );
+};
+
+void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+{
+  if(SR.empty()) return;
+  std::string format_str = "%4.2f ± %4.2f";
+  cfg.total_width = format_str.length();
+  auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].Points.size(),s); };
+  hline("━");
+  print_smth(SR[0].Points, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "AVERAGE"; } );
+  hline();
+  auto prn = [&](std::string title, auto & sr) {
+    print_smth(sr.Points, cfg, 
+          [&title](){ return title; }, 
+          [&format_str](auto & p) { 
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), p.eps*100,p.eps_error*100);
+            return std::string(buf); 
+          },
+          [&format_str](auto & P) { 
+            double sum=0;
+            double error2_sum=0;
+            for(auto & p: P)  
+            {
+              sum+=p.eps;  
+              error2_sum+=p.eps_error*p.eps_error;
+            }
+            double average = sum/P.size(); 
+            double error = sqrt(error2_sum)/P.size();
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), average*100,error*100);
+            return std::string(buf); 
+          } 
+        );
+  };
+  for( auto &  sr : SR) 
+     prn(sr.title,sr);
+  hline();
+  auto f = fold(SR);
+  prn("all", f);
+  hline("━");
+};
+
+void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+{
+  if(SR.empty()) return;
+  std::string format_str = "%4.2f ± %4.2f";
+  cfg.total_width = format_str.length();
+  auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].Points.size(),s); };
+  hline("━");
+  print_smth(SR[0].Points, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "AVERAGE"; } );
+  hline();
+  auto prn = [&](std::string title, auto & sr) {
+    print_smth(sr.Points, cfg, 
+          [&title](){ return title; }, 
+          [&format_str](auto & p) { 
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), p.effcor,p.effcor_error);
+            return std::string(buf); 
+          },
+          [&format_str](auto & P) { 
+            double sum=0;
+            double error2_sum=0;
+            for(auto & p: P)  
+            {
+              sum+=p.effcor;  
+              error2_sum+=p.effcor_error*p.effcor_error;
+            }
+            double average = sum/P.size(); 
+            double error = sqrt(error2_sum)/P.size();
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), average,error);
+            return std::string(buf); 
+          } 
+        );
+  };
+  for( auto &  sr : SR) 
+     prn(sr.title,sr);
+  hline();
+  auto f = fold(SR);
+  prn("all", f);
+  hline("━");
+};
+
+
 void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 {
   ChannelSelectionResult_t sr;
@@ -1621,35 +1735,11 @@ void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int f
   print(sr,0);
 }
 
-ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
-{
-  ChannelSelectionResult_t result;
-  result.title = name;
-  if(SR.empty()) return result;
-  result.Points.resize(SR[0].Points.size());
-  result.Ntt=0;
-  for(int i=0;i<result.Points.size();++i) 
-  {
-    for(const auto & r : SR )  
-    {
-      auto & p    = r.Points[i];
-      auto & rp   = result.Points[i];
-      result.Ntt += p.Ntt;
-      rp.Ntt     += p.Ntt;
-      rp.Ngg      = p.Ngg;
-      rp.L        = p.L;
-      rp.dL       = p.dL;
-      rp.W        = p.W;
-      rp.dW       = p.dW;
-    }
-  }
-  return result;
-};
 
 void print(const  std::vector<ChannelSelectionResult_t> & SR )
 {
-  for(int i=0;i<SR.size();++i) print(SR[i],i);
-  print(fold(SR,"all"),-1);
+  PrintConfig_t cfg;
+  print_Ntt(SR,cfg);
 };
 
 ChannelSelectionResult_t new_select(const std::vector<ScanPoint_t> & P, const ChannelSelection_t & S, std::string extra_cut="")
@@ -1671,6 +1761,7 @@ std::vector<ChannelSelectionResult_t> new_select( std::vector<ScanPoint_t> & P, 
     auto & s = S[i];
     auto & r = R[i];
     r = s; //save current selection for channel
+    r.cut = s.cut + extra_cut;
     r = new_select(P, s.cut + extra_cut);
     print(r,i);
   };
@@ -1710,6 +1801,7 @@ std::vector<ChannelSelectionResult_t> new_select(std::vector<ScanPoint_t> & DATA
     auto & s = SEL.sel[i];
     auto & r = R[i];
     r = s;
+    r.cut = SEL.sel[i].cut +  cut;
     r = new_select(DATA, SEL.sel[i].cut +  cut);
     print(r,j++);
   }
@@ -1717,178 +1809,59 @@ std::vector<ChannelSelectionResult_t> new_select(std::vector<ScanPoint_t> & DATA
   return R;
 };
 
-void select(std::vector<ScanPoint_t> & P, std::vector<ChannelSelection_t> & SEL, std::string global_cut="")
+
+std::vector<PointSelectionResult_t> measure_efficiency(const std::vector<ScanPoint_t> & P, std::string cut)
 {
-  //some printing configuration
-  int first_column_width = 10;
-  int last_column_width = 5;
-  int column_width = 8;
-  int vline_width = 6;
-  int hline_width = first_column_width + last_column_width + vline_width + P.size()*column_width+3;
-  auto hline = [&hline_width](std::string  symb="─", int width = 0) 
-  { 
-    int w = width == 0 ? hline_width : width;
-    for(int i=0;i<w;++i)
-    {
-      std::cout << symb;
+  return new_select(P,cut);
+}
+
+std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionResult_t>  & psr,  const std::vector<PointSelectionResult_t>  & eff, long N0)
+{
+  int i0=0;
+  const double UNSET = std::numeric_limits<double>::max();
+  double chi2_thr = UNSET;
+  for(int i = 0; i< psr.size(); ++i) {
+    auto & r = psr[i];
+    int jc; //correspoinding point
+    double chi2 = UNSET;
+    for( int j = 0;j<eff.size(); ++j) {
+      if (  std::abs(eff[j].W-r.W) < chi2 ) {
+        jc = j;
+        chi2 = std::abs(eff[j].W-r.W); 
+      }
     }
-    std::cout << std::endl;
-    //auto c = cout.fill(); std::cout << setfill(symb) << setw() << symb << setfill(c) << std::endl; 
+    assert ( chi2 == UNSET);
+    double eps = double(eff[jc].Ntt)/N0;
+    double eps_error =  sqrt( eps/N0 * ( 1.0 - eps));
+    //std::cout << i << " " << r.name << " " << "  W=" << r.W << "  eps = " << eps << " +- " << eps_error << std::endl;
+    if( std::abs(r.W*0.5 - MTAU) <  chi2_thr )  {
+      chi2_thr = std::abs(r.W*0.5 - MTAU);
+      i0 = i;
+    }
+    r.eps = eps;
+    r.eps_error = eps_error;
+
+  }
+  auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.W*0.5-MTAU); } );
+  //normalize efficiency correction to threshold efficiency
+  for(auto & rp : psr) {
+    rp.effcor = rp.eps / reference_point.eps;
+    rp.effcor_error = rp.eps_error / reference_point.eps;
+  }
+  reference_point.effcor_error = 0;
+  return psr;
+}
+
+std::vector<ChannelSelectionResult_t> & set_efficiency( std::vector<ChannelSelectionResult_t> & SR, const Scan_t & MC, long N0)
+{
+  for(auto & sr : SR)
+  {
+    auto eff = measure_efficiency(MC,sr.cut);
+    set_efficiency(sr.Points, eff, N0);
   };
-  auto vline = [&vline_width](char symb='-', int width = 0) { std::cout << std::setw(width == 0? (vline_width-1) : (width-1)) << symb; };
-
-  //default expression to show
-  const char * varexp = "ptem:acop";
-  std::vector<long> Ntt;
-  std::vector<long> totalEventInChannel(SEL.size());
-  Ntt.resize(P.size(),0);
-  hline("━");
-  //auto form = [](int w, const std::string & s) 
-  //{
-  //  std::cout << setw(first_column_width+count_utf8_extra_byte(std::string("ΔE,MeV")))
-  //};
-  std::cout << std::setw(first_column_width) << "CHNNL/PNT";
-  for(int i=0;i<Ntt.size();++i) std::cout << std::setw(column_width)  << P[i].title;
-  std::cout << std::setw(vline_width) << " │ " << std::setw(last_column_width) << "TOTAL";
-  std::cout << std::endl;
-  hline();
-  std::cout << std::setw(first_column_width+count_utf8_extra_byte(std::string("ΔE,MeV"))) << "ΔE,MeV";
-  for(int i=0;i<Ntt.size();++i) std::cout << std::setw(column_width) << (P[i].W*0.5-MTAU)*1e3;
-  std::cout << std::setw(vline_width) << " │ ";
-  std::cout << std::endl;
-  hline();
-  //for(int c = 0; c < CHANNELS.size(); c++)
-  int channel=0;
-  for(auto & sel : SEL)
-  {
-    std::string cut = sel.cut;
-    if( global_cut != "") cut += "&&" + global_cut;
-    select(P, varexp, cut.c_str(), "goff" , "add");
-    //std::cout << setw(first_column_width) << CHANNELS[c];
-    std::cout << std::setw(first_column_width+count_utf8_extra_byte(sel.title)) << sel.title;
-    totalEventInChannel[channel]=0;
-    for(int i=0; i < Ntt.size(); i++)
-    {
-      totalEventInChannel[channel]+=P[i].Ntt;
-      Ntt[i]+=P[i].Ntt;
-      std::cout << std::setw(column_width) <<  P[i].Ntt;
-    }
-    std::cout << std::setw(vline_width) << " │ " << std::setw(last_column_width) << totalEventInChannel[channel];
-    std::cout << std::endl;
-    channel++;
-  }
-  hline();
-  std::cout << std::setw(first_column_width) << "total";
-  for(int i=0;i<Ntt.size();i++) std::cout  << std::setw(column_width) << Ntt[i];
-  long totalEvent=0;
-  for(auto n :totalEventInChannel) totalEvent+=n;
-  std::cout << std::setw(vline_width) << " │ " << std::setw(last_column_width) << totalEvent;
-  std::cout << std::endl;
-  hline("━");
-  fit(P, "scan.txt", 1);
-}
-
-//void select(std::vector<ScanPoint_t> & P, std::string cut="")
-//{
-//  std::vector<ChannelSelection_t>  sel{{"test","test",cut}};
-//  select(P,sel);
-//}
-
-void measure_efficiency(std::vector<ScanPoint_t> & PNTS, std::vector<ChannelSelection_t> & SEL=DEFAULT_SELECTION, long N0=100000)
-{
-  const char * varexp = "ptem:acop";
-  std::vector<long> Ntt(PNTS.size(),0);
-  std::vector<TGraphErrors *> graphs(SEL.size());
-  for(auto & g : graphs) g = new TGraphErrors;
-  TGraphErrors * total_g = new TGraphErrors;
-  const int whead = 15;
-  const int wcol = 20;
-  std::cout << setw(whead) << "W,MeV";
-  for(int p = 0; p < PNTS.size(); ++p)
-  {
-    std::cout << setw(wcol) << PNTS[p].W*1e3;
-  }
-  std::cout << std::endl;
-  std::cout << setw(whead) << "E-MPDG,MeV";
-  for(int p = 0; p < PNTS.size(); ++p)
-  {
-    std::cout << setw(wcol) << (PNTS[p].W*0.5-MTAU)*1e3;
-  }
-  std::cout << std::endl;
-  for(int i = 0; i < SEL.size(); i++)
-  {
-    select(PNTS, varexp, SEL[i].cut.c_str(), "col" , "add");
-    std::cout << setw(whead+count_utf8_extra_byte(SEL[i].title)) << SEL[i].title;
-    //std::cout << setw(whead) << CHANNELS[i];
-    for(int p = 0; p < PNTS.size(); ++p)
-    {
-      Ntt[p]+=PNTS[p].Ntt;
-      PNTS[p].eps = double(PNTS[p].Ntt)/double(N0);
-      graphs[i]->SetPoint(p,(PNTS[p].W*0.5-MTAU)*1e3, PNTS[p].eps);
-      graphs[i]->SetPointError(p,PNTS[p].dW*1e3*0.5, sqrt(PNTS[p].eps*(1.0 - PNTS[p].eps)/N0));
-      std::cout << setw(wcol) << PNTS[p].eps;
-    }
-    std::cout << std::endl;
-  }
-  std::cout << setw(whead) << "TOTAL";
-  for(int p = 0;p<PNTS.size();++p) 
-  {
-    double eps = double(Ntt[p])/double(N0);
-//    std::cout << setw(10) << PNTS[p].W << setw(10) << PNTS[p].dW;
-    total_g->SetPoint(p, (PNTS[p].W*0.5-MTAU)*1e3, eps);
-    double deps = sqrt(eps*(1.0-eps)/N0);
-    total_g->SetPointError(p, PNTS[p].dW*1e3*0.5, deps);
-    char buf[1024];
-    sprintf(buf, "%7.5f±%7.5f", eps,deps);
-    std::cout << setw(wcol)<<buf;
-  }
-  std::cout << std::endl;
-  auto * mg = new TMultiGraph;
-  mg->Add(total_g, "lp");
-  total_g->SetLineColor(1);
-  total_g->SetMarkerColor(1);
-  total_g->SetMarkerStyle(20);
-  total_g->SetMarkerSize(2);
-  total_g->SetLineWidth(2);
-  for(int c = 0;c<graphs.size();++c) 
-  {
-    graphs[c]->SetLineColor(c+2);
-    graphs[c]->SetMarkerColor(c+2);
-    graphs[c]->SetMarkerStyle(21+c);
-    graphs[c]->SetMarkerSize(2);
-    graphs[c]->SetLineWidth(2);
-    mg->Add(graphs[c],"lp");
-  }
-  auto eff_c = new TCanvas;
-  eff_c->Divide(1,2);
-  eff_c->cd(1);
-  mg->Draw("apl");
-  mg->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
-  mg->GetYaxis()->SetTitle("efficiency ( #sigma_{vis} / #sigma )");
-  //mg->SetMarkerStyle(21);
-  //mg->SetMarkerSize(2);
-  //mg->SetLineWidth(2);
-  TGraphErrors * eps_cor_g = new TGraphErrors;
-  std::cout << setw(15) << "COR";
-  for(int p = 0; p<PNTS.size();++p)
-  {
-    eps_cor_g->SetPoint(p, total_g->GetX()[p], total_g->GetY()[p]/total_g->GetY()[0]);
-    eps_cor_g->SetPointError(p, total_g->GetErrorX(p), total_g->GetErrorY(p)/total_g->GetY()[0]);
-    PNTS[p].eps = total_g->GetY()[p];
-    PNTS[p].eps_error = total_g->GetErrorY(p);
-    PNTS[p].effcor = eps_cor_g->GetY()[p];
-    std::cout << setw(10) << eps_cor_g->GetY()[p];
-  }
-  std::cout << std::endl;
-  eff_c->cd(2);
-  eps_cor_g->Draw("ap");
-  eps_cor_g->Draw("apl");
-  eps_cor_g->SetMarkerStyle(21);
-  eps_cor_g->SetMarkerSize(2);
-  eps_cor_g->SetLineWidth(2);
-  eps_cor_g->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
-  eps_cor_g->GetYaxis()->SetTitle("efficiency correction");
-}
+  print_efficiency(SR);
+  return SR;
+};
 
 
 void draw_hist_vs_energies(Scan_t & scan, const char * var, int Nbin, double xmin, double xmax, const char *selection)
@@ -1905,7 +1878,7 @@ void draw_hist_vs_energies(Scan_t & scan, const char * var, int Nbin, double xmi
     scan[i].tt->SetLineColor(color[c]);
     scan[i].tt->SetLineStyle(line[l]);
     scan[i].tt->SetLineWidth(3);
-    s+=" >> h"+to_string(i)+"("+to_string(Nbin)+","+to_string(xmin)+","+to_string(xmax)+")";
+    s+=" >> h"+std::to_string(i)+"("+std::to_string(Nbin)+","+std::to_string(xmin)+","+std::to_string(xmax)+")";
     if(i==0) scan[i].tt->Draw(s.c_str(), selection);
     else scan[i].tt->Draw(s.c_str(),selection,"same");
   }
@@ -1947,10 +1920,10 @@ void correct_efficiency(Scan_t & D /*  data  */, Scan_t & MC /*  MC signal */)
   }
 
   std::cout << "#Correct efficiency: " << std::endl;
-  std::cout << "#" << setw(4) << " " << setw(10) << "W,MeV" << setw(10) << "E, MeV" << setw(15) << "E-Mtau, MeV" << setw(10) << "Ntt" << setw(10) << "effcor" << std::endl;
+  std::cout << "#" << std::setw(4) << " " << std::setw(10) << "W,MeV" << std::setw(10) << "E, MeV" << std::setw(15) << "E-Mtau, MeV" << std::setw(10) << "Ntt" << std::setw(10) << "effcor" << std::endl;
   for( int i = 0;i<D.size(); i++)
   {
-    std::cout << setw(5) << i+1 << setw(10) << D[i].W/MeV << setw(10) << D[i].W*0.5/MeV << setw(15) << (D[i].W*0.5-MTAU)/MeV <<  setw(10) << D[i].Ntt << setw(10) << D[i].effcor << std::endl;
+    std::cout << std::setw(5) << i+1 << std::setw(10) << D[i].W/MeV << std::setw(10) << D[i].W*0.5/MeV << std::setw(15) << (D[i].W*0.5-MTAU)/MeV <<  std::setw(10) << D[i].Ntt << std::setw(10) << D[i].effcor << std::endl;
   }
 }
 
@@ -1984,7 +1957,7 @@ void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, cons
       c->cd(index+1);
       sp->tt->Draw(ve.c_str(),selection, gopt.c_str());
       auto h = sp->tt->GetHistogram();
-      h->SetName(("h"+sp->title+to_string(index)).c_str());
+      h->SetName(("h"+sp->title+std::to_string(index)).c_str());
       h->SetTitle((sp->title).c_str());
       hs->Add(h);
       index++;
@@ -2168,9 +2141,12 @@ void find_Ep(ScanPoint_t &sp, int Nbin=0, double parmin=0, double parmax=0)
   }
   new TCanvas;
   g->Draw("a*l");
-  for( auto & [ level, range ] :  Mrange )
+  for( auto & m :  Mrange )
   {
-    auto [xmin, xmax ] = range;
+    auto level = m.first;
+    auto range = m.second;
+    auto xmin = range.first;
+    auto xmax = range.second;
     std::cout << "level  " << level << " : " <<  xmin << " " << xmax << std::endl;
   }
 };
