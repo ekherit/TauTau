@@ -228,6 +228,7 @@ struct PointSelectionResult_t
   std::string name;
   std::string root_name;
   std::string tex_name;
+  std::string cut;
   long Ntt=0; //number of tau tau events;
   long Ngg=0; //number of gamma gamma events for luminocity
   double W=0;   //point energy
@@ -701,7 +702,7 @@ void set_alias(TTree * tt, double W)
   //define channels
   auto make_xy  = [](TTree * tt,  std::string x, std::string y)
   {
-    auto s1 = sub("((x0 && y1) || (y0  && x1))", "x", x);
+    auto s1 = sub("((x0&&y1)||(y0&&x1))", "x", x);
     auto alias = sub(s1, "y", y);
     tt->SetAlias( (x+y).c_str(), alias.c_str());
   };
@@ -1181,6 +1182,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
   long Ntt=0; //total number of events for all points
   long Ngg=0; //total number of gg events
   std::vector<PointSelectionResult_t> Points;
+  std::string cut;
   ChannelSelectionResult_t(void){}
   ChannelSelectionResult_t(const ChannelSelection_t & cs, const std::vector<PointSelectionResult_t> & p) : ChannelSelection_t(cs)
   {
@@ -1189,7 +1191,9 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     {
       Ntt+=p.Ntt;
       Ngg+=p.Ngg;
+      cut = p.cut;
     } 
+
   }
   ChannelSelection_t & operator=(const std::vector<PointSelectionResult_t> & P)
   {
@@ -1200,6 +1204,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     {
       Ntt+=p.Ntt;
       Ngg+=p.Ngg;
+      cut = p.cut;
     } 
     return *this;
   }
@@ -1359,10 +1364,33 @@ void set_pid(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & 
 
             if ( value_name == "chi2_dedx"  || value_name == "delta_tof")  value_name += "_"+pid_name;
             value_name += "["+std::to_string(track)+"]";
-            std::string cut = std::to_string(r.min) + " < " + value_name + " && " + value_name  + " < "  +  std::to_string(r.max);
+            auto rm_zero = [](const std::string  input) -> std::string
+            {
+              std::string tmp = input;
+              std::reverse(tmp.begin(),tmp.end());
+              if( tmp.find('.') == std::string::npos) return input;
+              std::string result;
+              bool stop_skip=false;
+              for(int i=0;i<tmp.size();++i)
+              {
+                if(tmp[i] != '0' || stop_skip)
+                {
+                  stop_skip = true;
+                  result+=tmp[i];
+                }
+              }
+              std::reverse(result.begin(),result.end());
+              return result;
+            };
+            std::string min_str = rm_zero(std::to_string(r.min));
+            std::string max_str = rm_zero(std::to_string(r.max));
+
+            //std::string cut = std::to_string(r.min) + " < " + value_name + " && " + value_name  + " < "  +  std::to_string(r.max);
+            std::string cut = "("+min_str + "<" + value_name + "&&" + value_name  + "<"  +  max_str +")";
+            //std::string cut = buf;
             //std::cout << cut << std::endl;
             if(alias_value=="") alias_value = cut; 
-            else alias_value += " && " + cut;
+            else alias_value += "&&" + cut;
         };
 //        std::cout << " alias: " << name << " = " << alias_value << std::endl;
         data.tt->SetAlias(name.c_str(), alias_value.c_str());
@@ -1388,6 +1416,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     r.W            = p.W;
     r.dW           = p.dW;
     r.L            = p.L;
+    r.cut          = sel.c_str();
   }
   return R;
 }
@@ -1644,6 +1673,7 @@ void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
       } 
   );
 };
+
 
 void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
@@ -1974,6 +2004,15 @@ void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, cons
 void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char * selection, std::string gopt)
 {
   compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
+}
+
+void compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt, std::string H)
+{
+  auto c = new TCanvas;
+  P1.tt->SetLineColor(kBlue);
+  P1.tt->Draw((var+">>"+H).c_str(), sel.c_str(),gopt.c_str());
+  P2.tt->SetLineColor(kRed);
+  P2.tt->Draw(var.c_str(), sel.c_str(),(gopt+"same").c_str());
 }
 
  std::string test_replace(std::string particle_name_prefix, std::string selection_template, int track)
