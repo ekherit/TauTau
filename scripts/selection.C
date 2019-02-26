@@ -667,14 +667,20 @@ void set_alias(TTree * tt, double W)
   tt->SetAlias("M2mue","(p[1]+Emu0)**2-psum*psum");
   tt->SetAlias("M2KK","(EK0+EK1)**2-psum*psum");
 
+  tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
+
   char Eb[1024];
   sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);
+  tt->SetAlias("MPI",(std::to_string(MPI)+"*1").c_str());
   tt->SetAlias("Emis","(2*Eb-p[0]-p[1])");
   tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
   tt->SetAlias("cos_theta_mis2","(pz[0]+pz[1])/hypot(hypot(px[0]+px[1], py[0]+py[1]), pz[0]+pz[1])");
   tt->SetAlias("acol2","(px[0]*px[1]+py[0]*py[1]+pz[0]*pz[1])/(p[0]*p[1])");
   tt->SetAlias("MM2","Emis**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
+  tt->SetAlias("MM2pi","(2*Eb-sqrt(p[0]**2+MPI**2)-sqrt(p[1]**2+MPI**2))**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
+  tt->SetAlias("M2pi","(sqrt(p[0]**2+MPI**2)+sqrt(p[1]**2+MPI**2))**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
+  tt->SetAlias("k_ptem","(1.0*1.0)");
 
   auto set_alias = [](TTree * tt, std::string track_name_prefix, int track, std::string selection_template) -> void
   {
@@ -706,8 +712,8 @@ void set_alias(TTree * tt, double W)
     auto alias = sub(s1, "y", y);
     tt->SetAlias( (x+y).c_str(), alias.c_str());
   };
-  for (auto & x : {"e","u", "pi", "K"} )
-    for (auto & y : {"e","u", "pi", "K"} )
+  for (auto & x : {"e","u", "pi", "K","rho"} )
+    for (auto & y : {"e","u", "pi", "K","rho"} )
       make_xy(tt, x,y);
 
   //auto make_xx  = [](TTree * tt,  std::string x, std::string extra_cut = "")
@@ -723,9 +729,10 @@ void set_alias(TTree * tt, double W)
 
   //tt->SetAlias("Xrho",   "!rho0 && (e0 || u0 || pi0 || K0) && rho1 && !(e1 || u1 || K0)");
   //tt->SetAlias("rhoX",   "!rho1 && (e1 || u1 || pi1 || K1) && rho0 && !(e0 || u0 || K0)");
-  tt->SetAlias("Xrho",   "!rho0 && rho1");
-  tt->SetAlias("rhoX",   "!rho1 && rho0");
-  tt->SetAlias("rhorho", "!(e0 || u0 || K0) &&  !(e1 || u1 || K1) && Mpi0[0]>0.1128 && Mpi0[0]<0.1464 && Mpi0[1]>0.1128 && Mpi0[1]<0.1464  && pi0 && pi1  && ((Mrho_cut1 && Mrho_cut2) || (Mrho_cut1 && Mrho_cut3))");
+  //tt->SetAlias("Xrho",   "!rho0 && rho1");
+  //tt->SetAlias("rhoX",   "!rho1 && rho0");
+  tt->SetAlias("Xrho",   "((!rho0 && rho1)||(!rho1 && rho0))");
+//  tt->SetAlias("rhorho", "!(e0 || u0 || K0) &&  !(e1 || u1 || K1) && Mpi0[0]>0.1128 && Mpi0[0]<0.1464 && Mpi0[1]>0.1128 && Mpi0[1]<0.1464  && pi0 && pi1  && ((Mrho_cut1 && Mrho_cut2) || (Mrho_cut1 && Mrho_cut3))");
   tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
   //tt->SetAlias("pipi0pipi0_cut","Nc==2 && Npi0==2 && pipi && ptem>0.6");
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
@@ -1073,14 +1080,14 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     int Ngg = P[i].Ngg;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
     ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << 10 << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
-    ofs << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
+    ofs << std::setw(10) << 1.306 << " " << std::setw(10) << 0.017;
     ofs << std::setw(10) << Ntt << std::setw(10) <<  1 << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
   }
   if(!nofit)
   {
     char command[65536];
     //if(title=="") title=total_title;
-    sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    sprintf(command, "taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
     //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename);
     system(command);
   }
@@ -1173,8 +1180,8 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 struct ChannelSelection_t
 {
   std::string title; //channel name  (temrinal)
-  std::string root_title; //title for root to print on canvas
   std::string cut;
+  std::string root_title; //title for root to print on canvas
 };
 
 struct ChannelSelectionResult_t : public ChannelSelection_t
@@ -1184,6 +1191,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
   std::vector<PointSelectionResult_t> Points;
   std::string cut;
   ChannelSelectionResult_t(void){}
+  ChannelSelectionResult_t(const ChannelSelectionResult_t & ) = default;
   ChannelSelectionResult_t(const ChannelSelection_t & cs, const std::vector<PointSelectionResult_t> & p) : ChannelSelection_t(cs)
   {
     Points = p;
@@ -1211,8 +1219,8 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
   ChannelSelection_t & operator=(const ChannelSelection_t & cs )
   {
     title      = cs.title;
-    root_title = cs.root_title;
     cut        = cs.cut;
+    root_title = cs.root_title;
     return *this;
   }
 };
@@ -1226,74 +1234,6 @@ struct Selection
   ChannelSelection_t       & operator[](int i)         { return sel[i]; }
   const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
 };
-
-
-
-std::vector<ChannelSelection_t> SELECTION
-{
-  {"eμ", "e#mu"     , "Nc==2 && Nn==0 && eu   && ptem>0.25"}   ,
-  {"eπ", "e#pi"     , "Nc==2 && Nn==0 && epi  && ptem>0.3"}    ,
-  {"μπ", "#mu#pi"   , "Nc==2 && Nn==0 && upi  && ptem>0.62"}   ,
-  {"ee", "ee"       , "Nc==2 && Nn==0 && ee   && ptem>0.5  && acop<2.7 && p[0]<0.9 && p[1]<0.9"}     ,
-//{"ee", "ee"       , "ee && Nn==0 && Nc==2 && ptem>0.4 &&  S>0.05 && abs(cos_theta_mis2)<0.6"},
-  {"μμ", "#mu#mu"   , "Nc==2 && Nn==0 && uu   && ptem>0.5 && acop<2.7 && p[0]<0.9 && p[1]<0.9"}     ,
-  //{"μμ", "#mu#mu"   , "Nc==2 && Nn==0 && uu   && ptem>0.4 && abs(cos_theta_mis2) <0.7"}     ,
-  {"ππ", "#pi#pi"   , "Nc==2 && Nn==0 && pipi && ptem>0.55"}    ,
-  {"eK", "eK"       , "Nc==2 && Nn==0 && eK"}                   ,
-  {"πK", "#piK"     , "Nc==2 && Nn==0 && piK  && ptem >0.4"}    ,
-  {"μK", "#uK"      , "Nc==2 && Nn==0 && uK   && ptem >0.15"}   ,
-  {"KK", "KK"       , "Nc==2 && Nn==0 && KK   && ptem >0.15"}   ,
-  {"Xρ", "X#rho"    , "Nc==2 && Npi0 ==1 && (Xrho || rhoX) && acop>1.4"} ,
-  {"ρρ", "#rho#rho" , "Nc==2 && Npi0 ==2 && rhorho && ptem>0.5"}
-};
-
-std::vector<ChannelSelection_t> SELECTION11
-{
-  {"eμ", "e#mu"     , "eu   && Nc==2 && Nn==0 && ptem>0.1 && acop>16./180.*3.1415 && acop<(180-16.)/180.*3.1415"}     ,
-  {"eπ", "e#pi"     , "epi  && Nc==2 && Nn==0 && ptem>0.22"}    ,
-  {"μπ", "#mu#pi"   , "upi  && Nc==2 && Nn==0 && ptem>0.25 && p[0]<0.94 && p[1]<0.94"}    ,
-  {"ee", "ee"       , "ee   && Nc==2 && Nn==0 && ptem>0.33"}     ,
-  {"μμ", "#mu#mu"   , "uu   && Nc==2 && Nn==0 && ptem>0.35"}     ,
-  {"ππ", "#pi#pi"   , "pipi && Nc==2 && Nn==0 && ptem>0.33 && M2 >0.8"}   ,
-  {"KK", "KK"       , "KK   && Nc==2 && Nn==0 && ptem>0.33 && M2 >0.8"}   ,
-  {"eK", "eK"       , "eK   && Nc==2 && Nn==0 && ptem>0.22"}     ,
-  {"πK", "#piK"     , "piK  && Nc==2 && Nn==0 && ptem>0.33 && M2 > 0.8"}    
-};
-
-std::vector<ChannelSelection_t> SELECTION2
-{
-  {"eμ", "e#mu"     , "Nc==2 && Nn==0 && eu   && ptem>0.25" }  ,
-  {"eπ", "e#pi"     , "nciptrack ==2 && Nc==2 && Nn==0 && epi  && ptem>0.19"}   ,
-  {"μπ", "#mu#pi"   , "nciptrack ==2 && Nc==2 && Nn==0 && upi  && ptem>0.22"}   ,
-  {"ee", "ee"       , "nntrack==0 && nciptrack ==2 && Nc==2 && Nn==0 && ee   && ptem>0.3"}  ,
-  {"μμ", "#mu#mu"   , "nciptrack ==2 && Nc==2 && Nn==0 && uu   && ptem>0.25"}     ,
-  {"ππ", "#pi#pi"   , "nciptrack ==2 && Nc==2 && Nn==0 && pipi && ptem>0.2"}    ,
-  {"eK", "eK"       , "nciptrack ==2 && Nc==2 && Nn==0 && eK"}                   ,
-  {"πK", "#piK"     , "nntrack==0 && nciptrack ==2 && Nc==2 && Nn==0 && piK  && ptem >1"}    ,
-  {"μK", "#uK"      , "nciptrack ==2 && Nc==2 && Nn==0 && uK   && ptem >0.2"}   ,
-  {"KK", "KK"       , "nciptrack ==2 && Nc==2 && Nn==0 && KK   && ptem >0.16"}   
-};
-
-std::string SEL3_GLOBAL = "Nc==2 && Nn==0 && p[0] < 1.1 && p[1] < 1.1  && abs(cos_theta_mis2)<0.8 && cos(theta[0])<0.8 && cos(theta[1])<0.8";
-std::vector<ChannelSelection_t> SELECTION3
-{
-  {"eμ", "e#mu"     , "eu   && ptem > 0.3"},
-  {"eπ", "e#pi"     , "epi  && ptem > 0.3"},
-  {"μπ", "#mu#pi"   , "upi  && ptem > 0.3"},
-  {"ee", "ee"       , "ee   && ptem > 0.4"},
-  {"μμ", "#mu#mu"   , "uu   && ptem > 0.3"},
-  {"ππ", "#pi#pi"   , "pipi && ptem > 0.3"},
-  {"eK", "eK"       , "eK   && ptem > 0.0"},
-  {"πK", "#piK"     , "piK  && ptem > 0.3"},
-  {"μK", "#uK"      , "uK   && ptem > 0.3"},
-  {"KK", "KK"       , "KK   && ptem > 0.1"}   
-};
-
-
-std::vector<ChannelSelection_t> & DEFAULT_SELECTION=SELECTION;
-
-
-
 
 std::string to_string(time_t t, int TZ)
 {
@@ -1399,6 +1339,13 @@ void set_pid(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & 
   };
 };
 
+void set_kptem(std::vector<ScanPoint_t> & DATA, double kptem)
+{
+  for( auto & data : DATA)
+  {
+    data.tt->SetAlias("k_ptem",(std::to_string(kptem)+"*1").c_str());
+  };
+};
 
 
 std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & P, const std::string & sel)
@@ -1421,7 +1368,82 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   return R;
 }
 
-std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, const std::string & sel, const std::string & var, std::string gopt="")
+template<typename Iterator, typename Func>
+Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
+{
+  using ItemType = typename Iterator::value_type;
+  using Type = typename std::result_of<Func(ItemType)>::type;
+  Type chi2  = std::numeric_limits<Type>::max();
+  Iterator result=it_end;
+  for(auto it = it_begin; it!=it_end; ++it)
+  {
+    auto x = F(*it);
+    if( x < chi2 ) 
+    {
+      result = it;
+      chi2 = x;
+    }
+  }
+  return result;
+};
+
+template<typename Container, typename Func>
+typename Container::iterator find_best(Container & c, Func F)
+{
+  return find_best(std::begin(c), std::end(c), F);
+}
+
+std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::vector<ScanPoint_t> *> P, const std::string & var, const std::string & sel, std::string gopt="")
+{
+  auto c = new TCanvas;
+  int canvas_pos_x = 0;
+  int canvas_width_x = 1920*2/5.0*P.size();
+  int canvas_width_y = 1080*0.5;
+  static int canvas_pos_y = 0;
+  c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
+  canvas_pos_y+=canvas_width_y+60;
+  canvas_pos_y%=(1080*2);
+  c->SetWindowSize(canvas_width_x,canvas_width_y);
+  c->SetTitle(sel.c_str());
+  std::vector<std::vector<PointSelectionResult_t>> Result(P.size());
+  //find the Scan with bigest number of points
+  int nS = std::distance(P.begin(), std::max_element(P.begin(),P.end(),[](auto s1, auto s2){ return s1->size() < s2->size(); }));
+  std::vector<ScanPoint_t> & S = *P[nS];
+  c->Divide(S.size() ,1);
+
+  auto draw = [&](int s, int color) {
+    auto & scan = *P[s];
+    Result[s].resize(scan.size());
+    for(int i=0;i<scan.size();++i) {
+      int nc = i==nS ? 
+               1+i :
+               1+std::distance(S.begin(), find_best(S, [&scan,&i](const auto & p) { return  std::abs(p.W-scan[i].W); } ));
+      c->cd(nc);
+      auto & r       = Result[s][i]; //point result
+      auto & p       = scan[i];      //current point
+      p.tt->SetLineColor(s);
+      p.tt->SetMarkerColor(s);
+      if ( i == nS ) r.Ntt = p.tt->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+      else r.Ntt = p.tt->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
+      std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
+      p.tt->GetHistogram()->SetTitle(result_title.c_str());
+      if(p.gg) r.Ngg = p.gg->GetEntries();
+      r.name         = p.title;
+      r.root_name    = p.title;
+      r.tex_name     = p.title;
+      r.W            = p.W;
+      r.dW           = p.dW;
+      r.L            = p.L;
+    }
+  };
+  for(int s = 0; s < P.size(); ++s)
+  {
+    draw(s,s+1);
+  }
+  return Result;
+}
+
+std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, const std::string & var, const std::string & sel, std::string gopt="")
 {
   auto c = new TCanvas;
   int canvas_pos_x = 0;
@@ -1464,30 +1486,6 @@ std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const 
 };
 
 
-template<typename Iterator, typename Func>
-Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
-{
-  using ItemType = typename Iterator::value_type;
-  using Type = typename std::result_of<Func(ItemType)>::type;
-  Type chi2  = std::numeric_limits<Type>::max();
-  Iterator result=it_end;
-  for(auto it = it_begin; it!=it_end; ++it)
-  {
-    auto x = F(*it);
-    if( x < chi2 ) 
-    {
-      result = it;
-      chi2 = x;
-    }
-  }
-  return result;
-};
-
-template<typename Container, typename Func>
-typename Container::iterator find_best(Container & c, Func F)
-{
-  return find_best(std::begin(c), std::end(c), F);
-}
 
 ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
 {
@@ -1526,6 +1524,21 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
   }
   reference_point.effcor_error = 0;
   return result;
+};
+
+ChannelSelectionResult_t  fold(std::vector<std::vector<ChannelSelectionResult_t>> & SR, std::string name = "all")
+{
+  std::vector<ChannelSelectionResult_t> VSR;
+  for(const auto & vsr : SR) VSR.push_back(fold(vsr));
+  return fold(VSR);
+};
+
+ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & s1, const std::vector<ChannelSelectionResult_t>  & s2)
+{
+  std::vector<ChannelSelectionResult_t> VSR;
+  VSR.push_back(fold(s1));
+  VSR.push_back(fold(s2));
+  return fold(VSR);
 };
 
 void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
@@ -1967,7 +1980,7 @@ void set_color_and_line(TAttLine *obj, int index)
   obj->SetLineStyle(line[l]);
 }
 
-void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, const char * selection, std::string gopt)
+void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, std::string selection, std::string gopt)
 {
   auto  c = new TCanvas;
   int win_size=600;
@@ -1985,7 +1998,7 @@ void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, cons
       sp->tt->SetLineWidth(1);
       set_color_and_line(sp->tt, draw_index);
       c->cd(index+1);
-      sp->tt->Draw(ve.c_str(),selection, gopt.c_str());
+      sp->tt->Draw(ve.c_str(),selection.c_str(), gopt.c_str());
       auto h = sp->tt->GetHistogram();
       h->SetName(("h"+sp->title+std::to_string(index)).c_str());
       h->SetTitle((sp->title).c_str());
@@ -2006,13 +2019,61 @@ void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char *
   compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
 }
 
-void compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt, std::string H)
+TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0)
 {
+  std::cout << sel << std::endl;
   auto c = new TCanvas;
-  P1.tt->SetLineColor(kBlue);
-  P1.tt->Draw((var+">>"+H).c_str(), sel.c_str(),gopt.c_str());
-  P2.tt->SetLineColor(kRed);
-  P2.tt->Draw(var.c_str(), sel.c_str(),(gopt+"same").c_str());
+  P1.tt->SetLineColor(kRed);
+  P1.tt->SetLineWidth(2);
+  TH1 * h1;
+  TH1 * h2;
+  std::string name;
+  if(H!="") {
+    if(bin==0) name =">>"+H+"1";
+    else name = ">>H1("+std::to_string(bin)+")";
+  }
+  P1.tt->Draw((var+name).c_str(), sel.c_str(),gopt.c_str());
+  h1 = P1.tt->GetHistogram();
+  bin = h1->GetNbinsX();
+  double I1 =h1->Integral(); 
+  P2.tt->SetLineColor(kBlue);
+  P2.tt->SetLineWidth(2);
+  if(H!="") name=">>"+H+"2("+std::to_string(bin)+")";
+  P2.tt->Draw((var+name).c_str(), sel.c_str(),(gopt+"same").c_str());  
+  h2 = P2.tt->GetHistogram();
+  double I2 = h2->Integral();
+  h2->Scale(I1/I2);
+  h1->Draw();
+  h1->SetTitle(var.c_str());
+  h1->GetXaxis()->SetTitle(var.c_str());
+  h2->Draw("same");
+  return c;
+}
+TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0)
+{
+  std::string global_cut = SEL.common_cut;
+  std::string or_cut="(";
+  for(auto  it=SEL.sel.begin();it!=SEL.sel.end();++it)
+  {
+    if(it==SEL.sel.begin()) or_cut+="("+it->cut +")";
+    else or_cut+= "||("+it->cut+")";
+  }
+  or_cut+=")";
+  return compare2(P1,P2,var,global_cut+"&&"+or_cut,gopt,H,bin);
+}
+
+void make_compare(ScanPoint_t & P1, ScanPoint_t & P2, Selection & sel, int bin = 0)
+{
+  auto cmp = [&](std::string var) {
+    compare2(P1,P2,var,sel,"",var,bin)->SaveAs(("data_mc_"+var+".pdf").c_str());
+  };
+  cmp("p");
+  cmp("pt");
+  cmp("tof");
+  cmp("M2");
+  cmp("cos(theta)");
+  cmp("cos_theta_mis2");
+  cmp("ptem");
 }
 
  std::string test_replace(std::string particle_name_prefix, std::string selection_template, int track)
@@ -2039,7 +2100,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt")
     if(p.name=="") os << std::setw(5) << idx;
     else           os << std::setw(5) << p.name;
     os << std::setw(15) << p.L*1000 << std::setw(10) << 10 << std::setw(15) << p.W/MeV  << std::setw(15) << p.dW/MeV;
-    os << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
+    os << std::setw(10) << 1.306 << " " << std::setw(10) << 0.017;
     os << std::setw(10) << p.Ntt << std::setw(10) <<  1 << std::setw(10) << p.Ngg <<  std::setw(10) << p.effcor << "\n";
   }
   std::cout << os.str();
@@ -2051,7 +2112,7 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
 {
   save(sr,filename);
   char command[65536];
-  sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
+  sprintf(command, "taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
   system(command);
 }
 
@@ -2065,6 +2126,10 @@ void fit(const std::vector<PointSelectionResult_t>  & ps, std::string  filename=
   system(command);
 }
 
+void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="")
+{
+  fit(fold(sr),filename,title);
+}
 
 #include <TH1F.h>
 void find_optimal_depth(ScanPoint_t & sp, double kmin = 0, double kmax=100, double dk=0.1)
@@ -2095,15 +2160,24 @@ void show_depth(ScanPoint_t & sp, double k=58.6, double k0=-40)
   c->Divide(1,2);
   TTree * t = sp.tt;
   c->cd(1);
-  t->SetMarkerStyle(21);
-  t->SetMarkerColor(kBlue);
-  t->Draw("depth[0]:p[0]","depth[0]>0 && depth[0]<100 && abs(pid[0]) == 13");
-  t->SetMarkerStyle(22);
+  t->SetMarkerSize(1);
+  TLegend * leg = new TLegend(0.8,0.8,1.0,1.0);
+  t->SetMarkerStyle(7);
   t->SetMarkerColor(kRed);
+  t->Draw("depth[0]:p[0]","depth[0]>0 && depth[0]<100 && abs(pid[0]) == 13");
+  leg->AddEntry(t->GetHistogram(),"muon", "lp");
+  //t->SetMarkerStyle(21);
+  t->SetMarkerColor(kGreen);
   t->Draw("depth[0]:p[0]","depth[0]>0 && depth[0]<100 && abs(pid[0]) == 211", "same");
-  auto l  = new TLine(0.6, k0 + 0.6*k,  1.05, k0+1.05*k);
+  leg->AddEntry(t->GetHistogram(),"pion", "lp");
+  //t->SetMarkerStyle(21);
+  t->SetMarkerColor(kBlue);
+  t->Draw("depth[0]:p[0]","depth[0]>0 && depth[0]<100 && abs(pid[0]) == 11","same");
+  leg->AddEntry(t->GetHistogram(),"electron", "lp");
+  auto l  = new TLine(0.6, k0 + 0.6*k,  1.0, k0+1.0*k);
   l->SetLineWidth(3);
   l->Draw();
+  leg->Draw();
 
   //std::string mu = "depth[0]>0 && depth[0]<100 && abs(pid[0]) == 13 &&   depth[0]-p[0]*" + std::to_string(k) + " >= " + std::to_string(k0);
   //std::string pi = "depth[0]>0 && depth[0]<100 && abs(pid[0]) == 211 &&  depth[0]-p[0]*" + std::to_string(k) + " < " + std::to_string(k0);
@@ -2135,9 +2209,14 @@ void show_ep(ScanPoint_t & sp, std::string var = "Ep[0]", std::string cut = "", 
     t->Draw(var.c_str(),sel.c_str(),opt.c_str());
   };
   if( cut!="" ) cut+=" && ";
-  draw(var, cut + "abs(pid[0]) ==  11", opt +     "", kBlue,  21, 1);
-  draw(var, cut + "abs(pid[0]) ==  13", opt + "SAME", kRed,   21, 1);
-  draw(var, cut + "abs(pid[0]) == 211", opt + "SAME", kGreen-3, 21, 1);
+  TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  draw(var, cut + "abs(pid[0]) ==  11", opt +     "", kBlue,  21, 2);
+  l->AddEntry(t->GetHistogram(),"electron", "l");
+  draw(var, cut + "abs(pid[0]) ==  13", opt + "SAME", kRed,   21, 2);
+  l->AddEntry(t->GetHistogram(),"muon", "l");
+  draw(var, cut + "abs(pid[0]) == 211", opt + "SAME", kGreen-3, 21, 2);
+  l->AddEntry(t->GetHistogram(),"pion", "l");
+  l->Draw();
 };
 
 void find_Ep(ScanPoint_t &sp, int Nbin=0, double parmin=0, double parmax=0)
