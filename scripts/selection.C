@@ -41,6 +41,7 @@
 #include <TH1.h>
 #include <THStack.h>
 #include <TLegend.h>
+#include <TLatex.h>
 #include <TLine.h>
 #include <TTree.h>
 
@@ -650,8 +651,16 @@ std::string sub(std::string s, std::string regexpr, std::string substr)
   return result;
 };
 
+char MY_FORMAT_BUF[65535];
+template<typename...Ts>
+std::string myfmt(std::string format, Ts...ts)
+{
+  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
+  return std::string(MY_FORMAT_BUF);
+};
 
-void set_alias(TTree * tt, double W)
+
+void set_alias(TTree * tt, double W, double L=1.0)
 {
   tt->SetAlias("MM","(p[0]+p[1])**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("Epi0","sqrt(p[0]**2 + 0.1396**2)");
@@ -669,6 +678,7 @@ void set_alias(TTree * tt, double W)
 
   tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
 
+  tt->SetAlias("lum",myfmt("%6.2f*1",L).c_str());
   char Eb[1024];
   sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);
@@ -693,18 +703,6 @@ void set_alias(TTree * tt, double W)
     set_alias(tt,"Mrho_cut", i, "0.5 < Mrho[#] && Mrho[#] < 1.0");
   }
 
-  /*
-  //Now setup particle id's
-  for(int track=0;track<2;++track)
-  {
-    set_alias(tt, "e",   track, "0.8 < Ep[#] && Ep[#]<1.05 && chi2_dedx_e[#]<2 && abs(delta_tof_e[#])<0.2");
-    set_alias(tt, "u",   track, "!e# && 0.1 < E[#] && E[#] < 0.3 && depth[#]>0 && chi2_dedx_mu[#] < 5  && abs(delta_tof_mu[#]) < 0.3 && Ep[#]<0.8");
-    set_alias(tt, "pi",  track, "!(e#||u#) && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_pi[#] < 5 && abs(delta_tof_pi[#])<0.3");
-    set_alias(tt, "K",   track, "!(e#||u#||pi#) && 0.8 < p[#] && p[#] < 1.05 && Ep[#]<0.6 && chi2_dedx_K[#] < 3 && abs(delta_tof_K[#])<0.3");
-    set_alias(tt, "rho", track, "pi# && Mrho_cut# && Mpi0[#]>0.1128 && Mpi0[#]<0.1464");
-  }
-  */
-
   //define channels
   auto make_xy  = [](TTree * tt,  std::string x, std::string y)
   {
@@ -716,25 +714,11 @@ void set_alias(TTree * tt, double W)
     for (auto & y : {"e","u", "pi", "K","rho"} )
       make_xy(tt, x,y);
 
-  //auto make_xx  = [](TTree * tt,  std::string x, std::string extra_cut = "")
-  //{
-  //  auto alias = sub("x0 && x1", "x", x);
-  //  tt->SetAlias((x+x).c_str(), (alias + (extra_cut == "" ? "" : "&& (" + extra_cut + ")")).c_str() );
-  //};
-
-
-
   tt->SetAlias("pil", "(pi0 && (u1 || e1 ))");
   tt->SetAlias("lpi", "(pi1 && (u0 || e0 ))");
 
-  //tt->SetAlias("Xrho",   "!rho0 && (e0 || u0 || pi0 || K0) && rho1 && !(e1 || u1 || K0)");
-  //tt->SetAlias("rhoX",   "!rho1 && (e1 || u1 || pi1 || K1) && rho0 && !(e0 || u0 || K0)");
-  //tt->SetAlias("Xrho",   "!rho0 && rho1");
-  //tt->SetAlias("rhoX",   "!rho1 && rho0");
   tt->SetAlias("Xrho",   "((!rho0 && rho1)||(!rho1 && rho0))");
-//  tt->SetAlias("rhorho", "!(e0 || u0 || K0) &&  !(e1 || u1 || K1) && Mpi0[0]>0.1128 && Mpi0[0]<0.1464 && Mpi0[1]>0.1128 && Mpi0[1]<0.1464  && pi0 && pi1  && ((Mrho_cut1 && Mrho_cut2) || (Mrho_cut1 && Mrho_cut3))");
   tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
-  //tt->SetAlias("pipi0pipi0_cut","Nc==2 && Npi0==2 && pipi && ptem>0.6");
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
 }
 
@@ -779,7 +763,7 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     //change chain names
     tt->SetName(("tt"+std::to_string(index)).c_str());
     gg->SetName(("gg"+std::to_string(index)).c_str());
-    set_alias(tt,sp.W);
+    set_alias(tt,sp.W,sp.L);
     sp.tt = tt;
     sp.gg = gg;
   }
@@ -821,7 +805,7 @@ std::vector<ScanPoint_t> read_data2(std::string data_dir, std::string privalov_r
     //change chain names
     tt->SetName(("tt"+std::to_string(index)).c_str());
     gg->SetName(("gg"+std::to_string(index)).c_str());
-    set_alias(tt,sp.W);
+    set_alias(tt,sp.W,sp.L);
     sp.tt = tt;
     sp.gg = gg;
   }
@@ -846,7 +830,7 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
     //change chain names
     tt->SetName(("tt"+std::to_string(index)).c_str());
     gg->SetName(("gg"+std::to_string(index)).c_str());
-    set_alias(tt,sp.W);
+    set_alias(tt,sp.W,sp.L);
     sp.tt = tt;
     sp.gg = gg;
   }
@@ -878,7 +862,7 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R
           P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
           P.back().tt = get_chain("tt",("tt"+std::to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
           P.back().gg = get_chain("gg",("gg"+std::to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
-          set_alias(P.back().tt, P.back().W);
+          set_alias(P.back().tt, P.back().W,1.0);
         }
       }
       else
@@ -1106,7 +1090,7 @@ void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const cha
   std::string title = std::string("mc_data: ") + selection + " cut= " + cut;
   TCanvas * c = new TCanvas("data_mc_diff", title.c_str());
   TChain * chain = new TChain("data_mc_diff","data_mc_diff");
-  set_alias((TTree*)chain, MTAU*2);
+  set_alias((TTree*)chain, MTAU*2,1);
   for(int i=1;i<P.size();++i) chain->Add((TChain*)P[i].tt);
   std::string sel(selection);
   sel+=">>h1(";
@@ -1348,7 +1332,7 @@ void set_kptem(std::vector<ScanPoint_t> & DATA, double kptem)
 };
 
 
-std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & P, const std::string & sel)
+std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & P, const std::string  sel)
 {
   std::vector<PointSelectionResult_t> R(P.size());
   for(int i=0;i<P.size();++i)
@@ -2019,12 +2003,12 @@ void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char *
   compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
 }
 
-TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0)
+TCanvas*  compare2(TTree * t1, TTree * t2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xaxis_title="")
 {
-  std::cout << sel << std::endl;
+  //std::cout << sel << std::endl;
   auto c = new TCanvas;
-  P1.tt->SetLineColor(kRed);
-  P1.tt->SetLineWidth(2);
+  t1->SetLineColor(kRed);
+  t1->SetLineWidth(2);
   TH1 * h1;
   TH1 * h2;
   std::string name;
@@ -2032,24 +2016,38 @@ TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::str
     if(bin==0) name =">>"+H+"1";
     else name = ">>H1("+std::to_string(bin)+")";
   }
-  P1.tt->Draw((var+name).c_str(), sel.c_str(),gopt.c_str());
-  h1 = P1.tt->GetHistogram();
+  t1->Draw((var+name).c_str(), sel.c_str(),gopt.c_str());
+  h1 = (TH1*)t1->GetHistogram()->Clone(sub(name, R"([()\*])","_").c_str());
   bin = h1->GetNbinsX();
   double I1 =h1->Integral(); 
-  P2.tt->SetLineColor(kBlue);
-  P2.tt->SetLineWidth(2);
+  t2->SetLineColor(kBlue);
+  t2->SetLineWidth(2);
   if(H!="") name=">>"+H+"2("+std::to_string(bin)+")";
-  P2.tt->Draw((var+name).c_str(), sel.c_str(),(gopt+"same").c_str());  
-  h2 = P2.tt->GetHistogram();
+  t2->Draw((var+name).c_str(), sel.c_str(),(gopt+"same").c_str());  
+  h2 = (TH1*)t2->GetHistogram()->Clone(sub(name, R"([()\*])","_").c_str());
+  double prob = h1->KolmogorovTest(h2);
+  std::cout << var << ": " << prob << std::endl;
   double I2 = h2->Integral();
   h2->Scale(I1/I2);
   h1->Draw();
   h1->SetTitle(var.c_str());
-  h1->GetXaxis()->SetTitle(var.c_str());
+  if(title=="") title = var;
+  if(xaxis_title=="") xaxis_title = var;
+  h1->SetTitle(title.c_str());
+  h1->GetXaxis()->SetTitle(xaxis_title.c_str());
   h2->Draw("same");
+  TLatex *  l = new TLatex(0.6,0.95,("prob_{Kolmg} = "+ myfmt("%4.2f",prob)).c_str());
+  l->SetNDC(kTRUE);
+  l->Draw();
   return c;
+};
+
+TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xtitle="")
+{
+  return compare2(P1.tt, P2.tt, var, sel,gopt, H, bin,title, xtitle);
 }
-TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0)
+
+TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
 {
   std::string global_cut = SEL.common_cut;
   std::string or_cut="(";
@@ -2059,21 +2057,66 @@ TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Se
     else or_cut+= "||("+it->cut+")";
   }
   or_cut+=")";
-  return compare2(P1,P2,var,global_cut+"&&"+or_cut,gopt,H,bin);
+  return compare2(P1,P2,var,global_cut+"&&"+or_cut,gopt,H,bin,title, xtitle);
 }
 
+TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xtitle="")
+{
+  if(S1.empty() || S2.empty()) return nullptr;
+  std::string global_cut = SEL.common_cut;
+  std::string or_cut="(";
+  for(auto  it=SEL.sel.begin();it!=SEL.sel.end();++it)
+  {
+    if(it==SEL.sel.begin()) or_cut+="("+it->cut +")";
+    else or_cut+= "||("+it->cut+")";
+  }
+  or_cut+=")";
+  std::string cut = global_cut+"&&"+or_cut;
+  auto make_tree = [](TTree * tt) -> TTree*  {
+    TTree * tree = tt->CloneTree(0); //copy structure
+    tt->GetListOfClones()->Remove(tree); //detach new tree from initial one
+    tree->ResetBranchAddresses(); //reset brunch address
+    return tree;
+  };
+  TTree * tree1 = make_tree(S1[0].tt);
+  TTree * tree2 = make_tree(S2[0].tt);
+  auto fill_tree = [](TTree* tree, Scan_t & S, std::string cut)
+  {
+    for(auto & s : S) {
+      auto t = s.tt->CopyTree(cut.c_str());
+      t->CopyAddresses(tree);
+      for(Long64_t i = 0; i < t->GetEntriesFast(); ++i) {
+        if(t->GetEntry(i) < 0) break;
+        tree->Fill();
+      }
+    }
+  };
+  fill_tree(tree1,S1,cut);
+  fill_tree(tree2,S2,cut);
+  return compare2(tree1, tree2, var, "", gopt,H,bin,title);
+};
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  make_compare
+ *  Description:  Compare two data samples according to Selection. Histogram will have
+ *  number of bins "bin". If bin==0 then autobinning is used.
+ * =====================================================================================
+ */
 void make_compare(ScanPoint_t & P1, ScanPoint_t & P2, Selection & sel, int bin = 0)
 {
-  auto cmp = [&](std::string var) {
-    compare2(P1,P2,var,sel,"",var,bin)->SaveAs(("data_mc_"+var+".pdf").c_str());
+  auto cmp = [&](std::string var,std::string title="", std::string xtitle="") {
+    compare2(P1,P2,var,sel,"",var,bin, title,xtitle)->SaveAs(("data_mc_"+var+".pdf").c_str());
   };
-  cmp("p");
-  cmp("pt");
-  cmp("tof");
-  cmp("M2");
-  cmp("cos(theta)");
-  cmp("cos_theta_mis2");
-  cmp("ptem");
+  cmp("p","p","GeV");
+  cmp("pt","p_{t}", "GeV");
+  cmp("tof","TOF", "ns");
+  cmp("M2", "M_{inv}^{2}","GeV^{2}");
+  cmp("cos(theta)", "cos#theta", "cos#theta");
+  cmp("cos_theta_mis2", "cos#theta_{mis}", "cos#theta_{mis}");
+  cmp("ptem","ptem","ptem");
+  cmp("Mpi0", "M_{#pi^{0}}", "GeV");
+  cmp("Mrho", "M_{#rho}", "GeV");
 }
 
  std::string test_replace(std::string particle_name_prefix, std::string selection_template, int track)
