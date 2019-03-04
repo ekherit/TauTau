@@ -89,7 +89,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.1); //GeV
 
   declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0.1); //GeV
-  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.5); //GeV
+  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.2); //GeV
 
 
   declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO               = 0.05);
