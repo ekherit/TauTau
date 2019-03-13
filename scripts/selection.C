@@ -1762,11 +1762,16 @@ void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int f
   print(sr,0);
 }
 
-
 void print(const  std::vector<ChannelSelectionResult_t> & SR )
 {
   PrintConfig_t cfg;
   print_Ntt(SR,cfg);
+};
+
+std::string print_tex(const std::vector<PointSelectionResult_t> & SR)
+{
+  std::string s;
+  return s;
 };
 
 ChannelSelectionResult_t new_select(const std::vector<ScanPoint_t> & P, const ChannelSelection_t & S, std::string extra_cut="")

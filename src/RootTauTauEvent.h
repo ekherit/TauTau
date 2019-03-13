@@ -30,15 +30,6 @@
 //        Class:  RootEvent
 //  Description:  Main event information supposed to used for selection
 // =====================================================================================
-
-enum CHANNEL
-{
-   EE  =  0,  MUE  =  10,  KE  =  20,
-   EMU =  1,  MUMU =  11,  KMU =  21,
-   EPI =  2,  MUPI =  12,  KPI =  22,
-   EK  =  3,  MUK  =  13,  KK  =  23 
-};
-
 class RootTauTauEvent : public RootTuple
 {
   public:

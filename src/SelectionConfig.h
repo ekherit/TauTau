@@ -49,6 +49,8 @@ struct SelectionConfig
 
   double MIN_TOF;
   double MAX_TOF;
+
+  double DELTA_MJPSI;
   //double EMC_ENDCUP_MIN_COS_THETA;
   //double EMC_ENDCUP_MAX_COS_THETA;
   //double EMC_ENDCUP_MIN_ENERGY;

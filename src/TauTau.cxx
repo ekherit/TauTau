@@ -74,8 +74,8 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 {
   declareProperty("CENTER_MASS_ENERGY"         , cfg.CENTER_MASS_ENERGY         = 1.777*2); //GeV
 
-  declareProperty("MIN_CHARGED_TRACKS"         , cfg.MIN_CHARGED_TRACKS         = 2); 
-  declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 2); 
+  declareProperty("MIN_CHARGED_TRACKS"         , cfg.MIN_CHARGED_TRACKS         = 2);
+  declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 6);
 
   declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z                   = 10.0); //cm
   declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO                 = 1.0); //cm
@@ -100,6 +100,8 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 
   declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 2.5);
   declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 5.5);
+
+  declareProperty("DELTA_MJPSI"                , cfg.DELTA_MJPSI                   = 0.2);
 
 
   //good netural tracks
@@ -214,6 +216,7 @@ StatusCode TauTau::execute()
   Tracker::Vector  central_tracks = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
   Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks, cfg.MIN_EMC_ENERGY_FOR_CHARGED);
   Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(cfg.MIN_EMC_ENERGY_FOR_NEUTRAL);
+  Tracker::Vector Tgn             = tracker.GetGoodNeutralTracks();
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
   fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
@@ -222,7 +225,7 @@ StatusCode TauTau::execute()
   fEvent.Enmin     = tracker.MinNeutralTracksEnergy();
   fEvent.Enmax     = tracker.MaxNeutralTracksEnergy();
 
-  //TAU TAU SELECTION
+  //TAU TAU SELECTION and chi_c1 -> Jpsi gamma selection
   if(
       Tc.size() == central_tracks.size()  //all central tracks has energy deposite in EMS
     &&
@@ -235,11 +238,12 @@ StatusCode TauTau::execute()
         || Tc.size() == 6 //till 3 charged particle decay for each tau
       ) 
     && 
-      (    Tn.size() == 0 
-        || Tn.size() == 2 
-        || Tn.size() == 4 
-        || Tn.size() == 6 
-        || Tn.size() == 8 //till 2pi0 for each tau decay
+      (     Tn.size() == 0 
+        || Tgn.size() == 1
+        || Tgn.size() == 2 
+        || Tgn.size() == 4 
+        || Tgn.size() == 6 
+        || Tgn.size() == 8 //till 2pi0 for each tau decay
       )
     )
   {
@@ -250,7 +254,7 @@ StatusCode TauTau::execute()
     fEvent.Pid.init();
 
     std::vector<HepLorentzVector> Pc = GetMdcLorentzVector(Tc); //lorentz vector for charged tracks (electron hypoteza)
-    std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tn);
+    std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tgn);
 
     HepLorentzVector Psum = GetTotalFourMomentum(Pc);
     Hep3Vector p3sum      = GetTotalMomentum(Pc);
@@ -282,61 +286,69 @@ StatusCode TauTau::execute()
     fEvent.lambda2 = V[1];
     fEvent.lambda3 = V[2];
 
-    //find best pi0 combination
-    //create combination list
-    typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
-    typedef std::vector< comb_t > comb_list_t;
-    //std::vector<HepLorentzVector*> 
-    //comb_list_t pi0_cmb_list;
-    //make_unique_pairs(Pn.begin(),Pn.end(),pi0_cmb_list);
-    comb_list_t pi0_cmb_list = make_combination_list(Pn); 
-    //loop over all combinations
-    comb_list_t::iterator best_comb=pi0_cmb_list.begin();
-    double chi2_mass=1e100;
-    for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
+    if (Tgn.size() % 2 == 0)
     {
-      double chi2=0;
-      for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
+      //find best pi0 combination
+      //create combination list
+      typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
+      typedef std::vector< comb_t > comb_list_t;
+      //std::vector<HepLorentzVector*> 
+      //comb_list_t pi0_cmb_list;
+      //make_unique_pairs(Pn.begin(),Pn.end(),pi0_cmb_list);
+      comb_list_t pi0_cmb_list = make_combination_list(Pn); 
+      //loop over all combinations
+      comb_list_t::iterator best_comb=pi0_cmb_list.begin();
+      double chi2_mass=1e100;
+      for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
       {
-        //calculate invariant mass
-        double m = (*(it_pair->first) +  *(it_pair->second)).mag();
-        //add to chi square
-        chi2+=pow(m-PI0_MASS,2.0);
-      }
-      if( chi2 < chi2_mass ) 
-      {
-        chi2_mass = chi2;
-        best_comb = it;
-      }
-    }
-    fEvent.npi0 = Pn.size()/2;
-    fEvent.Nrho = fEvent.npi0*Tc.size();
-    if(pi0_cmb_list.size()!=0)
-    {
-      int idx=0;
-      for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
-      {
-        double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
-        fEvent.Mpi0[idx] = m;
-        select &= fabs(m - PI0_MASS) <  0.03; //selection of the pi0
-        //now create all combination to tie pi0 with charged tracks
-        for(int i = 0; i<Tc.size(); ++i)
+        double chi2=0;
+        for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
         {
-          //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-          HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
-          double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
-          fEvent.Mrho[idx*Tc.size()+i] = Mrho;
+          //calculate invariant mass
+          double m = (*(it_pair->first) +  *(it_pair->second)).mag();
+          //add to chi square
+          chi2+=pow(m-PI0_MASS,2.0);
         }
-        idx++;
+        if( chi2 < chi2_mass ) 
+        {
+          chi2_mass = chi2;
+          best_comb = it;
+        }
+      }
+      fEvent.npi0 = Pn.size()/2;
+      fEvent.Nrho = fEvent.npi0*Tc.size();
+      if(pi0_cmb_list.size()!=0)
+      {
+        int idx=0;
+        for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
+        {
+          double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
+          fEvent.Mpi0[idx] = m;
+          select &= fabs(m - PI0_MASS) <  0.03; //selection of the pi0
+          //now create all combination to tie pi0 with charged tracks
+          for(int i = 0; i<Tc.size(); ++i)
+          {
+            //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
+            HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
+            double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
+            fEvent.Mrho[idx*Tc.size()+i] = Mrho;
+          }
+          idx++;
+        }
+      }
+      select &=( cfg.MIN_PTEM < fEvent.ptem  && fEvent.ptem   < cfg.MAX_PTEM);
+      for(int i=0;i<Tc.size();++i)
+      {
+        select &= ( cfg.MIN_MOMENTUM             < fEvent.T.p[i]      && fEvent.T.p[i]      < cfg.MAX_MOMENTUM);
+        select &= ( cfg.MIN_TRANSVERSE_MOMENTUM  < fEvent.T.pt[i]     && fEvent.T.pt[i]     < cfg.MAX_TRANSVERSE_MOMENTUM);
+        select &= ( cfg.MIN_EP_RATIO             < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < cfg.MAX_EP_RATIO);
+        select &= ( cfg.MIN_TOF                  < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < cfg.MAX_TOF);
       }
     }
-    select &=( cfg.MIN_PTEM < fEvent.ptem  && fEvent.ptem   < cfg.MAX_PTEM);
-    for(int i=0;i<Tc.size();++i)
+    if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
     {
-      select &= ( cfg.MIN_MOMENTUM             < fEvent.T.p[i]      && fEvent.T.p[i]      < cfg.MAX_MOMENTUM);
-      select &= ( cfg.MIN_TRANSVERSE_MOMENTUM  < fEvent.T.pt[i]     && fEvent.T.pt[i]     < cfg.MAX_TRANSVERSE_MOMENTUM);
-      select &= ( cfg.MIN_EP_RATIO             < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < cfg.MAX_EP_RATIO);
-      select &= ( cfg.MIN_TOF                  < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < cfg.MAX_TOF);
+      double Mjpsi = fEvent.M2 > 0 ? sqrt(fEvent.M2) : 0;
+      select &= ( fabs(Mjpsi - JPSI_MASS) < 0.2 );
     }
     if(select)
     {
@@ -350,11 +362,12 @@ StatusCode TauTau::execute()
   }
 SKIP_TAUTAU:
   //GAMMA GAMMA LUMINOCITY SELECTION
-  fGG.N0 = Tn.size();
+  fGG.N0 = Tgn.size();
   fGG.Nq = Tc.size();
   if
   ( 
-                2 <= fGG.N0 
+       Tgn.size() == Tn.size()
+        &&      2 <= fGG.N0 
         && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
         && fGG.Nq <= fGG.CHARGED_TRACKS_NUMBER
   )

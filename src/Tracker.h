@@ -29,8 +29,6 @@
 #include <list>
 #include <vector>
 #include <limits>
-//#include <type_traits>
-//
 #include <cassert>
 
 struct Tracker
@@ -69,18 +67,48 @@ struct Tracker
   long GetNtrackTotal(void)    { return  evtRecEvent->totalTracks(); };
 
   template<typename Container>
-  Container GetNeutralTracks(double Emin)
-  {
-    Container result;
-    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+    Container GetNeutralTracks(double Emin)
     {
-      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
-      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
-      RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      if(emcTrk->energy() > Emin) result.push_back(*itTrk);
+      Container result;
+      for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++) {
+        EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+        if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+        RecEmcShower *emcTrk = (*itTrk)->emcShower();
+        if(emcTrk->energy() > Emin) result.push_back(*itTrk);
+      }
+      return result;
     }
-    return result;
-  }
+
+  template<typename Container>
+    Container GetGoodNeutralTracks(void)
+    {
+      Container input = GetNeutralTracks(0.025); //Get preliminary neutral tracks
+      Container result;
+      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
+        assert((*it)->isEmcShowerValid());
+        RecEmcShower *emcTrk = (*it)->emcShower();
+        double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+        double E  =  emcTrk->energy();
+        double t  =  emcTrk->time();
+        double angle = 180/(CLHEP::pi) * AngleToCloseCharged(emcTrk);
+        bool hit_barrel = (c < 0.8);
+        bool hit_endcup = (0.86 <c) && (c < 0.92);
+        //barrel and endcup calorimeters have different energy threshold
+        bool barrel_good_track = hit_barrel && (E > 0.025);
+        bool endcup_good_track = hit_endcup && (E > 0.050);
+        bool good_time = 0 < t && t < 14;
+        bool no_close_charged = angle > 20;
+        if(good_time 
+            && 
+            (barrel_good_track || endcup_good_track) 
+            && 
+            no_close_charged
+          ) {
+          result.push_back(*itTrk);
+        }
+      }
+      return result;
+    }
 
   //minimum and maximum neutral tracks energy of all reconstructed tracks
   double MaxNeutralTracksEnergy(void)
@@ -96,6 +124,33 @@ struct Tracker
     }
     return Emax;
   };
+
+  inline double AngleToCloseCharged(RecEmcShower * emcTrk)
+  {
+    Hep3Vector emcpos(emcTrk->x(), emcTrk->y(), emcTrk->z());
+    double dthe = 200.;
+    double dphi = 200.;
+    double dang = 200.; 
+    for( int j = 0; j< evtRecEvent->totalCharged(); j++) {
+      EvtRecTrackIterator itChargedTrk=evtRecTrkCol->begin() + j;
+      if(!(*itChargedTrk)->isExtTrackValid()) continue;
+      RecExtTrack *extTrk = (*itChargedTrk)->extTrack();
+      if(extTrk->emcVolumeNumber() == -1) continue;
+      Hep3Vector extpos = extTrk->emcPosition();
+      double angd = extpos.angle(emcpos);
+      double thed = extpos.theta() - emcpos.theta();
+      double phid = extpos.deltaPhi(emcpos);
+      thed = fmod(thed+CLHEP::twopi+CLHEP::twopi+pi, CLHEP::twopi) - CLHEP::pi;
+      phid = fmod(phid+CLHEP::twopi+CLHEP::twopi+pi, CLHEP::twopi) - CLHEP::pi;
+      if(angd < dang) {
+        dang = angd;
+        dthe = thed;
+        dphi = phid;
+      }
+      if(dang>=200) continue;
+    }
+    return dang;
+  }
 
   double MinNeutralTracksEnergy(void)
   {
@@ -237,3 +292,4 @@ inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const dou
   }
   return result;
 }
+
