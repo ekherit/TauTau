@@ -10,8 +10,11 @@ parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to co
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
 parser.add_argument('--config', default='')
+parser.add_argument('--W', help='c.m. energy in filename')
+
 
 cfg = parser.parse_args()
+
 
 template = """#include "$ROOTIOROOT/share/jobOptions_ReadRec.txt"
 #include "$VERTEXFITROOT/share/jobOptions_VertexDbSvc.txt"
@@ -160,7 +163,7 @@ for key, flist in input_file_dict.items():
         files=files+'"'+os.path.abspath(f)+'",\n'
     files=files[:-2]
     W = 1.77686*2
-    if False:
+    if cfg.W:
       W=float(key)
     else:
       run = int(key)
