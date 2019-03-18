@@ -82,7 +82,7 @@ struct Tracker
   template<typename Container>
     Container GetGoodNeutralTracks(void)
     {
-      Container input = GetNeutralTracks(0.025); //Get preliminary neutral tracks
+      Container input = GetNeutralTracks<Container>(0.025); //Get preliminary neutral tracks
       Container result;
       for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
         assert((*it)->isEmcShowerValid());
@@ -104,7 +104,7 @@ struct Tracker
             && 
             no_close_charged
           ) {
-          result.push_back(*itTrk);
+          result.push_back(*it);
         }
       }
       return result;
