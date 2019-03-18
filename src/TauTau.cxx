@@ -346,7 +346,7 @@ StatusCode TauTau::execute()
     } else if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
     {
       double Mjpsi = fEvent.M2 > 0 ? sqrt(fEvent.M2) : 0;
-      select &= ( fabs(Mjpsi - JPSI_MASS) < 0.5 );
+      select &= ( fabs(Mjpsi - JPSI_MASS) < 0.02 );
     } else  {
       select = false;
     }
