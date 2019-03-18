@@ -239,11 +239,11 @@ StatusCode TauTau::execute()
       ) 
     && 
       (     Tn.size() == 0 
-        || Tgn.size() == 1
+        || Tgn.size() == 1 //this is for eta_c2  -> J/psi gamma
         || Tgn.size() == 2 
         || Tgn.size() == 4 
-        || Tgn.size() == 6 
-        || Tgn.size() == 8 //till 2pi0 for each tau decay
+      //  || Tgn.size() == 6 
+      //  || Tgn.size() == 8 //till 2pi0 for each tau decay
       )
     )
   {
@@ -286,8 +286,7 @@ StatusCode TauTau::execute()
     fEvent.lambda2 = V[1];
     fEvent.lambda3 = V[2];
 
-    if (Tgn.size() % 2 == 0)
-    {
+    if (Tgn.size() % 2 == 0) {
       //find best pi0 combination
       //create combination list
       typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
@@ -329,7 +328,7 @@ StatusCode TauTau::execute()
           for(int i = 0; i<Tc.size(); ++i)
           {
             //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-            HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS); //was error I should use PI+mass
+            HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS);
             double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
             fEvent.Mrho[idx*Tc.size()+i] = Mrho;
           }
@@ -344,11 +343,12 @@ StatusCode TauTau::execute()
         select &= ( cfg.MIN_EP_RATIO             < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < cfg.MAX_EP_RATIO);
         select &= ( cfg.MIN_TOF                  < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < cfg.MAX_TOF);
       }
-    }
-    if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
+    } else if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
     {
       double Mjpsi = fEvent.M2 > 0 ? sqrt(fEvent.M2) : 0;
       select &= ( fabs(Mjpsi - JPSI_MASS) < 0.5 );
+    } else  {
+      select = false;
     }
     if(select)
     {
