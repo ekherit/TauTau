@@ -117,7 +117,7 @@ void doall(Selection & S, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t
   make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
 };
 
-void select() 
+void select7() 
 {
   set_pid(DATA,PID);
   set_kptem(DATA,1);
