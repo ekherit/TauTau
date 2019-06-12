@@ -87,6 +87,14 @@ void print_utf(int width, const char * s)
   print_utf(width, std::string(s));
 };
 
+template<typename...Ts>
+std::string myfmt(std::string format, Ts...ts)
+{
+  static char MY_FORMAT_BUF[65535];
+  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
+  return std::string(MY_FORMAT_BUF);
+};
+
 /* ========================================================================================== */
 
 //Get recursive file list
@@ -651,13 +659,6 @@ std::string sub(std::string s, std::string regexpr, std::string substr)
   return result;
 };
 
-char MY_FORMAT_BUF[65535];
-template<typename...Ts>
-std::string myfmt(std::string format, Ts...ts)
-{
-  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
-  return std::string(MY_FORMAT_BUF);
-};
 
 
 void set_alias(TTree * tt, double W, double L=1.0)
@@ -1810,6 +1811,9 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   )" << "\n";
   os << R"(\centering \textbf{ \Large {)" << ResultTitle << R"(}}\\)" << "\n";
   os << R"(\today)" << "\n";
+
+
+
   os << R"(\begin{table}[h!])" << "\n";
   os << R"(\caption{Количество отобранных $\tau$ пар})" << "\n";
   os << R"(\centering)" << "\n";
@@ -1982,6 +1986,126 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   os << R"(\end{table})" << "\n";
   if(fit_file!="")
   {
+    auto total = fold(SR);
+    os << R"(\begin{table}[h!])" << "\n";
+    os << R"(\caption{Количество отобранных $\tau$ пар})" << "\n";
+    os << R"(\centering)" << "\n";
+    os << R"(\resizebox{\textwidth}{!}{)" << "\n";
+    os << R"(\begin{tabular}[h!]{)";
+    os << "c";
+    for(int i=0; i< SR[0].Points.size(); ++i) os << "r";
+    os << "|"<<"r}" << R"(\\)";
+    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    int col_width=5;
+
+    auto make_row = [&col_width](
+        std::ostream & os, 
+        const ChannelSelectionResult_t & sr, 
+        std::string title, 
+        std::function<std::string(const PointSelectionResult_t & p)> Data,
+        std::function<std::string(void)> LastColumn = [](){ return ""; })
+    {
+      os << std::setw(20) << title;
+      for( auto & p : sr.Points) {
+        os << " & ";
+        os << std::setw(col_width) << Data(p);
+      }
+      os << " & ";
+      os << LastColumn();
+      os << R"(\\)" << "\n";
+    };
+
+    //os << std::setw(20) << "channel";
+    //for( auto & p : SR[0].Points) {
+    //  std::string name = R"(\myCF{)" + p.name + R"(})";
+    //  os << " & " << std::setw(col_width) << name;
+    //}
+    //os << std::setw(col_width) << " & " << "total"  << R"(\\ \hline)";
+    //os << "\n";
+
+    //os << std::setw(20) << R"($\int L$, $pb^{-1}$)";
+    //for( auto & p : SR[0].Points) {
+    //  os << " & ";
+    //  char buf[1024];
+    //  sprintf(buf,"%5.1f", p.L);
+    //  os << std::setw(col_width) << buf;
+    //}
+    //os << " & ";
+    //{
+    //  char buf[1024];
+    //  sprintf(buf,"%5.1f", (SR[0].L));
+    //  os << std::setw(col_width) << buf;
+    //}
+    //os<< R"(\\ \hline)" <<  "\n";
+
+    //os << std::setw(20) << R"($E-M_{\tau}^{\text{PDG}}$, MeV)";
+    //for( auto & p : SR[0].Points) {
+    //  os << " & ";
+    //  char buf[1024];
+    //  sprintf(buf,"%3.2f", (p.W*0.5 - MTAU)*1000);
+    //  os << std::setw(col_width) << R"(\myR{)" <<  buf << "}";
+    //}
+    //os << " & " << R"(\\ \hline)" <<  "\n";
+
+    make_row(os, total, 
+        R"(point)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myCF{%s})", p.name.c_str()); },
+        [&total]() { return "Total"; }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+
+    //print luminosity
+    make_row(os, total, 
+        R"($\int L, pb^{-1}$)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.L); },
+        [&total]() { return myfmt(R"(%4.1f)", total.L); }
+        );
+
+    //print energy for point
+    make_row(os, total, 
+        R"($E-M_{\tau}, MeV)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.W*0.5 - MTAU)*1000); }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+    os << R"(\renewcommand{\arraystretch}{1.1})" << "\n";
+    for (auto & sr : SR) {
+      std::string title = sr.title; 
+      title = sub(title,"μ",R"(\mu)");
+      title = sub(title,"π",R"(\pi)");
+      title = sub(title,"ρ",R"(\rho)");
+      title = "$ " + title + " $";
+      make_row(os, sr, title,  
+        [](const PointSelectionResult_t & p) { return myfmt(R"(%d)", p.Ntt); },
+        [&sr]() { return R"(\textit{)"+std::to_string(sr.Ntt)+"}"; });
+    }
+    os << R"(\hline)" << "\n";
+
+    //print total event number
+    make_row(os, total, 
+        "all", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\textbf{%d})", p.Ntt); },
+        [&total]() { return R"(\textbf{)"+std::to_string(total.Ntt)+"}"; }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+    //print epsilon
+    make_row(os, total, 
+        R"($\varepsilon$, \%)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.eps*100, p.eps_error*100); });
+
+    //print epsilon correction
+    make_row(os, total, 
+        R"($\epsilon^{cor}$)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.effcor, p.effcor_error); });
+
+    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    os << R"(\end{tabular})" << "\n";
+    os << "}\n";
+    os << R"(\end{table})" << "\n";
+
+
     os << R"(\begin{figure}[h!])" << "\n";
     os << R"(\centering)" << "\n";
     os << R"(\includegraphics[width=0.8\textwidth]{)" << fit_file << "}\n";
