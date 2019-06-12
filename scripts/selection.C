@@ -2541,7 +2541,7 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
   std::string basename = sub(filename,R"(\..+)", "");
   std::string output_file = basename + "_fit";
   //sprintf(command, (std::string("taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s'") + (wait ? "" : "&")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
-  sprintf(command, (std::string("taufit --tau-spread=1.24 --mjpsi=0.078 --mpsi2s=0.078 --correct-energy --title='sigma: %s' '%s' --output '%s' & ")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
+  sprintf(command, (std::string("taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s' & ")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
   system(command);
 }
 

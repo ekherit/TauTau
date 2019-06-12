@@ -228,10 +228,10 @@ Selection SEL4 =
     ,{"eρ",   "Nn==2 && Npi0 == 1 && erho"}
     ,{"μπ",    "Nn==0 && upi && ptem>0.3*k_ptem"}
     ,{"μρ", "Nn==2 && Npi0 == 1 && urho && ptem>0.3*k_ptem"}
-    ,{"ee", "Nn==0 && ee && ptem > 0.3*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+ //   ,{"ee", "Nn==0 && ee && ptem > 0.3*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
     ,{"μμ", "Nn==0 && uu && ptem > 0.3*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"}
     ,{"ππ", "Nn==0 && pipi&& ptem > 0.3*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-    ,{"ρρ", "Nn==4 && Npi0==2  && rhorho && ptem>0.3*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+//  ,{"ρρ", "Nn==4 && Npi0==2  && rhorho && ptem>0.3*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
   }
 };
 
