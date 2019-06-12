@@ -1065,14 +1065,14 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     int Ngg = P[i].Ngg;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
     ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << 10 << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
-    ofs << std::setw(10) << 1.306 << " " << std::setw(10) << 0.017;
+    ofs << std::setw(10) << 1.24 << " " << std::setw(10) << 0.017;
     ofs << std::setw(10) << Ntt << std::setw(10) <<  1 << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
   }
   if(!nofit)
   {
     char command[65536];
     //if(title=="") title=total_title;
-    sprintf(command, "taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
     //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename);
     system(command);
   }
