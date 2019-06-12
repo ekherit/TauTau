@@ -43,7 +43,7 @@ std::vector<ParticleID_t> PID =
       }}, 
     {"u", { "!e#" 
            ,"depth[#]-p[#]*58.61 > -35"
-           ,"Nmuhit[#]>=2"
+        //   ,"Nmuhit[#]>=2"
           },
       { 
         {"depth",        0, 100},
@@ -94,19 +94,20 @@ Selection SEL7 =
   PID,
   //kinematic selection for different channel
   { 
-    {"eμ",   "Nn==0 && eu  && ptem>0.15*k_ptem"}
+    {"eμ",   "Nn==0 && eu  && ptem>0.1*k_ptem"}
    ,{"eπ",   "Nn==0 && epi && ptem>0.20*k_ptem"}
    ,{"eρ",   "Nn==2 && Npi0 == 1 && erho && ptem>0.1*k_ptem"}
    ,{"μπ",   "Nn==0 && upi && ptem>0.4*k_ptem"}
    ,{"μρ",   "Nn==2 && Npi0 == 1 && urho && ptem>0.3*k_ptem"}
-  // ,{"ee",   "Nn==0 && ee && ptem > 0.4*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-   ,{"μμ",   "Nn==0 && uu && ptem > 0.15*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"}
+   ,{"ee",   "Nn==0 && ee && ptem > 0.4*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+   ,{"μμ",   "Nn==0 && uu && ptem > 0.1*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"}
    ,{"ππ",   "Nn==0 && pipi&& ptem > 0.25*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-   //,{"ρρ",   "Nn==4 && Npi0==2  && rhorho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+   ,{"πρ",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.3*k_ptem"}
+   ,{"ρρ",   "Nn==4 && Npi0==2  && rhorho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
   }
 };
 
-void doall(Selection & S, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="" /* the name of do all */)
+void doall(Selection & S, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="sel7" /* the name of do all */)
 {
   set_kptem(D,kptem); 
   auto result = new_select(D,S); 
