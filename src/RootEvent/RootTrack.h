@@ -21,7 +21,7 @@
 struct RootTracks
 {
 	//NTuple::Item<long>    ntrack;  //size of 
-	NTuple::Array<long>   id; //id of the track
+	NTuple::Array<double>   id; //id of the track
 	NTuple::Array<double> q; //charge of the track
 	NTuple::Array<double> E;
 	NTuple::Array<double> Ep;//E/p ratio
@@ -35,7 +35,7 @@ struct RootTracks
 	NTuple::Array<double> x, y, z, r; 
 	NTuple::Array<double> vxy, vz, vphi; //poca coordinate of track
   NTuple::Array<double> depth; //depth in muon system
-  NTuple::Array<long> Nmuhit; //number of muon hits
+  NTuple::Array<double> Nmuhit; //number of muon hits
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrack, const std::string & prefix="")
 	{
 		//tuple->addItem ("ntrack", ntrack); 
