@@ -23,7 +23,7 @@ auto DATA        = read_data("data", read_my_runtable("../scan_points.txt"));
 //auto DATAp       = read_data("data-old", read_my_runtable("../scan_points.txt"));
 //auto DATA5       = read_data("../sel5/data", read_my_runtable("../scan_points.txt"));
 //auto DATA703     = read_data("data703", read_my_runtable("../scan_points.txt"));
-auto DATA11      = read_data3("../tau2011","../tau2011/runtable.txt");
+//auto DATA11      = read_data3("../tau2011","../tau2011/runtable.txt");
 auto MC          = read_mc("mc/signal");
 
 std::map<std::string, Scan_t> GALUGA =
@@ -52,7 +52,7 @@ std::vector<ParticleID_t> PID =
       }}, 
     {"u", { "!e#" 
            ,"depth[#]-p[#]*58.61 > -35"
-    //       ,"Nmuhit[#]>=2"
+           ,"Nmuhit[#]>=2"
           },
       { 
         {"depth",        0, 100},

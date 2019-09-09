@@ -87,6 +87,14 @@ void print_utf(int width, const char * s)
   print_utf(width, std::string(s));
 };
 
+template<typename...Ts>
+std::string myfmt(std::string format, Ts...ts)
+{
+  static char MY_FORMAT_BUF[65535];
+  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
+  return std::string(MY_FORMAT_BUF);
+};
+
 /* ========================================================================================== */
 
 //Get recursive file list
@@ -651,13 +659,6 @@ std::string sub(std::string s, std::string regexpr, std::string substr)
   return result;
 };
 
-char MY_FORMAT_BUF[65535];
-template<typename...Ts>
-std::string myfmt(std::string format, Ts...ts)
-{
-  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
-  return std::string(MY_FORMAT_BUF);
-};
 
 
 void set_alias(TTree * tt, double W, double L=1.0)
@@ -856,7 +857,7 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R
       if(std::regex_match(file_name,energy_match,energy_re))
       {
         double W = std::stod(energy_match[1]);
-        //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
+        std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
         if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
         {
           P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
@@ -1064,14 +1065,14 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
     int Ngg = P[i].Ngg;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
     ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << 10 << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
-    ofs << std::setw(10) << 1.306 << " " << std::setw(10) << 0.017;
+    ofs << std::setw(10) << 1.24 << " " << std::setw(10) << 0.017;
     ofs << std::setw(10) << Ntt << std::setw(10) <<  1 << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
   }
   if(!nofit)
   {
     char command[65536];
     //if(title=="") title=total_title;
-    sprintf(command, "taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
     //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename);
     system(command);
   }
@@ -1172,6 +1173,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
 {
   long Ntt=0; //total number of events for all points
   long Ngg=0; //total number of gg events
+  double L=0; //total luminocity
   std::vector<PointSelectionResult_t> Points;
   std::string cut;
   ChannelSelectionResult_t(void){}
@@ -1197,6 +1199,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
       Ntt+=p.Ntt;
       Ngg+=p.Ngg;
       cut = p.cut;
+      L += p.L;
     } 
     return *this;
   }
@@ -1460,13 +1463,13 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
   return R;
 }
 
-std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection & S, int i, const std::string & var,  std::string extracut="", std::string gopt="")
+std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection & S, int i, const std::string  var,  std::string extracut="", std::string gopt="")
 {
   set_pid(DATA, S.pid);
   std::string cut = S[i].cut;
   if(S.common_cut!="") cut += " && " + S.common_cut;
   if(extracut!="")     cut += " && " + extracut;
-  return draw(DATA, cut, var, gopt);
+  return draw(DATA, var, cut, gopt);
 };
 
 
@@ -1574,13 +1577,18 @@ struct PrintConfig_t
   std::string thline=""; //top horizontal line
   std::string bhline=""; //bottom horizontal line
   PrintConfig_t() = default;
-  void hline(int N, std::string symb="─")
+  void hline(int N, std::string symb="─", std::string name="")
   {
     int hline_width = title_width + total_width + vline_width + N*data_width+3;
-    //int w = width == 0 ? hline_width : width;
-    for(int i=0;i<hline_width;++i)
-    {
-      std::cout << symb;
+    if(name=="") {
+      //int w = width == 0 ? hline_width : width;
+      for(int i=0;i<hline_width;++i) std::cout << symb;
+    }
+    else {
+      int f = (hline_width - 2 - name.length())/2;
+      for(int  i =0; i< f; ++i) std::cout << symb;
+      std::cout << " " << name << " ";
+      for(int  i =0; i< f; ++i) std::cout << symb;
     }
     std::cout << std::endl;
   }
@@ -1675,10 +1683,10 @@ void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
 void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
-  std::string format_str = "%4.2f ± %4.2f";
+  std::string format_str = "%4.3f ± %4.3f";
   cfg.total_width = format_str.length();
-  auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].Points.size(),s); };
-  hline("━");
+  auto hline = [&SR, &cfg](std::string s="─",std::string title="") { cfg.hline(SR[0].Points.size(),s,title); };
+  hline("━","REGISTRATION EFFICIENCY");
   print_smth(SR[0].Points, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "AVERAGE"; } );
   hline();
   auto prn = [&](std::string title, auto & sr) {
@@ -1716,10 +1724,10 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
 void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
-  std::string format_str = "%4.2f ± %4.2f";
+  std::string format_str = "%4.3f ± %4.3f";
   cfg.total_width = format_str.length();
-  auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].Points.size(),s); };
-  hline("━");
+  auto hline = [&SR, &cfg](std::string s="─",std::string title="") { cfg.hline(SR[0].Points.size(),s,title); };
+  hline("━","CORRECTION TO EFFICIENCY");
   print_smth(SR[0].Points, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "AVERAGE"; } );
   hline();
   auto prn = [&](std::string title, auto & sr) {
@@ -1728,6 +1736,10 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
           [&format_str](auto & p) { 
             char buf[1024];
             sprintf(buf,format_str.c_str(), p.effcor,p.effcor_error);
+            if(p.effcor_error == 0 && p.effcor==1) 
+            {
+              return std::string("     1     ");
+            }
             return std::string(buf); 
           },
           [&format_str](auto & P) { 
@@ -1768,11 +1780,354 @@ void print(const  std::vector<ChannelSelectionResult_t> & SR )
   print_Ntt(SR,cfg);
 };
 
-std::string print_tex(const std::vector<PointSelectionResult_t> & SR)
+std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::string ResultTitle="", std::string fit_file="")
 {
-  std::string s;
-  return s;
+  std::ostringstream os;
+  os << R"(
+  \documentclass[a4paper,12pt]{article}
+  \usepackage[T2A]{fontenc}
+  \usepackage[utf8]{inputenc} 
+  \usepackage[english,russian]{babel}
+  \usepackage{graphics}
+  \usepackage{epsfig}
+  \usepackage{amsmath,amssymb}
+  \usepackage{ctable}
+  \usepackage[
+    a4paper, 
+    mag=1000,
+    nofoot, 
+    nohead,
+    left=0.5cm, 
+    right=0.5cm, 
+    top=0.5cm, 
+    bottom=0.5cm
+  ]{geometry}
+  \renewcommand{\arraystretch}{1.2}
+  \newcommand{\myC}[1]{\multicolumn{1}{c}{#1}}
+  \newcommand{\myCF}[1]{\multicolumn{1}{c}{\hspace{4ex}#1\hspace{4ex}}}
+  \newcommand{\myL}[1]{\multicolumn{1}{l}{#1}}
+  \newcommand{\myR}[1]{\multicolumn{1}{r}{#1}}
+  \begin{document}
+  )" << "\n";
+  os << R"(\centering \textbf{ \Large {)" << ResultTitle << R"(}}\\)" << "\n";
+  os << R"(\today)" << "\n";
+
+
+
+  os << R"(\begin{table}[h!])" << "\n";
+  os << R"(\caption{Количество отобранных $\tau$ пар})" << "\n";
+  os << R"(\centering)" << "\n";
+  os << R"(\begin{tabular}[h!]{)";
+  os << "c";
+  for(int i=0; i< SR[0].Points.size(); ++i) os << "r";
+  os << "|"<<"r}" << R"(\\)";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  int col_width=5;
+  os << std::setw(20) << "channel";
+  for( auto & p : SR[0].Points) {
+    std::string name = R"(\myCF{)" + p.name + R"(})";
+    os << " & " << std::setw(col_width) << name;
+  }
+  os << std::setw(col_width) << " & " << "total"  << R"(\\ \hline)";
+  os << "\n";
+
+  os << std::setw(20) << R"($\int L$, $pb^{-1}$)";
+  for( auto & p : SR[0].Points) {
+    os << " & ";
+    char buf[1024];
+    sprintf(buf,"%5.1f", p.L);
+    os << std::setw(col_width) << buf;
+  }
+  os << " & ";
+  {
+    char buf[1024];
+    sprintf(buf,"%5.1f", (SR[0].L));
+    os << std::setw(col_width) << buf;
+  }
+  os<< R"(\\ \hline)" <<  "\n";
+
+  os << std::setw(20) << R"($E-M_{\tau}^{\text{PDG}}$, MeV)";
+  for( auto & p : SR[0].Points) {
+    os << " & ";
+    char buf[1024];
+    sprintf(buf,"%3.2f", (p.W*0.5 - MTAU)*1000);
+    os << std::setw(col_width) << R"(\myR{)" <<  buf << "}";
+  }
+  os << " & " << R"(\\ \hline)" <<  "\n";
+
+  
+
+  os << R"(\renewcommand{\arraystretch}{1.1})" << "\n";
+  for (auto & sr : SR) {
+    std::string title = sr.title; 
+    title = sub(title,"μ",R"(\mu)");
+    title = sub(title,"π",R"(\pi)");
+    title = sub(title,"ρ",R"(\rho)");
+    title = "$ " + title + " $";
+    os << std::setw(20) << title << " & ";
+    for(auto & p : sr.Points) {
+      os << std::setw(col_width) << p.Ntt << " & ";
+    }
+    os << std::setw(col_width) << sr.Ntt << R"(\\)" << "\n";
+  }
+  os << R"(\hline)" << "\n";
+  auto total = fold(SR);
+  os << std::setw(20) << "all" << " & "; 
+  for( auto & p : total.Points ) {
+    os << std::setw(col_width) << p.Ntt << " & ";
+  }
+  os << std::setw(col_width) << total.Ntt << R"(\\)" << "\n";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  os << R"(\end{tabular})" << "\n";
+  os << R"(\end{table})" << "\n";
+
+  os << R"(\begin{table}[h!])" << "\n";
+  os << R"(\caption{Эффективность регистрации $\tau$ пар})" << "\n";
+  os << R"(\centering)" << "\n";
+  os << R"(\resizebox{\textwidth}{!}{)" << "\n";
+  os << R"(\begin{tabular}[h!]{)";
+  os << "c";
+  for(int i=0; i< SR[0].Points.size(); ++i) os << "r";
+  //os << "|"<<"r";
+  os << "}" << R"(\\)";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  col_width=20;
+  os << std::setw(20) << "channel";
+  for( auto & p : SR[0].Points) {
+    std::string name = R"(\myC{)" + p.name + "}";
+    os << " & " << std::setw(col_width) << name;
+  }
+  //os << std::setw(col_width) << "average ";
+  os << R"(\\ \hline)";
+  os << "\n";
+  os << R"(\renewcommand{\arraystretch}{1.1})" << "\n";
+  for (auto & sr : SR) {
+    std::string title = sr.title; 
+    title = sub(title,"μ",R"(\mu)");
+    title = sub(title,"π",R"(\pi)");
+    title = sub(title,"ρ",R"(\rho)");
+    title = "$ " + title + " $";
+    os << std::setw(20) << title;
+    for(auto & p : sr.Points) {
+      os << " & ";
+      char buf[1024];
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps*100, p.eps_error*100);
+      os << std::setw(col_width) << buf;
+    }
+    //os << std::setw(col_width) << sr.Ntt;
+    os << R"(\\)" << "\n";
+  }
+  os << R"(\hline)" << "\n";
+  os << std::setw(20) << "all"; 
+  for( auto & p : total.Points ) {
+      os << " & ";
+      char buf[1024];
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps*100, p.eps_error*100);
+      os << std::setw(col_width) << buf;
+  }
+  //os << std::setw(col_width) << total.Ntt;
+  os << R"(\\)" << "\n";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  os << R"(\end{tabular})" << "\n";
+  os << R"(})" << "\n";
+  os << R"(\end{table})" << "\n";
+
+  os << R"(\begin{table}[h!])" << "\n";
+  os << R"(\caption{Поправка к эффективности регистрации $\tau$ пар})" << "\n";
+  os << R"(\centering)" << "\n";
+  os << R"(\resizebox{\textwidth}{!}{)" << "\n";
+  os << R"(\begin{tabular}[h!]{)";
+  os << "c";
+  for(int i=0; i< SR[0].Points.size(); ++i) os << "r";
+  //os << "|"<<"r";
+  os << "}" << R"(\\)";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  col_width=20;
+  os << std::setw(20) << "channel";
+  for( auto & p : SR[0].Points){
+    std::string name = R"(\myC{)" + p.name + "}";
+    os << " & " << std::setw(col_width) << name;
+  }
+  //os << std::setw(col_width) << "average ";
+  os << R"(\\ \hline)";
+  os << "\n";
+  os << R"(\renewcommand{\arraystretch}{1.1})" << "\n";
+  for (auto & sr : SR) {
+    std::string title = sr.title; 
+    title = sub(title,"μ",R"(\mu)");
+    title = sub(title,"π",R"(\pi)");
+    title = sub(title,"ρ",R"(\rho)");
+    title = "$ " + title + " $";
+    os << std::setw(20) << title;
+    for(auto & p : sr.Points) {
+      os << " & ";
+      char buf[1024];
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor, p.effcor_error);
+      os << std::setw(col_width) << buf;
+    }
+    //char buf[1024];
+    //sprintf(buf, "$%4.3f \\pm %4.3f$", sr.effcor, sr.effcor_error);
+    //os << std::setw(col_width) << sr.Ntt;
+    os << R"(\\)" << "\n";
+  }
+  os << R"(\hline)" << "\n";
+  os << std::setw(20) << "all"; 
+  for( auto & p : total.Points ) {
+      os << " & ";
+      char buf[1024];
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor, p.effcor_error);
+      os << std::setw(col_width) << buf;
+  }
+  //os << std::setw(col_width) << total.Ntt;
+  os << R"(\\)" << "\n";
+  os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+  os << R"(\end{tabular})" << "\n";
+  os << R"(})" << "\n";
+  os << R"(\end{table})" << "\n";
+  if(fit_file!="")
+  {
+    auto total = fold(SR);
+    os << R"(\begin{table}[h!])" << "\n";
+    os << R"(\caption{Количество отобранных $\tau$ пар})" << "\n";
+    os << R"(\centering)" << "\n";
+    os << R"(\resizebox{\textwidth}{!}{)" << "\n";
+    os << R"(\begin{tabular}[h!]{)";
+    os << "c";
+    for(int i=0; i< SR[0].Points.size(); ++i) os << "r";
+    os << "|"<<"r}" << R"(\\)";
+    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    int col_width=5;
+
+    auto make_row = [&col_width](
+        std::ostream & os, 
+        const ChannelSelectionResult_t & sr, 
+        std::string title, 
+        std::function<std::string(const PointSelectionResult_t & p)> Data,
+        std::function<std::string(void)> LastColumn = [](){ return ""; })
+    {
+      os << std::setw(20) << title;
+      for( auto & p : sr.Points) {
+        os << " & ";
+        os << std::setw(col_width) << Data(p);
+      }
+      os << " & ";
+      os << LastColumn();
+      os << R"(\\)" << "\n";
+    };
+
+    //os << std::setw(20) << "channel";
+    //for( auto & p : SR[0].Points) {
+    //  std::string name = R"(\myCF{)" + p.name + R"(})";
+    //  os << " & " << std::setw(col_width) << name;
+    //}
+    //os << std::setw(col_width) << " & " << "total"  << R"(\\ \hline)";
+    //os << "\n";
+
+    //os << std::setw(20) << R"($\int L$, $pb^{-1}$)";
+    //for( auto & p : SR[0].Points) {
+    //  os << " & ";
+    //  char buf[1024];
+    //  sprintf(buf,"%5.1f", p.L);
+    //  os << std::setw(col_width) << buf;
+    //}
+    //os << " & ";
+    //{
+    //  char buf[1024];
+    //  sprintf(buf,"%5.1f", (SR[0].L));
+    //  os << std::setw(col_width) << buf;
+    //}
+    //os<< R"(\\ \hline)" <<  "\n";
+
+    //os << std::setw(20) << R"($E-M_{\tau}^{\text{PDG}}$, MeV)";
+    //for( auto & p : SR[0].Points) {
+    //  os << " & ";
+    //  char buf[1024];
+    //  sprintf(buf,"%3.2f", (p.W*0.5 - MTAU)*1000);
+    //  os << std::setw(col_width) << R"(\myR{)" <<  buf << "}";
+    //}
+    //os << " & " << R"(\\ \hline)" <<  "\n";
+
+    make_row(os, total, 
+        R"(point)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myCF{%s})", p.name.c_str()); },
+        [&total]() { return "Total"; }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+
+    //print luminosity
+    make_row(os, total, 
+        R"($\int L, pb^{-1}$)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.L); },
+        [&total]() { return myfmt(R"(%4.1f)", total.L); }
+        );
+
+    //print energy for point
+    make_row(os, total, 
+        R"($E-M_{\tau}, MeV)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.W*0.5 - MTAU)*1000); }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+    os << R"(\renewcommand{\arraystretch}{1.1})" << "\n";
+    for (auto & sr : SR) {
+      std::string title = sr.title; 
+      title = sub(title,"μ",R"(\mu)");
+      title = sub(title,"π",R"(\pi)");
+      title = sub(title,"ρ",R"(\rho)");
+      title = "$ " + title + " $";
+      make_row(os, sr, title,  
+        [](const PointSelectionResult_t & p) { return myfmt(R"(%d)", p.Ntt); },
+        [&sr]() { return R"(\textit{)"+std::to_string(sr.Ntt)+"}"; });
+    }
+    os << R"(\hline)" << "\n";
+
+    //print total event number
+    make_row(os, total, 
+        "all", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\textbf{%d})", p.Ntt); },
+        [&total]() { return R"(\textbf{)"+std::to_string(total.Ntt)+"}"; }
+        );
+    os<< R"(\hline)" <<  "\n";
+
+    //print epsilon
+    make_row(os, total, 
+        R"($\varepsilon$, \%)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.eps*100, p.eps_error*100); });
+
+    //print epsilon correction
+    make_row(os, total, 
+        R"($\epsilon^{cor}$)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.effcor, p.effcor_error); });
+
+    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    os << R"(\end{tabular})" << "\n";
+    os << "}\n";
+    os << R"(\end{table})" << "\n";
+
+
+    os << R"(\begin{figure}[h!])" << "\n";
+    os << R"(\centering)" << "\n";
+    os << R"(\includegraphics[width=0.8\textwidth]{)" << fit_file << "}\n";
+    os << R"(\caption{)" <<sub(fit_file,"_",R"(\_)")  << "}\n";
+    os << R"(\end{figure})" << "\n";
+  }
+  os << R"(\end{document})";
+  os << "\n";
+  return os.str();
 };
+
+void make_tex(std::string latex, std::string filename = "scan.tex")
+{
+  std::ofstream ofs(filename);
+  ofs << latex;
+  ofs.close();
+  char command[65536];
+  std::cout << "Compiling latex file..." << filename << std::endl;
+  sprintf(command, "pdflatex %s > /dev/null", filename.c_str());
+  system(command);
+};
+
 
 ChannelSelectionResult_t new_select(const std::vector<ScanPoint_t> & P, const ChannelSelection_t & S, std::string extra_cut="")
 {
@@ -1892,6 +2247,7 @@ std::vector<ChannelSelectionResult_t> & set_efficiency( std::vector<ChannelSelec
     set_efficiency(sr.Points, eff, N0);
   };
   print_efficiency(SR);
+  print_effcor(SR);
   return SR;
 };
 
@@ -2062,7 +2418,28 @@ TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Se
     else or_cut+= "||("+it->cut+")";
   }
   or_cut+=")";
+  if(H=="") H=var;
   return compare2(P1,P2,var,global_cut+"&&"+or_cut,gopt,H,bin,title, xtitle);
+}
+
+TCanvas * compare3(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string subregex, const Selection & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
+{
+  std::string global_cut = SEL.common_cut;
+  std::string or_cut="(";
+  for(auto  it=SEL.sel.begin();it!=SEL.sel.end();++it)
+  {
+    if(it==SEL.sel.begin()) or_cut+="("+it->cut +")";
+    else or_cut+= "||("+it->cut+")";
+  }
+  or_cut+=")";
+  std::string cut = global_cut+"&&"+or_cut;
+  std::cout << "compare3 cut = " << cut << std::endl;
+  std::cout << "remove var from cut " << std::endl;
+  std::string r = var + R"(\s*>\s*\d*)";
+  std::cout << "regex = " << r << std::endl;
+  std::string result = sub(cut,subregex,"1");
+  std::cout << " result = " << result << std::endl;
+  return compare2(P1,P2,var,result,gopt,H,bin,title, xtitle);
 }
 
 TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xtitle="")
@@ -2100,6 +2477,7 @@ TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection & 
   fill_tree(tree2,S2,cut);
   return compare2(tree1, tree2, var, "", gopt,H,bin,title);
 };
+
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -2156,27 +2534,30 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt")
   ofs << os.str();
 }
 
-void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="")
+void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="", bool wait = false)
 {
   save(sr,filename);
   char command[65536];
-  sprintf(command, "taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
+  std::string basename = sub(filename,R"(\..+)", "");
+  std::string output_file = basename + "_fit";
+  //sprintf(command, (std::string("taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s'") + (wait ? "" : "&")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
+  sprintf(command, (std::string("taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s' & ")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
   system(command);
 }
 
-void fit(const std::vector<PointSelectionResult_t>  & ps, std::string  filename="scan.txt", std::string title="")
-{
-  ChannelSelectionResult_t sr;
-  sr = ps;
-  save(sr,filename);
-  char command[65536];
-  sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
-  system(command);
-}
+//void fit(const std::vector<PointSelectionResult_t>  & ps, std::string  filename="scan.txt", std::string title="")
+//{
+//  ChannelSelectionResult_t sr;
+//  sr = ps;
+//  save(sr,filename);
+//  char command[65536];
+//  sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
+//  system(command);
+//}
 
-void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="")
+void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", bool wait = false)
 {
-  fit(fold(sr),filename,title);
+  fit(fold(sr),filename,title, wait);
 }
 
 #include <TH1F.h>
