@@ -316,6 +316,7 @@ StatusCode TauTau::execute()
       }
       fEvent.npi0 = Pn.size()/2;
       fEvent.Nrho = fEvent.npi0*Tc.size();
+      bool has_good_pi0 = false;
       if(pi0_cmb_list.size()!=0)
       {
         int idx=0;
@@ -323,7 +324,7 @@ StatusCode TauTau::execute()
         {
           double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
           fEvent.Mpi0[idx] = m;
-          select &= fabs(m - PI0_MASS) <  0.03; //selection of the pi0
+          select = select || ( fabs(m - PI0_MASS) <  0.03); //selection of the pi0
           //now create all combination to tie pi0 with charged tracks
           for(int i = 0; i<Tc.size(); ++i)
           {
@@ -335,6 +336,7 @@ StatusCode TauTau::execute()
           idx++;
         }
       }
+      select &= has_good_pi0; //supress some events completely without pi0
       select &=( cfg.MIN_PTEM < fEvent.ptem  && fEvent.ptem   < cfg.MAX_PTEM);
       for(int i=0;i<Tc.size();++i)
       {
