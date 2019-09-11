@@ -56,6 +56,8 @@ const double MTAU=1776.86*MeV;
 const double MPI=0.13957061*GeV; 
 const double MPI0=0.134977*GeV;
 
+std::string TAUFIT_STR = "taufit --tau-spread=1.258 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy ";
+
 /* ==================== WORKING WITH UTF-8 ================================================== */
 
 template <class String > 
@@ -1026,8 +1028,7 @@ void set_last(std::vector<ScanPoint_t> & P)
     p.NttMap[p.selection]=p.Ntt;
   }
 }
-
-void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false, std::string title="")
+void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nofit=false, std::string title="")
 {
   long totalNtt=0;
   long totalNgg = 0;
@@ -1072,9 +1073,9 @@ void fit(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool no
   {
     char command[65536];
     //if(title=="") title=total_title;
-    sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
-    //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename);
-    system(command);
+    //sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
+    //sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename); //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename); system(command);
+    sprintf(command, (TAUFIT_STR + " --title='sigma: %s' '%s' --output '%s' & ").c_str(), title.c_str(), filename.c_str(),filename.c_str());
   }
 }
 
@@ -1332,6 +1333,12 @@ void set_kptem(std::vector<ScanPoint_t> & DATA, double kptem)
   {
     data.tt->SetAlias("k_ptem",(std::to_string(kptem)+"*1").c_str());
   };
+};
+
+void set_pid_kptem(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & PID, double kptem)
+{
+  set_pid(DATA,PID);
+  set_kptem(DATA,kptem);
 };
 
 
@@ -2534,6 +2541,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt")
   ofs << os.str();
 }
 
+
 void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="", bool wait = false)
 {
   save(sr,filename);
@@ -2541,7 +2549,7 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
   std::string basename = sub(filename,R"(\..+)", "");
   std::string output_file = basename + "_fit";
   //sprintf(command, (std::string("taufit --tau-spread=1.306 --correct-energy --title='sigma: %s' '%s' --output '%s'") + (wait ? "" : "&")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
-  sprintf(command, (std::string("taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s' & ")).c_str(), title.c_str(), filename.c_str(),output_file.c_str());
+  sprintf(command, (TAUFIT_STR + " --title='sigma: %s' '%s' --output '%s' & ").c_str(), title.c_str(), filename.c_str(),output_file.c_str());
   system(command);
 }
 
