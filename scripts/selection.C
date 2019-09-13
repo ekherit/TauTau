@@ -58,6 +58,10 @@ const double MPI0=0.134977*GeV;
 
 std::string TAUFIT_STR = "taufit --tau-spread=1.258 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy ";
 
+void clean_taufit(void) {
+  system("killall -9 taufit");
+}
+
 /* ==================== WORKING WITH UTF-8 ================================================== */
 
 template <class String > 
@@ -859,7 +863,7 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R
       if(std::regex_match(file_name,energy_match,energy_re))
       {
         double W = std::stod(energy_match[1]);
-        std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
+        //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
         if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
         {
           P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
@@ -1219,6 +1223,7 @@ struct Selection
   std::string common_cut;
   std::vector<ParticleID_t> pid;
   std::vector<ChannelSelection_t> sel;
+  //std::vector<int> skip_list; //channel to skip list
   ChannelSelection_t       & operator[](int i)         { return sel[i]; }
   const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
 };
@@ -1289,6 +1294,7 @@ void set_pid(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & 
 
             std::string pid_name= pid.name;
             if(pid_name == "u") pid_name = "mu";
+            if(pid_name == "PI") pid_name = "pi";
 
             if ( value_name == "chi2_dedx"  || value_name == "delta_tof")  value_name += "_"+pid_name;
             value_name += "["+std::to_string(track)+"]";
@@ -1347,6 +1353,8 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   std::vector<PointSelectionResult_t> R(P.size());
   for(int i=0;i<P.size();++i)
   {
+    //if( std::find ( skip_list.begin(), skip_list.end(), i) != skip_list.end() ) continue;
+    //R.emplace_back(PointSelectionResult_t{});
     auto & r       = R[i];
     auto & p       = P[i];
     r.Ntt          = p.tt->GetEntries(sel.c_str());
@@ -1361,6 +1369,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   }
   return R;
 }
+
 
 template<typename Iterator, typename Func>
 Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
@@ -1478,6 +1487,72 @@ std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const 
   if(extracut!="")     cut += " && " + extracut;
   return draw(DATA, var, cut, gopt);
 };
+
+
+//fold all points together and draw the result
+TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, const std::string & var, const std::string & sel, std::string gopt="")
+{
+  auto c = new TCanvas;
+  int Nx = 4; //numbe of canvases on x size;
+  int Ny = 3; //number of canvases on y size;
+  int window_title_bar_ysize = 45;
+  int window_border_xsize = 5;
+  int panel_ysize = 40;
+  int canvas_width_x = 1920*2/Nx;
+  int canvas_width_y = (1080*2-panel_ysize)/Ny;
+  static int nc = 0; //current canvas number
+  int canvas_pos_x = (nc % Nx)* canvas_width_x;
+  int canvas_pos_y = ((nc/Nx)%Ny)* canvas_width_y;
+  c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
+  c->SetWindowSize(canvas_width_x-window_border_xsize,canvas_width_y-window_title_bar_ysize);
+  c->SetTitle(sel.c_str());
+//  PointSelectionResult_t R;
+  //find commond xmin and xmax and number of bins
+  std::vector<TH1*> vH(P.size());
+  std::vector<double> vmin(P.size()), vmax(P.size());
+  std::vector<int> vNbins(P.size());
+  for(int i=0;i<P.size();++i)
+  {
+    auto & p       = P[i];
+    std::string htitle = "H"+std::to_string(i);
+    long N = p.tt->Draw((var+">>"+htitle).c_str(),sel.c_str(),"goff");  
+    auto h  = (TH1*) p.tt->GetHistogram();
+    int Nbins = h->GetNbinsX();
+    vNbins[i]  = Nbins;
+    double min = h->GetBinCenter(0)-h->GetBinWidth(0)*0.5;
+    double max = h->GetBinCenter(Nbins)+h->GetBinWidth(Nbins)*0.5;
+    vmin[i] = min;
+    vmax[i] = max;
+    std::cout << htitle << " " << Nbins << " " << min << " " << max << " N = " << N << std::endl;
+    delete h;
+  }
+  double min = *std::min_element(vmin.begin(),vmin.end());
+  double max = *std::max_element(vmax.begin(),vmax.end());
+  int Nbins = *std::max_element(vNbins.begin(),vNbins.end());
+  std::cout << "common hist params: "  << Nbins << " " << min << " " << max << " N = " << std::endl;
+
+  //now draw histograms with common bins and range
+  for(int i=0;i<P.size();++i)
+  {
+    //new TCanvas;
+    auto & p       = P[i];
+    std::string htitle = "HM"+std::to_string(i);
+    std::string hconfig = "("+std::to_string(Nbins)+"," + std::to_string(min)+"," + std::to_string(max) + ")";
+    p.tt->Draw((var+">>"+htitle + hconfig).c_str(),sel.c_str(),gopt.c_str());  
+    vH[i]  = (TH1*) p.tt->GetHistogram();
+  }
+
+  TH1 * H = new TH1F(("Hall"+std::to_string(nc)).c_str(), var.c_str(), Nbins, min,max);
+  for(auto & h : vH) {
+    H->Add(h);
+    delete h;
+  }
+  c->cd();
+  H->Draw();
+  nc++;
+  return H;
+};
+
 
 
 
@@ -2146,12 +2221,15 @@ ChannelSelectionResult_t new_select(const std::vector<ScanPoint_t> & P, const Ch
   return r;
 };
 
-std::vector<ChannelSelectionResult_t> new_select( std::vector<ScanPoint_t> & P, const std::vector<ChannelSelection_t> & S, std::string extra_cut="")
+std::vector<ChannelSelectionResult_t> new_select( std::vector<ScanPoint_t> & P, const std::vector<ChannelSelection_t> & S, std::string extra_cut="", const std::vector<int>  skip_list={})
 {
   std::vector<ChannelSelectionResult_t> R(S.size());
+  //R.reserve(S.size());
   if(extra_cut!="") extra_cut = " && " + extra_cut;
   for(int i=0; i<S.size(); ++i)
   {
+    //if( std::find ( skip_list.begin(), skip_list.end(), i) != skip_list.end() ) continue;
+    //R.emplace_back(ChannelSelectionResult_t());
     auto & s = S[i];
     auto & r = R[i];
     r = s; //save current selection for channel
