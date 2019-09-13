@@ -24,6 +24,7 @@
 #include <string>
 #include <list>
 #include <algorithm>
+#include <numeric>
 
 #include <variant>
 
@@ -51,10 +52,28 @@
 
 const double GeV=1.0;
 const double MeV=1e-3*GeV;
+const double bn = 1.0;
+const double pbn = 1e-12*bn;
 
 const double MTAU=1776.86*MeV;
 const double MPI=0.13957061*GeV; 
 const double MPI0=0.134977*GeV;
+
+
+static const double ME_PDG2011=0.510998910*MeV; //+-0.000000013 
+static const double ME_PDG2019=0.5109989461*MeV; //+-0.000000013
+static const double ME_PDG=ME_PDG2019;// mass of electron
+static const double ME=ME_PDG;// mass of electron
+
+static const double SIGMA_TOMSON = 0.665245854*bn; 
+const double SIGMA_CONST = SIGMA_TOMSON/pbn* ME*ME/2.;  // GeV^2/pbn
+
+
+static const double ALPHA_PDG2019=1/137.035999139; 
+static const double ALPHA = ALPHA_PDG2019;
+static const double ALPHAPI=ALPHA/TMath::Pi(); //alpha / pi
+static const double PIALPHA=ALPHA*TMath::Pi(); 
+
 
 std::string TAUFIT_STR = "taufit --tau-spread=1.258 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy ";
 
@@ -845,7 +864,7 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
 }
 
 #include <regex>
-std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R"(.+\.root)")
+std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
@@ -857,19 +876,33 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", std::string regexpr=R
   for(auto  file: * dir.GetListOfFiles())
   {
     std::string file_name(file->GetName());
-    if(std::regex_match (file_name,file_match,file_re))
-    {
+    if(std::regex_match (file_name,file_match,file_re)) {
       //extracting the energy
-      if(std::regex_match(file_name,energy_match,energy_re))
-      {
+      if(std::regex_match(file_name,energy_match,energy_re)) {
         double W = std::stod(energy_match[1]);
-        //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
-        if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
-        {
-          P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
-          P.back().tt = get_chain("tt",("tt"+std::to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
-          P.back().gg = get_chain("gg",("gg"+std::to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
-          set_alias(P.back().tt, P.back().W,1.0);
+        if(cfg.empty()){
+          //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
+          if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
+          {
+            P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
+            P.back().tt = get_chain("tt",("tt"+std::to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
+            P.back().gg = get_chain("gg",("gg"+std::to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
+            set_alias(P.back().tt, P.back().W,1.0);
+          }
+        }
+        else {
+          //find closest energy
+          auto & sp  = *std::min_element(cfg.begin(), cfg.end(), [W](auto a, auto b){ return fabs(a.W-W)<fabs(b.W-W); } );
+          if( abs(sp.W - W) < 0.001 ) {
+            P.push_back(sp);
+            auto & p = P.back();
+            p.title = "mc"+p.title;
+            p.W = W;
+            p.L = -p.L;
+            p.tt = get_chain("tt",("tt"+p.title).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
+            p.gg = get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
+            set_alias(p.tt, p.W,p.L);
+          }
         }
       }
       else
@@ -1489,8 +1522,98 @@ std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const 
 };
 
 
+static int HISTO_INDEX = 0; //current canvas number
+static int CANVAS_INDEX = 0; //current canvas number
+
 //fold all points together and draw the result
-TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, const std::string & var, const std::string & sel, std::string gopt="")
+TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  Sel, std::string gopt="", int Nbin=100, double Min=0, double Max=0)
+{
+  //find commond xmin and xmax and number of bins
+  std::vector<std::unique_ptr<TH1>> vH(P.size());
+  std::vector<double> vmin(P.size()), vmax(P.size());
+  std::vector<int> vNbins(P.size());
+  std::vector<double> vweight; 
+  //calculate weights
+  auto vFc  = [](double v) -> double { 
+    if(v==0) return PIALPHA; 
+    return PIALPHA/(1. - exp(-PIALPHA/v));
+  };
+
+  //tau pair cross section with Coloumb correction
+  auto sigma_tree_fc = [&vFc]( double s) -> double
+  {
+    if( s < 4*MTAU*MTAU) return 0;
+    double v= sqrt(1.0 - pow(MTAU*2,2)/s);
+    return SIGMA_CONST*(3.-v*v)/2./s*vFc(v);
+  };
+
+  for(auto & p : P) 
+  {
+    double sigma = sigma_tree_fc(p.W*p.W);
+    if(sigma == 0) sigma  = sigma_tree_fc((2*MTAU+1*MeV)*(2*MTAU+1*MeV));
+    //std::cout << p.L << " " <<  sigma << std::endl;
+    vweight.push_back(p.L * sigma);
+  }
+  double wsum = std::accumulate(vweight.begin(), vweight.end(),0.0);
+  if(wsum == 0) {
+    std::cerr << "ERROR: zero total sum L * sigma" << std::endl;
+    std::exit(1);
+  }
+  for(auto & w : vweight) w*=1e-6;
+  std::string sel = Sel;
+
+  auto draw = [&](const ScanPoint_t & p, std::string title, double weight = - 1.0) -> long {
+    if(weight>=0) {
+      if(Sel=="") sel = std::to_string(weight);
+      else sel = std::to_string(weight)+"*("+Sel+")";
+    }
+    else sel= Sel;
+    //std::cout << p.title << " " << sel<< std::endl;
+    return p.tt->Draw(title.c_str(),sel.c_str(),"goff");  
+  };
+    
+  for(int i=0;i<P.size();++i)
+  {
+    auto & p       = P[i];
+    std::string htitle = "H2341dodk"+std::to_string(i)+"("+std::to_string(Nbin);
+    if(Min<Max) htitle+= (", " +std::to_string(Min) + "," +std::to_string(Max));
+    htitle+=")";
+    long N = draw(p, var+">>"+htitle, -vweight[i]);  
+    auto h  = (TH1*) p.tt->GetHistogram();
+    int Nbins = h->GetNbinsX();
+    vNbins[i]  = Nbins;
+    double min = h->GetBinCenter(0)-h->GetBinWidth(0)*0.5;
+    double max = h->GetBinCenter(Nbins-1)+h->GetBinWidth(Nbins-1)*0.5;
+    vmin[i] = min;
+    vmax[i] = max;
+    //std::cout << htitle << " " << Nbins << " " << min << " " << max << " N = " << N << std::endl;
+    delete h;
+  }
+  double min = Min==Max ? *std::min_element(vmin.begin(),vmin.end()) : Min;
+  double max = Min==Max ? *std::max_element(vmax.begin(),vmax.end()) : Max;
+  int Nbins = *std::max_element(vNbins.begin(),vNbins.end());
+  //std::cout << "common hist params: "  << Nbins << " " << min << " " << max << " N = " << std::endl;
+
+  //now draw histograms with common bins and range
+  for(int i=0;i<P.size();++i) {
+    //new TCanvas;
+    auto & p       = P[i];
+    std::string htitle = "HMoqek231kc"+std::to_string(i);
+    std::string hconfig = "("+std::to_string(Nbins)+"," + std::to_string(min)+"," + std::to_string(max) + ")";
+    p.tt->Draw((var+">>"+htitle + hconfig).c_str(),sel.c_str());  
+    vH[i].reset((TH1*) p.tt->GetHistogram());
+  }
+
+  TH1 * H = new TH1F(("Hall"+std::to_string(HISTO_INDEX)).c_str(), var.c_str(), Nbins, min,max);
+  for(auto & h : vH) {
+    H->Add(h.get());
+   // delete h; //remove anused histogram
+  }
+  HISTO_INDEX++;
+  return H;
+};
+
+TCanvas * get_new_tailed_canvas(std::string title)
 {
   auto c = new TCanvas;
   int Nx = 4; //numbe of canvases on x size;
@@ -1500,60 +1623,76 @@ TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, const std::string & var
   int panel_ysize = 40;
   int canvas_width_x = 1920*2/Nx;
   int canvas_width_y = (1080*2-panel_ysize)/Ny;
-  static int nc = 0; //current canvas number
-  int canvas_pos_x = (nc % Nx)* canvas_width_x;
-  int canvas_pos_y = ((nc/Nx)%Ny)* canvas_width_y;
+  int canvas_pos_x = (CANVAS_INDEX % Nx)* canvas_width_x;
+  int canvas_pos_y = ((CANVAS_INDEX/Nx)%Ny)* canvas_width_y;
   c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
   c->SetWindowSize(canvas_width_x-window_border_xsize,canvas_width_y-window_title_bar_ysize);
-  c->SetTitle(sel.c_str());
-//  PointSelectionResult_t R;
-  //find commond xmin and xmax and number of bins
-  std::vector<TH1*> vH(P.size());
-  std::vector<double> vmin(P.size()), vmax(P.size());
-  std::vector<int> vNbins(P.size());
-  for(int i=0;i<P.size();++i)
-  {
-    auto & p       = P[i];
-    std::string htitle = "H"+std::to_string(i);
-    long N = p.tt->Draw((var+">>"+htitle).c_str(),sel.c_str(),"goff");  
-    auto h  = (TH1*) p.tt->GetHistogram();
-    int Nbins = h->GetNbinsX();
-    vNbins[i]  = Nbins;
-    double min = h->GetBinCenter(0)-h->GetBinWidth(0)*0.5;
-    double max = h->GetBinCenter(Nbins)+h->GetBinWidth(Nbins)*0.5;
-    vmin[i] = min;
-    vmax[i] = max;
-    std::cout << htitle << " " << Nbins << " " << min << " " << max << " N = " << N << std::endl;
-    delete h;
-  }
-  double min = *std::min_element(vmin.begin(),vmin.end());
-  double max = *std::max_element(vmax.begin(),vmax.end());
-  int Nbins = *std::max_element(vNbins.begin(),vNbins.end());
-  std::cout << "common hist params: "  << Nbins << " " << min << " " << max << " N = " << std::endl;
-
-  //now draw histograms with common bins and range
-  for(int i=0;i<P.size();++i)
-  {
-    //new TCanvas;
-    auto & p       = P[i];
-    std::string htitle = "HM"+std::to_string(i);
-    std::string hconfig = "("+std::to_string(Nbins)+"," + std::to_string(min)+"," + std::to_string(max) + ")";
-    p.tt->Draw((var+">>"+htitle + hconfig).c_str(),sel.c_str(),gopt.c_str());  
-    vH[i]  = (TH1*) p.tt->GetHistogram();
-  }
-
-  TH1 * H = new TH1F(("Hall"+std::to_string(nc)).c_str(), var.c_str(), Nbins, min,max);
-  for(auto & h : vH) {
-    H->Add(h);
-    delete h;
-  }
+  c->SetTitle(title.c_str());
   c->cd();
-  H->Draw();
-  nc++;
+  CANVAS_INDEX++;
+  return c;
+}
+
+TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, std::string  var, std::string  sel, std::string gopt="")
+{
+  auto c = get_new_tailed_canvas(var + " " + sel);
+  auto H = fold(P,var,sel);
+  if(gopt == "NORM") H->DrawNormalized();
+  else H->Draw();
   return H;
+}
+
+void cmp(const Scan_t & S1, const Scan_t & S2, std::string var, std::string sel="", std::string gopt="", int Nbin=100, double Min=0, double Max=0)
+{
+  auto c  = get_new_tailed_canvas(var + " " + sel);
+  auto h1 = fold(S1,var,sel,gopt,Nbin,Min,Max);
+  auto h2 = fold(S2,var,sel,gopt,Nbin,Min,Max);
+  h1->SetLineColor(kRed);
+  h2->SetLineColor(kBlue);
+  if(gopt=="NORM") {
+    h1->DrawNormalized("E");
+    h2->DrawNormalized("Esame");
+  } else  {
+    h1->Draw("E");
+    h2->Draw("Esame");
+  }
 };
 
 
+void cmp(const Scan_t & S1, const Scan_t & S2, const Selection & Sel, int i, std::string var, std::string extracut="", std::string gopt = "", int Nbin=100, double Min=0, double Max=0)
+{
+  std::cout << Sel[i].title << std::endl;
+  std::string sel = Sel.common_cut  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+  cmp(S1,S2,var,sel,gopt,Nbin,Min,Max);
+};
+
+TH1 * fold(const Scan_t & D, const Selection & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+  std::string name = "Hlastfold" + std::to_string(HISTO_INDEX);
+  TH1 * H = new TH1F(name.c_str(),name.c_str() ,Nbin,Min,Max);
+  for(int i =0;i<Sel.sel.size();++i) {
+    std::cout << Sel[i].title << std::endl;
+    std::string sel = Sel.common_cut  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+    auto h = fold(D, var,sel,gopt,Nbin,Min,Max);
+    H->Add(h);
+    delete h;
+  }
+  return H;
+}
+
+void cmp(const Scan_t & D1, const Scan_t & D2, const Selection & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+  auto h1 = fold(D1,Sel,var,extracut,gopt, Nbin,Min,Max);
+  auto h2 = fold(D2,Sel,var,extracut,gopt, Nbin,Min,Max);
+  h1->SetLineColor(kRed);
+  h2->SetLineColor(kBlue);
+  auto c  = get_new_tailed_canvas(var + " " + extracut);
+  if(gopt=="NORM") {
+    h1->DrawNormalized("E");
+    h2->DrawNormalized("Esame");
+  } else  {
+    h1->Draw("E");
+    h2->Draw("Esame");
+  }
+}
 
 
 ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
