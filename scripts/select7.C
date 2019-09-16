@@ -94,16 +94,17 @@ Selection SEL7 =
   PID,
   //kinematic selection for different channel
   { 
-    {"eμ",   "Nn==0 && eu  && ptem>0.15*k_ptem"}
-//   ,{"eπ",   "Nn==0 && epi && ptem>0.20*k_ptem"}
-//   ,{"eρ",   "Nn==2 && Npi0 == 1 && erho && ptem>0.1*k_ptem"}
-//   ,{"μπ",   "Nn==0 && upi && ptem>0.4*k_ptem"}
-//   ,{"μρ",   "Nn==2 && Npi0 == 1 && urho && ptem>0.3*k_ptem"}
-//   ,{"ee",   "Nn==0 && ee && ptem > 0.4*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-//   ,{"μμ",   "Nn==0 && uu && ptem > 0.15*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"}
-//   ,{"ππ",   "Nn==0 && pipi&& ptem > 0.25*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-   ,{"πρ",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
-   ,{"ρρ",   "Nn==4 && Npi0==2  && rhorho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && 0.12 < Mpi0[1] && Mpi0[1] < 0.14"}
+      {"eμ",   "Nn==0 && eu  && ptem>0.1*k_ptem"}
+     ,{"eπ",   "Nn==0 && epi && ptem>0.20*k_ptem"}
+     ,{"eρ",   "Nn==2 && Npi0 == 1 && erho && ptem>0.1*k_ptem"}
+     ,{"μπ",   "Nn==0 && upi && ptem>0.4*k_ptem"}
+     ,{"μρ",   "Nn==2 && Npi0 == 1 && urho && ptem>0.3*k_ptem"}
+     ,{"ee",   "Nn==0 && ee && ptem > 0.4*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+     ,{"μμ",   "Nn==0 && uu && ptem > 0.15*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"}
+     ,{"ππ",   "Nn==0 && pipi&& ptem > 0.25*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+     ,{"πρ",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+     ,{"ρρ",   "Nn==4 && Npi0==2  && rhorho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && 0.12 < Mpi0[1] && Mpi0[1] < 0.14"}
+     ,{"XX",   "Nn==4 && Npi0==2 && pipi && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0)  || (0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0))  && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && 0.12 < Mpi0[1] && Mpi0[1] < 0.14"}
   }
 };
 
