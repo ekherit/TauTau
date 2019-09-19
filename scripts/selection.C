@@ -78,10 +78,8 @@ static const double ALPHAPI=ALPHA/TMath::Pi(); //alpha / pi
 static const double PIALPHA=ALPHA*TMath::Pi(); 
 
 
-//std::string TAUFIT_STR = "taufit --tau-spread=1.258 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy ";
-std::string TAUFIT_STR = "taufit --tau-spread=1.258 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy --lum=bes";
-//energy spread from EMS
-//std::string TAUFIT_STR = "taufit --tau-spread=1.448 --mjpsi=-0.0054 --mpsi2s=-0.0054 --correct-energy --lum=bes";
+std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.039";
+//std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.0054";
 
 void clean_taufit(void) {
   system("killall -9 taufit");

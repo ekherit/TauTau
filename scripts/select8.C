@@ -20,8 +20,8 @@
 #include <map>
 
 //auto RUNTABLE  = read_my_runtable("scan_points_ems3.txt");
-auto RUNTABLE  = read_my_runtable("scan_points_ems3_privalov_lum.txt");
 //auto RUNTABLE  = read_my_runtable("scan_points_ems3_privalov_lum.txt");
+auto RUNTABLE  = read_my_runtable("scan_points_ems2_privalov_lum.txt");
 
 //read data from directory "data". Runs are combined into points according to runtable scan_points.txt
 auto DATA        = read_data("data", RUNTABLE);
