@@ -278,3 +278,9 @@ void select8()
   }
 }
 
+void parameter_example(Selection & SEL=SEL8)
+{
+  fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + SEL.common_cut,"NORM");
+  fold_and_draw(MC,"ptem","Nc==2 && Nn==0 &&" + SEL8.common_cut,"NORM SAME");
+}
+

@@ -1773,6 +1773,63 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
   return H;
 }
 
+std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+  std::vector<TH1*> H;
+  std::string title = (var + ":" + extracut);
+  auto c  = get_new_tailed_canvas(title.c_str());
+  gStyle->SetOptStat(0);
+  std::vector<int> color={kRed, kBlue, kBlack, kGreen+2};
+  std::vector<int> line = {1,2,3};
+  std::smatch sm;
+  bool is_norm = std::regex_match(gopt, sm, std::regex("NORM|norm")); 
+  for(unsigned i=0;i<SCANS.size();++i) {
+    auto h = fold(SCANS[i],var,extracut,gopt, Nbin,Min,Max);
+    h->SetTitle(title.c_str());
+    h->SetLineWidth(2);
+    h->SetLineColor(color[i % color.size()]);
+    h->SetMarkerColor(color[i % color.size()]);
+    //h->SetLineStyle(line[(i/color.size())%line.size()]);
+    H.push_back(h);
+  }
+  std::vector<double> ymax;
+  std::vector<double> ymin;
+  for(unsigned i = 0; i<H.size(); ++i) {
+    TH1 * h;
+    if(is_norm) {
+      h=(TH1*)H[i]->DrawNormalized(gopt.c_str());
+    } else {
+      H[i]->Draw(gopt.c_str());
+      h=H[i];
+    }
+    if(i==0) gopt+="SAME";
+    int bin_max = h->GetMaximumBin();
+    int bin_min = h->GetMinimumBin();
+    ymax.push_back(h->GetBinContent(bin_max) + 2*h->GetBinError(bin_max));
+    ymin.push_back(h->GetBinContent(bin_min) - 2*h->GetBinError(bin_min));
+    std::cout << ymax.back() << std::endl;
+  }
+  double max = *std::max_element(ymax.begin(),ymax.end());
+  double min = *std::max_element(ymin.begin(),ymin.end());
+  std::string title2d=("h2d"+std::to_string(HISTO_INDEX));
+  TH2 * h2d = new TH2F(title2d.c_str(),title2d.c_str(), Nbin,Min,Max,1000,min,max);
+  h2d->Draw();
+  for(unsigned i=0;i<H.size(); ++i) {
+    if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
+    else  H[i]->Draw(gopt.c_str());
+  }
+  h2d->SetTitle(var.c_str());
+  h2d->GetXaxis()->SetTitle(var.c_str());
+
+  TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  for(unsigned i=0;i<SCANS.size();++i) {
+    //typeof(SCANS[i]);
+    Scan_t  &  s = SCANS[i];
+    l->AddEntry(H[i],s[0].type.c_str(), "lp");
+  }
+  l->Draw();
+  return H;
+}
+
 ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
 {
   ChannelSelectionResult_t result;
