@@ -260,7 +260,7 @@ void cmpall(Selection &S=SEL8) {
   //cmp({MC , DATA} , S , "p"              , "" , "NORM" , 40 , 0   , 1.1);
   //cmp({MC , DATA} , S , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
   //cmp({MC , DATA} , S , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
-  cmp({MC , DATA} , S , "Mpi"     , "" , "NORM" , 40 , 0.11  , 0.15);
+  cmp({MC , DATA} , S , "Mpi0"     , "" , "NORM" , 40 , 0.11  , 0.15);
   cmp({MC , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
 }
 
