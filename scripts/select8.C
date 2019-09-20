@@ -20,8 +20,8 @@
 #include <map>
 
 //auto RUNTABLE  = read_my_runtable("scan_points_ems3.txt");
-//auto RUNTABLE  = read_my_runtable("scan_points_ems3_privalov_lum.txt");
-auto RUNTABLE  = read_my_runtable("scan_points_ems2_privalov_lum.txt");
+auto RUNTABLE  = read_my_runtable("scan_points_ems3_privalov_lum.txt");
+//auto RUNTABLE  = read_my_runtable("scan_points_ems2_privalov_lum.txt");
 
 //read data from directory "data". Runs are combined into points according to runtable scan_points.txt
 auto DATA        = read_data("data", RUNTABLE);
@@ -224,8 +224,8 @@ void doall(Selection & S=SEL8, double kptem=1.0, Scan_t & D = DATA/* data */ , S
   set_kptem(M,kptem);
   set_efficiency(result,M,1000000);
   fit(result, name + ".txt",  S.name);
-  //sleep(10);
-  //make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
+  sleep(10);
+  make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
 };
 
 void cmpall(Selection &S) {
