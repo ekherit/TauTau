@@ -1770,8 +1770,9 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
     l->AddEntry(H[i],s[0].type.c_str(), "lp");
   }
   l->Draw();
-  c->SaveAs("tmp.root");
-  return H;
+  return c;
+  //c->SaveAs("tmp.root");
+  //return H;
 }
 
 std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
