@@ -1816,8 +1816,8 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::s
   h2d->Draw();
   for(unsigned i=0;i<H.size(); ++i) {
     //if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
-    //if(is_norm) H[i]->DrawNormalized((gopt+ " HIST").c_str());
-    if(is_norm) H[i]->DrawNormalized((gopt+ " HIST PLC").c_str());
+    if(is_norm) H[i]->DrawNormalized((gopt+ " HIST").c_str());
+    //if(is_norm) H[i]->DrawNormalized((gopt+ " HIST PLC").c_str());
     else  H[i]->Draw(gopt.c_str());
   }
   h2d->SetTitle(var.c_str());
