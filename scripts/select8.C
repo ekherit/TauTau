@@ -216,6 +216,30 @@ Selection SEL8 =
   },
 };
 
+Selection SELRHO =
+{
+  "SEL8", //selection name
+  //common cuts
+  "Nc==2"
+ // "&& p[0] < 1.1 && p[1] < 1.1"
+  "&& p[0] < 1.05 && p[1] < 1.05"
+  "&& E[0]>0.025 && E[1]>0.025"
+  "&& pt[0]>0.2 && pt[1]>0.2"
+  //"&& abs(cos(theta[0]))<0.93"
+  //"&& abs(cos(theta[1]))<0.93"
+  "&& abs(cos(theta[0]))<0.8"
+  "&& abs(cos(theta[1]))<0.8"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  , 
+  PID,
+  //kinematic selection for different channel
+  { 
+    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
+    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
+    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
+  },
+};
+
 void doall(Selection & S=SEL8, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="sel8" /* the name of do all */, std::vector<int> skip_list = {})
 {
   set_kptem(D,kptem); 
@@ -228,14 +252,16 @@ void doall(Selection & S=SEL8, double kptem=1.0, Scan_t & D = DATA/* data */ , S
   make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
 };
 
-void cmpall(Selection &S) {
-  cmp({MC , DATA} , SEL8 , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
-  cmp({MC , DATA} , SEL8 , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
-  cmp({MC , DATA} , SEL8 , "acop"           , "" , "NORM" , 40 , 0   , 1);
-  cmp({MC , DATA} , SEL8 , "acol"           , "" , "NORM" , 40 , 0   , 1);
-  cmp({MC , DATA} , SEL8 , "p"              , "" , "NORM" , 40 , 0   , 1.1);
-  cmp({MC , DATA} , SEL8 , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
-  cmp({MC , DATA} , SEL8 , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
+void cmpall(Selection &S=SEL8) {
+  //cmp({MC , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({MC , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
+  //cmp({MC , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());
+  //cmp({MC , DATA} , S , "acol"           , "" , "NORM" , 40 , 0   , 1);
+  //cmp({MC , DATA} , S , "p"              , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({MC , DATA} , S , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
+  //cmp({MC , DATA} , S , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
+  cmp({MC , DATA} , S , "Mpi"     , "" , "NORM" , 40 , 0.11  , 0.15);
+  cmp({MC , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
 }
 
 
