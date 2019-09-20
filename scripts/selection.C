@@ -1778,7 +1778,7 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::s
   std::string title = (var + ":" + extracut);
   auto c  = get_new_tailed_canvas(title.c_str());
   gStyle->SetOptStat(0);
-  std::vector<int> color={kRed, kBlue, kBlack, kGreen+2};
+  std::vector<int> color={kRed, kBlack, kBlue, kGreen+2, kYellow,kCyan};
   std::vector<int> line = {1,2,3};
   std::smatch sm;
   bool is_norm = std::regex_match(gopt, sm, std::regex("NORM|norm")); 
@@ -1788,7 +1788,8 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::s
     h->SetLineWidth(2);
     h->SetLineColor(color[i % color.size()]);
     h->SetMarkerColor(color[i % color.size()]);
-    //h->SetLineStyle(line[(i/color.size())%line.size()]);
+    h->SetMarkerStyle(i+20);
+    h->SetLineStyle(line[(i/color.size())%line.size()]);
     H.push_back(h);
   }
   std::vector<double> ymax;
@@ -1814,7 +1815,8 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::s
   TH2 * h2d = new TH2F(title2d.c_str(),title2d.c_str(), Nbin,Min,Max,1000,min,max);
   h2d->Draw();
   for(unsigned i=0;i<H.size(); ++i) {
-    if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
+    //if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
+    if(is_norm) H[i]->DrawNormalized((gopt+ " HIST").c_str());
     else  H[i]->Draw(gopt.c_str());
   }
   h2d->SetTitle(var.c_str());
