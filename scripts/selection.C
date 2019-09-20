@@ -1773,7 +1773,7 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
   return H;
 }
 
-std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::vector<TH1*> H;
   std::string title = (var + ":" + extracut);
   auto c  = get_new_tailed_canvas(title.c_str());
