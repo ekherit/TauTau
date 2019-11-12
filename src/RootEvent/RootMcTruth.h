@@ -95,7 +95,7 @@ struct RootMcTruth
     RecMdcKalTrack * mdc = track->mdcKalTrack();
     double x=1e100;
     bool found=false;
-    for(Event::McParticleCol::iterator ip=mcParticleCol->begin(); ip!=mcParticleCol->end(); ++ip)
+    for(Event::McParticleCol::const_iterator ip=mcParticleCol->begin(); ip!=mcParticleCol->end(); ++ip)
     {
       Event::McParticle * p = *ip;
       int mc_track_id = p->trackIndex();
