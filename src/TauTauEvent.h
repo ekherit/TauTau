@@ -18,26 +18,26 @@
 
 #include <vector>
 
-#include "EventModel/EventHeader.h"
-
 #include "RootEvent/RootTuple.h"
 #include "RootEvent/RootTrack.h"
-
-#include "RootEvent/RootPid.h"
 #include "RootEvent/RootMcTruth.h"
+#include "RootEvent/RootPid.h"
 
-#include "CLHEP/Vector/LorentzVector.h"
 
 #include "SelectionConfig.h"
+
+class EventModel::MC::McParticleCol;
+class EvtRecTrack;
+class Event::EventHeader;
 
 // =====================================================================================
 //        Class:  RootEvent
 //  Description:  Main event information supposed to used for selection
 // =====================================================================================
-class RootTauTauEvent : public RootTuple
+class TauTauEvent : public RootTuple
 {
   public:
-    virtual ~RootTauTauEvent(void);
+    virtual ~TauTauEvent(void);
     NTuple::Item<long>    run; //run number
     NTuple::Item<long>    event; //event number 
     NTuple::Item<long>    time; //time of the event
@@ -128,5 +128,5 @@ class RootTauTauEvent : public RootTuple
     virtual void fill(int i,  EvtRecTrack * track);
 
     bool pass(const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const SelectionConfig & cfg);
-    bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
+    bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader, const EventModel::MC::McParticleCol *,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
 };
