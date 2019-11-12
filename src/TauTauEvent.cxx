@@ -14,18 +14,23 @@
 //
 // =====================================================================================
 
+#include "CLHEP/Vector/LorentzVector.h"
+
+#include "McTruth/McParticle.h"
+#include "EventModel/EventHeader.h"
+
 #include "TauTauEvent.h"
 #include "PhysConst.h"
 #include "Utils.h"
 #include "Tracker.h"
 
-RootTauTauEvent::~RootTauTauEvent(void)
+TauTauEvent::~TauTauEvent(void)
 {
 }
 
 const int UNSET_VALUE = -999;
 
-void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
+void TauTauEvent::fill(int i,  EvtRecTrack * track)
 {
   if(track->isMdcTrackValid())
   {
@@ -99,7 +104,7 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
   }
 }
 
-bool RootTauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
+bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const EventModel::MC::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;
   result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS; //two charged tracks
