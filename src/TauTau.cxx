@@ -140,8 +140,9 @@ StatusCode TauTau::initialize(void)
     exit(0);
   }
 
+  //init counters
   nproceed_events=0;
-  nwrited_events = 0;
+  nwrited_events=0;
   ntautau_events=0;
   nbhabha_events=0;
   ngg_events=0;
@@ -218,11 +219,10 @@ StatusCode TauTau::execute()
     nwritten_events++;
   }
 
-  //TAU TAU SELECTION and chi_c1 -> Jpsi gamma selection
 
   /* *******************  SELECT  DIGAMMA  EVENTS ********************************** */
   //see selection detail in GammaGammaEvent.h
-  if(fGG.pass(eventHeader.ptr(), Tc,Tgn) )
+  if(fGG.pass(eventHeader.ptr(), cfg.CENTER_MASS_ENERGY, Tc,Tgn) )
   {
     fGG.write();
     ngg_events++;
