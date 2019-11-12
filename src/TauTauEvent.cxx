@@ -23,6 +23,7 @@
 #include "PhysConst.h"
 #include "Utils.h"
 #include "Tracker.h"
+#include "combinator.h"
 
 TauTauEvent::~TauTauEvent(void)
 {
