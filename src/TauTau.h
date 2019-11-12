@@ -52,7 +52,7 @@ class TauTau : public Algorithm
     long int ntautau_events;  //number of selected (and written) tau tau events
     long int nbhabha_events;  //number of Bhabha events to measure luminosity
     long int ngg_events;      //number of Digamma events to measure luminosity
-    RootTauTauEvent fEvent; //tau tau events
+    TauTauEvent fEvent; //tau tau events
     GammaGammaEvent fGG;   //gamma gamma events for luminosity
     BhabhaEvent     fBB;   //Bhabha events for luminosity
 };
