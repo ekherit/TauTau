@@ -99,7 +99,7 @@ void RootTauTauEvent::fill(int i,  EvtRecTrack * track)
   }
 }
 
-bool RootTauTauEvent::pass(const SelectionConfig & cfg, const SmartDataPtr<Event::EventHeader> & eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
+bool RootTauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;
   result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS; //two charged tracks
@@ -118,7 +118,7 @@ bool RootTauTauEvent::pass(const SelectionConfig & cfg, const SmartDataPtr<Event
      || (Tgn.size() == 2  && Tn.size() == 2)
      || (Tgn.size() == 4  && Tn.size() == 2)
     );
-  if(!result) resurn false;
+  if(!result) return false;
   bool select=true;
   ngood_charged_track = Tc.size();
   ngood_neutral_track = Tn.size();

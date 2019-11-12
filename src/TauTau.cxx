@@ -205,7 +205,7 @@ StatusCode TauTau::execute()
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
   /* ****************** TAU PAIR SELECTION **********************************/
-  if ( Tc.size() == central_tracks.size()  && fEvent.pass(cfg, eventHeader, Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
+  if ( Tc.size() == central_tracks.size()  && fEvent.pass(cfg, eventHeader.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
   {
     fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
     fEvent.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
@@ -222,7 +222,7 @@ StatusCode TauTau::execute()
 
   /* *******************  SELECT  DIGAMMA  EVENTS ********************************** */
   //see selection detail in GammaGammaEvent.h
-  if(fGG.pass(eventHeader, Tc,Tgn) )
+  if(fGG.pass(eventHeader.ptr(), Tc,Tgn) )
   {
     fGG.write();
     ngg_events++;
@@ -231,7 +231,7 @@ StatusCode TauTau::execute()
 
   /* *******************  SELECT  BHABHA EVENTS ********************************** */
   //see selection detail in BhabhaEvent.h
-  if(fBB.pass(eventHeader, Tc,Tn))
+  if(fBB.pass(eventHeader.ptr(), Tc,Tn))
   {
     fBB.write();
     nbhabha_events++;
