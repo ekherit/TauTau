@@ -142,7 +142,7 @@ StatusCode TauTau::initialize(void)
 
   //init counters
   nproceed_events=0;
-  nwrited_events=0;
+  nwritten_events=0;
   ntautau_events=0;
   nbhabha_events=0;
   ngg_events=0;
