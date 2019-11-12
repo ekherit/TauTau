@@ -93,6 +93,7 @@ class BhabhaEvent : public RootTuple
 
     virtual void fill(int i,  EvtRecTrack * track, double CENTER_MASS_ENERGY=3.6) 
     {
+      const int UNSET_VALUE = -999;
       if(track->isMdcTrackValid())
       {
         //RecMdcKalTrack * mdc = track->mdcKalTrack();
