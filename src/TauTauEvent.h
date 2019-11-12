@@ -18,6 +18,8 @@
 
 #include <vector>
 
+#include "EventModel/EventHeader.h"
+
 #include "RootEvent/RootTuple.h"
 #include "RootEvent/RootTrack.h"
 
