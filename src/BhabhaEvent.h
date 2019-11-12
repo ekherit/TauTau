@@ -71,9 +71,9 @@ class BhabhaEvent : public RootTuple
     NTuple::Item<long> Nq;            //number of charged tracks in event
     NTuple::Item<double> delta_phi;   //delta phi
     NTuple::Item<double> delta_theta; //delta theta
+    NTuple::Item<double> acol;        //Acolinearity
     NTuple::Array<double> E_Eb;       //E/Ebeam
-    NTuple::Array<double> p_Eb;      // p/Ebeam
-    tuple->addItem("acol",acol);
+    NTuple::Array<double> p_Eb;       //p/Ebeam
 
     virtual void bind_tuple(void)
     {
@@ -84,6 +84,7 @@ class BhabhaEvent : public RootTuple
       tuple->addItem ("Nq", Nq, 0,MAX_CHARGED_TRACKS_NUMBER); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
+      tuple->addItem("acol",acol);
       tuple->addIndexedItem ("E_Eb", Nq, E_Eb);
       tuple->addIndexedItem ("p_Eb", Nq, p_Eb);
       T.add_to_tuple (tuple,Nq); 
@@ -170,7 +171,7 @@ class BhabhaEvent : public RootTuple
     }
 
 
-    bool pass(const SmartDataPtr<Event::EventHeader> & eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn) 
+    bool pass(const Event::EventHeader * eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn) 
     {
       bool result = true;
       result = result && Tc.size() < MAX_CHARGED_TRACKS_NUMBER;
@@ -212,8 +213,8 @@ class BhabhaEvent : public RootTuple
       result = result && delta_phi > MIN_DELTA_PHI_CUT;
       result = result && delta_phi < MAX_DELTA_PHI_CUT;
       for(int i=0;i<2;++i) {
-        result = result && T[i].theta[i] < COS_THETA_CUT;
-        result = result && MIN_EEB_CUT < T[i].E_Eb  && T[i].E_EB  < MAX_EEB_CUT;
+        result = result && T.theta[i] < COS_THETA_CUT;
+        result = result && MIN_EEB_CUT < E_Eb  && E_Eb  < MAX_EEB_CUT;
       }
       run   = eventHeader->runNumber();
       event = eventHeader->eventNumber();
