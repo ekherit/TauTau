@@ -15,6 +15,7 @@
  *
  * =====================================================================================
  */
+#pragma once
 
 #include "GaudiKernel/SmartDataPtr.h"
 #include "GaudiKernel/IDataProviderSvc.h"
@@ -30,6 +31,8 @@
 #include <vector>
 #include <limits>
 #include <cassert>
+
+
 
 struct Tracker
 {

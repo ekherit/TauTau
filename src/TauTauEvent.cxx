@@ -17,6 +17,7 @@
 #include "TauTauEvent.h"
 #include "PhysConst.h"
 #include "Utils.h"
+#include "Tracker.h"
 
 RootTauTauEvent::~RootTauTauEvent(void)
 {
