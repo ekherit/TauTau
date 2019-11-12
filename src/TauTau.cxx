@@ -64,7 +64,6 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 
 #include "ParticleID/ParticleID.h"
 
-#include "pair_comb.h"
 
 inline double sq(double x) { return x*x; }
 
