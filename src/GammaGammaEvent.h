@@ -23,6 +23,7 @@
 #include "RootEvent/RootTuple.h" 
 #include "CLHEP/Vector/LorentzVector.h"
 
+#include "Utils.h"
 //#include "SelectionConfig.h"
 
 // =====================================================================================
@@ -106,8 +107,8 @@ class GammaGammaEvent : public RootTuple
       N0 = Tn.size();
       Nq = Tc.size();
       result = result &&  2 <= N0;
-      resutl = result && N0 <= MAX_NEUTRAL_TRACKS_NUMBER;
-      resutl = result && Nq <= MAX_CHARGED_TRACKS_NUMBER;
+      result = result && N0 <= MAX_NEUTRAL_TRACKS_NUMBER;
+      result = result && Nq <= MAX_CHARGED_TRACKS_NUMBER;
       if(!result) return false;
       /*  
           std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
