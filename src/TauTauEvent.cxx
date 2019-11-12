@@ -219,6 +219,7 @@ bool RootTauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader
     }
   } else if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
   {
+    //TAU TAU SELECTION and chi_c1 -> Jpsi gamma selection
     double Mjpsi = M2 > 0 ? sqrt(M2) : 0;
     select = select && ( fabs(Mjpsi - JPSI_MASS) < 0.02 );
   } else  {

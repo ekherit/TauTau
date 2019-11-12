@@ -24,7 +24,7 @@
 #include "CLHEP/Vector/LorentzVector.h"
 
 #include "Utils.h"
-//#include "SelectionConfig.h"
+#include "SelectionConfig.h"
 
 // =====================================================================================
 //        Class:  GammaGammaEvent
@@ -101,7 +101,7 @@ class GammaGammaEvent : public RootTuple
       }
     }
 
-    bool pass(const Event::EventHeader * eventHeader, const  std::vector<EvtRecTrack*>  & Tc /* charged tracks */, const  std::vector<EvtRecTrack*>  & Tn /* netural tracks */) 
+    bool pass(const Event::EventHeader * eventHeader, double W, const  std::vector<EvtRecTrack*>  & Tc /* charged tracks */, const  std::vector<EvtRecTrack*>  & Tn /* netural tracks */) 
     {
       bool result = true;
       N0 = Tn.size();
@@ -138,7 +138,7 @@ class GammaGammaEvent : public RootTuple
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();
         E[i] = emc->energy();
-        x[i] = 2.0*E[i] / cfg.CENTER_MASS_ENERGY;
+        x[i] = 2.0*E[i] / W;
         phi[i] = emc->phi();
         theta[i] = emc->theta();
         keep = keep && ( EEB_MIN_CUT < x[i]  && x[i] < EEB_MAX_CUT );
