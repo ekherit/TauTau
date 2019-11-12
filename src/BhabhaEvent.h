@@ -101,18 +101,18 @@ class BhabhaEvent : public RootTuple
         T.id[i] = mdc->trackId(); //id of the track
         T.q[i] =  mdc->charge(); //charge of the track
         T.p[i] = mdc->p();
-        T.p_Eb[i] = 2 * T.p[i] / CENTER_MASS_ENERGY;
+        p_Eb[i] = 2 * T.p[i] / CENTER_MASS_ENERGY;
         if(track->isEmcShowerValid())
         {
           T.E[i] = track->emcShower()->energy();
           T.Ep[i] = T.E[i]/T.p[i];
-          T.E_Eb[i] = 2 * T.E[i] / CENTER_MASS_ENERGY;
+          E_Eb[i] = 2 * T.E[i] / CENTER_MASS_ENERGY;
         }
         else
         {
           T.E[i] = UNSET_VALUE;
           T.Ep[i] = UNSET_VALUE;
-          T.E_Eb[i] = UNSET_VALUE;
+          E_Eb[i] = UNSET_VALUE;
         }
         T.px[i] = mdc->px();
         T.py[i] = mdc->py();
