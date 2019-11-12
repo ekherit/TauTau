@@ -24,6 +24,7 @@
 #include "Utils.h"
 #include "Tracker.h"
 #include "combinator.h"
+#include "pair_comb.h"
 
 TauTauEvent::~TauTauEvent(void)
 {
@@ -232,9 +233,9 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     select = false;
   }
   result = select;
-  fEvent.run   = eventHeader->runNumber();
-  fEvent.event = eventHeader->eventNumber();
-  fEvent.time  = eventHeader->time();
-  fEvent.channel = 0;
+  run   = eventHeader->runNumber();
+  event = eventHeader->eventNumber();
+  time  = eventHeader->time();
+  channel = 0;
   return result;
 }
