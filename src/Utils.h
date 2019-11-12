@@ -323,7 +323,7 @@ inline double Aplanarity(std::vector<double> & v)
 
 
 template < class T>
-bool in( const T & value, const T & min, const T & max ) { return  min < T && T < max; }
+bool in( const T & value, const T & min, const T & max ) { return  min < value && value < max; }
 
 /* Have to write own accumulator - just copy from cppreference.com */
 /*
