@@ -34,7 +34,7 @@
 
 #include "SelectionConfig.h"
 
-#include "RootTauTauEvent.h" 
+#include "TauTauEvent.h" 
 #include "GammaGammaEvent.h"
 #include "BhabhaEvent.h"
 
