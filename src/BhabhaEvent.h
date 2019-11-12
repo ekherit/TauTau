@@ -80,8 +80,8 @@ class BhabhaEvent : public RootTuple
       tuple->addItem ("run", run);
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
-      tuple->addItem ("N0", N0, 0,MAX_NEUTRAL_TRACKS_NUMBER); 
-      tuple->addItem ("Nq", Nq, 0,MAX_CHARGED_TRACKS_NUMBER); 
+      tuple->addItem ("N0", N0, 0,3); 
+      tuple->addItem ("Nq", Nq, 0,3); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
       tuple->addItem("acol",acol);
