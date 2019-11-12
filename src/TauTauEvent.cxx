@@ -104,7 +104,7 @@ void TauTauEvent::fill(int i,  EvtRecTrack * track)
   }
 }
 
-bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const EventModel::MC::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
+bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;
   result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS; //two charged tracks
