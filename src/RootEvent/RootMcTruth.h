@@ -90,7 +90,7 @@ struct RootMcTruth
     whitelist.insert(id);
   }
 
-	virtual void fill(int i, EvtRecTrack * track,  Event::McParticleCol * mcParticleCol)
+  virtual void fill(int i, EvtRecTrack * track,  const Event::McParticleCol * mcParticleCol)
   {
     RecMdcKalTrack * mdc = track->mdcKalTrack();
     double x=1e100;
