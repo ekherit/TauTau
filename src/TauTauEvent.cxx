@@ -14,7 +14,7 @@
 //
 // =====================================================================================
 
-#include "RootTauTauEvent.h"
+#include "TauTauEvent.h"
 #include "PhysConst.h"
 #include "Utils.h"
 
