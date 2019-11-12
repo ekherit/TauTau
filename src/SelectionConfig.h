@@ -19,12 +19,12 @@
 
 struct SelectionConfig
 {
-	double CENTER_MASS_ENERGY;      //center mass energy
+  double CENTER_MASS_ENERGY;      //center mass energy
 
-	int MIN_CHARGED_TRACKS; //minimum good charged tracks in selection
-	int MAX_CHARGED_TRACKS; //maximum good charged tracks in selection
+  int MIN_CHARGED_TRACKS; //minimum good charged tracks in selection
+  int MAX_CHARGED_TRACKS; //maximum good charged tracks in selection
 
-	int MAX_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
+  int MAX_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
 
   double IP_MAX_RHO, IP_MAX_Z; //interection point cut
   int  USE_VERTEX_DB; //user vertex db information

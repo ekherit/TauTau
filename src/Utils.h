@@ -228,6 +228,15 @@ inline bool PtOrder(EvtRecTrack * track1, EvtRecTrack *track2)
     return mdc1->pxy() < mdc2->pxy();
 }
 
+inline bool MomentumOrder(EvtRecTrack * track1, EvtRecTrack *track2)
+{
+    if(!track2->isMdcTrackValid()) return false; 
+    RecMdcTrack * mdc2 = track2->mdcTrack();  
+    if(!track1->isMdcTrackValid()) return true; 
+    RecMdcTrack * mdc1 = track1->mdcTrack();  
+    return mdc1->p() < mdc2->p();
+}
+
 inline int GetCharge(EvtRecTrack * track)
 {
   if(!track->isMdcTrackValid()) return -999;
@@ -311,6 +320,10 @@ inline double Aplanarity(std::vector<double> & v)
 {
   return 1.5*v[2];
 }
+
+
+template < class T>
+bool in( const T & value, const T & min, const T & max ) { return  min < T && T < max; }
 
 /* Have to write own accumulator - just copy from cppreference.com */
 /*

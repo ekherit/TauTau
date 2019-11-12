@@ -18,13 +18,14 @@
 
 #include <vector>
 
-#include "RootEvent/RootTuple.h" #include "CLHEP/Vector/LorentzVector.h"
+#include "RootEvent/RootTuple.h" 
+#include "CLHEP/Vector/LorentzVector.h"
 
-#include "SelectionConfig.h"
+//#include "SelectionConfig.h"
 
 // =====================================================================================
 //        Class:  GammaGammaEvent
-//  Description:   Two gamma   
+//  Description:  Digamma events to measure luminosity
 // =====================================================================================
 
 class GammaGammaEvent : public RootTuple
@@ -34,8 +35,8 @@ class GammaGammaEvent : public RootTuple
     GammaGammaEvent(void)
     {
       //default selections
-      CHARGED_TRACKS_NUMBER = 0;
-      NEUTRAL_TRACKS_NUMBER = 2;
+      MAX_CHARGED_TRACKS_NUMBER = 0;
+      MAX_NEUTRAL_TRACKS_NUMBER = 5;
       DELTA_THETA_CUT = 0.05;
       MIN_DELTA_PHI_CUT = -0.06;
       MAX_DELTA_PHI_CUT = 0.02;
@@ -43,8 +44,8 @@ class GammaGammaEvent : public RootTuple
       EEB_MIN_CUT = 0.8;
       EEB_MAX_CUT = 1.2;
     }
-    long   CHARGED_TRACKS_NUMBER;
-    long   NEUTRAL_TRACKS_NUMBER;
+    long   MAX_CHARGED_TRACKS_NUMBER;
+    long   MAX_NEUTRAL_TRACKS_NUMBER;
     double DELTA_THETA_CUT;
     double MIN_DELTA_PHI_CUT;
     double MAX_DELTA_PHI_CUT;
@@ -76,8 +77,8 @@ class GammaGammaEvent : public RootTuple
       tuple->addItem ("run", run);
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
-      tuple->addItem ("N0", N0, 0,2); 
-      tuple->addItem ("Nq", Nq, 0,2); 
+      tuple->addItem ("N0", N0, 0,MAX_NEUTRAL_TRACKS_NUMBER); 
+      tuple->addItem ("Nq", Nq, 0,MAX_CHARGED_TRACKS_NUMBER); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
       tuple->addIndexedItem ("E", N0, E);
@@ -96,4 +97,66 @@ class GammaGammaEvent : public RootTuple
         E_Eb[i] = 2 * E[i] / CENTER_MASS_ENERGY;
       }
     }
+
+    bool pass(const SmartDataPtr<Event::EventHeader> & eventHeader, const  std::vector<EvtRecTrack*>  & Tc /* charged tracks */, const  std::vector<EvtRecTrack*>  & Tn /* netural tracks */) 
+    {
+      bool result = true;
+      N0 = Tn.size();
+      Nq = Tc.size();
+      result = result &&  2 <= N0;
+      resutl = result && N0 <= MAX_NEUTRAL_TRACKS_NUMBER;
+      resutl = result && Nq <= MAX_CHARGED_TRACKS_NUMBER;
+      if(!result) return false;
+      /*  
+          std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
+          std::cout << " N0 cut = " << fGG.NEUTRAL_TRACKS_NUMBER;
+          std::cout << " Nq cut = " << fGG.CHARGED_TRACKS_NUMBER;
+          std::cout << " E/B min = " << fGG.EEB_MIN_CUT;
+          std::cout << " E/B max = " << fGG.EEB_MAX_CUT;
+          std::cout << " cos = " << fGG.COS_THETA_CUT;
+          std::cout << " delta theta = " << fGG.DELTA_THETA_CUT;
+          std::cout << " delta phi min = " << fGG.MIN_DELTA_PHI_CUT;
+          std::cout << " delta phi max = " << fGG.MAX_DELTA_PHI_CUT;
+          std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
+          std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
+          std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
+          std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
+          std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
+          std::cout << std::endl;
+          */
+
+      std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
+      std::reverse(Tn.begin(),Tn.end());
+      bool keep=true;
+      double E[2];
+      double x[2]; //E/Ebeam
+      double theta[2];
+      double phi[2];
+      for(int i=0;i<2;i++) {
+        RecEmcShower * emc = Tn[i]->emcShower();
+        E[i] = emc->energy();
+        x[i] = 2.0*E[i] / cfg.CENTER_MASS_ENERGY;
+        phi[i] = emc->phi();
+        theta[i] = emc->theta();
+        keep = keep && ( EEB_MIN_CUT < x[i]  && x[i] < EEB_MAX_CUT );
+        keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
+        E[i] = E[i];
+        E_Eb[i] = x[i];
+        phi[i] = phi[i];
+        theta[i] = theta[i];
+      }
+      delta_theta =  theta[0] + theta[1] - M_PI;
+      delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
+      keep = keep && fabs( delta_theta) < DELTA_THETA_CUT;
+      keep = keep && delta_phi > MIN_DELTA_PHI_CUT;
+      keep = keep && delta_phi < MAX_DELTA_PHI_CUT;
+      result = keep;
+
+      run   = eventHeader->runNumber();
+      event = eventHeader->eventNumber();
+      time  = eventHeader->time();
+
+      return result;
+    }
 };
+

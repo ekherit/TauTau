@@ -102,23 +102,6 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 5.5);
 
   declareProperty("DELTA_MJPSI"                , cfg.DELTA_MJPSI                   = 0.2);
-
-
-  //good netural tracks
-  //declareProperty("EMC_ENDCUP_MIN_ENERGY",    cfg.EMC_ENDCUP_MIN_ENERGY = 0.05);
-  //declareProperty("EMC_BARREL_MIN_ENERGY",    cfg.EMC_BARREL_MIN_ENERGY = 0.025);
-
-  ////endcup calorimeter
-  //declareProperty("EMC_ENDCUP_MIN_COS_THETA", cfg.EMC_ENDCUP_MIN_COS_THETA = 0.83); //was 0.86
-  //declareProperty("EMC_ENDCUP_MAX_COS_THETA", cfg.EMC_ENDCUP_MAX_COS_THETA = 0.92);
-
-  ////barrel calorimeter
-  //declareProperty("EMC_BARREL_MAX_COS_THETA", cfg.EMC_BARREL_MAX_COS_THETA = 0.83); //was 0.8
-  //declareProperty("NEUTRAL_CLOSE_CHARGED_ANGLE",    cfg.NEUTRAL_CLOSE_CHARGED_ANGLE = 10);
-
-  //for tau+ -> pi+pi0
-  //declareProperty("GAMMA_GAMMA_MIN_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.10);
-  //declareProperty("GAMMA_GAMMA_MAX_INV_MASS", cfg.GAMMA_GAMMA_MIN_INV_MASS = 0.20);
   declareProperty("TEST_COMBINATIONS", cfg.TEST_COMBINATIONS=0);
 
 }
@@ -166,13 +149,14 @@ StatusCode TauTau::initialize(void)
   try
   {
     fEvent.make_tuple(this, "FILE1/tt","Signal tau tau events");
-    fGG.make_tuple(this, "FILE1/gg","Two gamma (luminocity) events");
+    fGG.make_tuple(this, "FILE1/gg","Two gamma (luminosity) events");
+    fBB.make_tuple(this, "FILE1/bb","Bhabha (luminosity) events");
   }
-	catch(std::runtime_error & error)
-	{
-		log << MSG::ERROR << error.what() << endmsg;
-		return StatusCode::FAILURE;
-	}
+  catch(std::runtime_error & error)
+  {
+    log << MSG::ERROR << error.what() << endmsg;
+    return StatusCode::FAILURE;
+  }
   cfg.print();
   return StatusCode::SUCCESS;
 }
@@ -217,217 +201,43 @@ StatusCode TauTau::execute()
   Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks, cfg.MIN_EMC_ENERGY_FOR_CHARGED);
   Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(cfg.MIN_EMC_ENERGY_FOR_NEUTRAL);
   Tracker::Vector Tgn             = tracker.GetGoodNeutralTracks<Tracker::Vector>();
+
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
-  fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
-  fEvent.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
-  fEvent.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
-  fEvent.Enmin     = tracker.MinNeutralTracksEnergy();
-  fEvent.Enmax     = tracker.MaxNeutralTracksEnergy();
+  /* ****************** TAU PAIR SELECTION **********************************/
+  if ( Tc.size() == central_tracks.size()  && fEvent.pass(cfg, eventHeader, Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
+  {
+    fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
+    fEvent.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
+    fEvent.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
+    fEvent.Enmin     = tracker.MinNeutralTracksEnergy();
+    fEvent.Enmax     = tracker.MaxNeutralTracksEnergy();
+
+    fEvent.write();
+    ntautau_events++;
+    nwritten_events++;
+  }
 
   //TAU TAU SELECTION and chi_c1 -> Jpsi gamma selection
-  if(
-      Tc.size() == central_tracks.size()  //all central tracks has energy deposite in EMS
-    &&
-      cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS
-    &&
-      GetTotalCharge(Tc) == 0  // opposite charge for tracks
-    && 
-      (    Tc.size() == 2  
-        || Tc.size() == 4 
-        || Tc.size() == 6 //till 3 charged particle decay for each tau
-      ) 
-    && 
-      (     Tn.size() == 0 
-        || Tgn.size() == 1 //this is for eta_c2  -> J/psi gamma
-        || Tgn.size() == 2 
-        || Tgn.size() == 4 
-      //  || Tgn.size() == 6 
-      //  || Tgn.size() == 8 //till 2pi0 for each tau decay
-      )
-    )
+
+  /* *******************  SELECT  DIGAMMA  EVENTS ********************************** */
+  //see selection detail in GammaGammaEvent.h
+  if(fGG.pass(eventHeader, Tc,Tgn) )
   {
-    bool select=true;
-    fEvent.ngood_charged_track = Tc.size();
-    fEvent.ngood_neutral_track = Tn.size();
-
-    fEvent.Pid.init();
-
-    std::vector<HepLorentzVector> Pc = GetMdcLorentzVector(Tc); //lorentz vector for charged tracks (electron hypoteza)
-    std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tgn);
-
-    HepLorentzVector Psum = GetTotalFourMomentum(Pc);
-    Hep3Vector p3sum      = GetTotalMomentum(Pc);
-    Hep3Vector ptsum      = GetTotalTransverseMomentum(Pc);
-
-    for(int i=0;i<Tc.size();++i)
-    {
-      fEvent.Pid.fill(i, Tc[i]);
-      fEvent.fill(i, Tc[i]);
-      if(eventHeader->runNumber() < 0)
-      {
-        fEvent.McTruth.fill(i,Tc[i],mcParticleCol);
-      }
-    }
-    fEvent.M2    = Psum.mag2();
-    fEvent.Entot = GetTotalNeutralTracksEnergy(Tn);
-    fEvent.Emis  = cfg.CENTER_MASS_ENERGY - Psum.e() - fEvent.Entot;
-    fEvent.ptsum = ptsum.mag();
-    fEvent.ptem  = fEvent.ptsum / fEvent.Emis;
-
-    //acoplanarity and acolinearity for momentum with higher transverse momentum
-    fEvent.acop = Acoplanarity(Tc[0], Tc[1]);
-    fEvent.acol = Acolinearity(Tc[0], Tc[1]);
-
-    std::vector<double> V = getSphericityEigenvalues(Tc);
-    fEvent.S = Sphericity(V);
-    fEvent.A = Aplanarity(V);
-    fEvent.lambda1 = V[0];
-    fEvent.lambda2 = V[1];
-    fEvent.lambda3 = V[2];
-
-    if (Tgn.size() % 2 == 0) {
-      //find best pi0 combination
-      //create combination list
-      typedef std::list < std::pair<HepLorentzVector*, HepLorentzVector*> > comb_t;
-      typedef std::vector< comb_t > comb_list_t;
-      //std::vector<HepLorentzVector*> 
-      //comb_list_t pi0_cmb_list;
-      //make_unique_pairs(Pn.begin(),Pn.end(),pi0_cmb_list);
-      comb_list_t pi0_cmb_list = make_combination_list(Pn); 
-      //loop over all combinations
-      comb_list_t::iterator best_comb=pi0_cmb_list.begin();
-      double chi2_mass=1e100;
-      for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
-      {
-        double chi2=0;
-        for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
-        {
-          //calculate invariant mass
-          double m = (*(it_pair->first) +  *(it_pair->second)).mag();
-          //add to chi square
-          chi2+=pow(m-PI0_MASS,2.0);
-        }
-        if( chi2 < chi2_mass ) 
-        {
-          chi2_mass = chi2;
-          best_comb = it;
-        }
-      }
-      fEvent.npi0 = Pn.size()/2;
-      fEvent.Nrho = fEvent.npi0*Tc.size();
-      if(pi0_cmb_list.size()!=0)
-      {
-        bool has_good_pi0 = false;
-        int idx=0;
-        for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
-        {
-          double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
-          fEvent.Mpi0[idx] = m;
-          has_good_pi0 = has_good_pi0 || ( fabs(m - PI0_MASS) <  0.03); //selection of the pi0
-          //now create all combination to tie pi0 with charged tracks
-          for(int i = 0; i<Tc.size(); ++i)
-          {
-            //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
-            HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS);
-            double Mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
-            fEvent.Mrho[idx*Tc.size()+i] = Mrho;
-          }
-          idx++;
-        }
-        select &= has_good_pi0; //supress some events completely without pi0
-      }
-      select &=( cfg.MIN_PTEM < fEvent.ptem  && fEvent.ptem   < cfg.MAX_PTEM);
-      for(int i=0;i<Tc.size();++i)
-      {
-        select &= ( cfg.MIN_MOMENTUM             < fEvent.T.p[i]      && fEvent.T.p[i]      < cfg.MAX_MOMENTUM);
-        select &= ( cfg.MIN_TRANSVERSE_MOMENTUM  < fEvent.T.pt[i]     && fEvent.T.pt[i]     < cfg.MAX_TRANSVERSE_MOMENTUM);
-        select &= ( cfg.MIN_EP_RATIO             < fEvent.T.Ep[i]     && fEvent.T.Ep[i]     < cfg.MAX_EP_RATIO);
-        select &= ( cfg.MIN_TOF                  < fEvent.Pid.ftof[i] && fEvent.Pid.ftof[i] < cfg.MAX_TOF);
-      }
-    } else if( Tgn.size() == 1) //chi_c2 -> Jpsi gamma
-    {
-      double Mjpsi = fEvent.M2 > 0 ? sqrt(fEvent.M2) : 0;
-      select &= ( fabs(Mjpsi - JPSI_MASS) < 0.02 );
-    } else  {
-      select = false;
-    }
-    if(select)
-    {
-      fEvent.run   = eventHeader->runNumber();
-      fEvent.event = eventHeader->eventNumber();
-      fEvent.time  = eventHeader->time();
-      fEvent.channel = 0;
-      fEvent.write();
-      ntautau_events++;
-    }
+    fGG.write();
+    ngg_events++;
+    nwritten_events++;
   }
-SKIP_TAUTAU:
-  //GAMMA GAMMA LUMINOCITY SELECTION
-  fGG.N0 = Tgn.size();
-  fGG.Nq = Tc.size();
-  if
-  ( 
-       Tgn.size() == Tn.size()
-        &&      2 <= fGG.N0 
-        && fGG.N0 <= fGG.NEUTRAL_TRACKS_NUMBER
-        && fGG.Nq <= fGG.CHARGED_TRACKS_NUMBER
-  )
+
+  /* *******************  SELECT  BHABHA EVENTS ********************************** */
+  //see selection detail in BhabhaEvent.h
+  if(fBB.pass(eventHeader, Tc,Tn))
   {
-
-    /*  
-    std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
-    std::cout << " N0 cut = " << fGG.NEUTRAL_TRACKS_NUMBER;
-    std::cout << " Nq cut = " << fGG.CHARGED_TRACKS_NUMBER;
-    std::cout << " E/B min = " << fGG.EEB_MIN_CUT;
-    std::cout << " E/B max = " << fGG.EEB_MAX_CUT;
-    std::cout << " cos = " << fGG.COS_THETA_CUT;
-    std::cout << " delta theta = " << fGG.DELTA_THETA_CUT;
-    std::cout << " delta phi min = " << fGG.MIN_DELTA_PHI_CUT;
-    std::cout << " delta phi max = " << fGG.MAX_DELTA_PHI_CUT;
-    std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
-    std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
-    std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
-    std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
-    std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
-    std::cout << std::endl;
-    */
-
-
-    std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
-    std::reverse(Tn.begin(),Tn.end());
-
-    bool keep=true;
-    double E[2];
-    double x[2]; //E/Ebeam
-    double theta[2];
-    double phi[2];
-    for(int i=0;i<2;i++)
-    {
-      RecEmcShower * emc = Tn[i]->emcShower();
-      E[i] = emc->energy();
-      x[i] = 2.0*E[i] / cfg.CENTER_MASS_ENERGY;
-      phi[i] = emc->phi();
-      theta[i] = emc->theta();
-      keep = keep && ( fGG.EEB_MIN_CUT < x[i]  && x[i] < fGG.EEB_MAX_CUT );
-      keep = keep && fabs(cos(theta[i])) < fGG.COS_THETA_CUT;
-      fGG.E[i] = E[i];
-      fGG.E_Eb[i] = x[i];
-      fGG.phi[i] = phi[i];
-      fGG.theta[i] = theta[i];
-    }
-    fGG.delta_theta =  theta[0] + theta[1] - M_PI;
-    fGG.delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
-    keep = keep && fabs( fGG.delta_theta) < fGG.DELTA_THETA_CUT;
-    keep = keep && fGG.delta_phi > fGG.MIN_DELTA_PHI_CUT;
-    keep = keep && fGG.delta_phi < fGG.MAX_DELTA_PHI_CUT;
-    //std::cout << fGG.delta_theta << " " << fGG.delta_phi << std::endl;
-    if(keep) 
-    {
-      fGG.write();
-      ngg_events++;
-    }
+    fBB.write();
+    nbhabha_events++;
+    nwritten_events++;
   }
+
   return StatusCode::SUCCESS;
 }
 
@@ -435,9 +245,10 @@ StatusCode TauTau::finalize()
 {
   cfg.print_relevant();
   std::cout << "Event proceed: "        << nproceed_events                        << std::endl;
-  std::cout << "ττ candidates: "        << ntautau_events                         << endl;
-  std::cout << "Bhabha candidates: "    << nbhabha_events                         << endl;
-  std::cout << "γγ candidates: "        << ngg_events                             << endl;
+  std::cout << "ττ candidates: "        << ntautau_events                         << std::endl;
+  std::cout << "Bhabha candidates: "    << nbhabha_events                         << std::endl;
+  std::cout << "γγ candidates: "        << ngg_events                             << std::endl;
+  std::cout << "Total written: "        << nwritten_events                        << std::endl;
   std::cout << "Selection efficiency: " << ntautau_events/double(nproceed_events) << std::endl;
   return StatusCode::SUCCESS;
 }
