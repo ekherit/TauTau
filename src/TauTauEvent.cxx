@@ -16,8 +16,8 @@
 
 #include "CLHEP/Vector/LorentzVector.h"
 
-#include "McTruth/McParticle.h"
-#include "EventModel/EventHeader.h"
+//#include "McTruth/McParticle.h"
+//#include "EventModel/EventHeader.h"
 
 #include "TauTauEvent.h"
 #include "PhysConst.h"

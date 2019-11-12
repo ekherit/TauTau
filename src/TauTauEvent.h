@@ -26,9 +26,13 @@
 
 #include "SelectionConfig.h"
 
-class EventModel::MC::McParticleCol;
+//class EventModel::MC::McParticleCol;
+//class Event::EventHeader;
+
+#include "McTruth/McParticle.h"
+#include "EventModel/EventHeader.h"
+
 class EvtRecTrack;
-class Event::EventHeader;
 
 // =====================================================================================
 //        Class:  RootEvent
