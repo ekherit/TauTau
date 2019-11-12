@@ -8,4 +8,4 @@ constituents.makecmtsave
 x86_64-*-opt*
 cmt/setup.*
 cmt/cleanup.*
-
+*.pyc

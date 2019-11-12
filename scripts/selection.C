@@ -1683,7 +1683,6 @@ void cmp(const Scan_t & S1, const Scan_t & S2, const Selection & Sel, int i, std
 TH1 * fold(const Scan_t & D, const Selection & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::string name = "Hlastfold" + std::to_string(HISTO_INDEX);
   TH1 * H = new TH1F(name.c_str(),name.c_str() ,Nbin,Min,Max);
-  std::cout << "Proceeding ";
   for(int i =0;i<Sel.sel.size();++i) {
     std::cout << Sel[i].title << ", " << std::flush;
     std::string sel = Sel.common_cut  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
@@ -1715,9 +1714,6 @@ void cmp(const Scan_t & D1, const Scan_t & D2, const Selection & SEL,  std::stri
 
 std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const Selection & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::vector<TH1*> H;
-  //std::cout << typeid(SCANS).name() << std::endl;
-  //std::cout << typeid((Scan_t &) (SCANS[0])).name() << std::endl;
-  //return H;
   std::string title = (var + ":" + extracut);
   auto c  = get_new_tailed_canvas(title.c_str());
   gStyle->SetOptStat(0);
@@ -1726,9 +1722,10 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
   std::smatch sm;
   bool is_norm = std::regex_match(gopt, sm, std::regex("NORM|norm")); 
   for(unsigned i=0;i<SCANS.size();++i) {
+    std::cout << "Proceeding " << title.c_str() << ": ";
     auto h = fold(SCANS[i],SEL,var,extracut,gopt, Nbin,Min,Max);
     h->SetTitle(title.c_str());
-    h->SetLineWidth(2);
+    h->SetLineWidth(3);
     h->SetLineColor(color[i % color.size()]);
     h->SetMarkerColor(color[i % color.size()]);
     //h->SetLineStyle(line[(i/color.size())%line.size()]);
@@ -1749,23 +1746,26 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
     int bin_min = h->GetMinimumBin();
     ymax.push_back(h->GetBinContent(bin_max) + 2*h->GetBinError(bin_max));
     ymin.push_back(h->GetBinContent(bin_min) - 2*h->GetBinError(bin_min));
-    std::cout << ymax.back() << std::endl;
   }
   double max = *std::max_element(ymax.begin(),ymax.end());
   double min = *std::max_element(ymin.begin(),ymin.end());
   std::string title2d=("h2d"+std::to_string(HISTO_INDEX));
   TH2 * h2d = new TH2F(title2d.c_str(),title2d.c_str(), Nbin,Min,Max,1000,min,max);
   h2d->Draw();
-  for(unsigned i=0;i<H.size(); ++i) {
-    if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
-    else  H[i]->Draw(gopt.c_str());
+  for(auto h : H) {
+    if(is_norm) h->DrawNormalized((gopt+ (h == H[0] ? " HIST " : "") ).c_str());
+    else  h->Draw(gopt.c_str());
   }
+  //for(unsigned i=0;i<H.size(); ++i) {
+  //  if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
+  //  else  H[i]->Draw(gopt.c_str());
+  //}
   h2d->SetTitle(var.c_str());
   h2d->GetXaxis()->SetTitle(var.c_str());
 
-  TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  TLegend * l = new TLegend(0.6,0.8,1.0,1.0);
+  l->SetHeader(var.c_str());
   for(unsigned i=0;i<SCANS.size();++i) {
-    //typeof(SCANS[i]);
     Scan_t  &  s = SCANS[i];
     l->AddEntry(H[i],s[0].type.c_str(), "lp");
   }
@@ -1785,7 +1785,7 @@ TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var
   for(unsigned i=0;i<SCANS.size();++i) {
     auto h = fold(SCANS[i],var,extracut,gopt, Nbin,Min,Max);
     h->SetTitle(title.c_str());
-    h->SetLineWidth(2);
+    h->SetLineWidth(3);
     h->SetLineColor(color[i % color.size()]);
     h->SetMarkerColor(color[i % color.size()]);
     h->SetMarkerStyle(i+20);
@@ -1816,6 +1816,7 @@ TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var
   h2d->Draw();
   for(unsigned i=0;i<H.size(); ++i) {
     //if(is_norm) H[i]->DrawNormalized((gopt+ (i==0 ? " HIST " : "") ).c_str());
+    H[i]->SetLineWidth(3);
     if(is_norm) H[i]->DrawNormalized((gopt+ " HIST").c_str());
     //if(is_norm) H[i]->DrawNormalized((gopt+ " HIST PLC").c_str());
     else  H[i]->Draw(gopt.c_str());
@@ -1823,7 +1824,7 @@ TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var
   h2d->SetTitle(var.c_str());
   h2d->GetXaxis()->SetTitle(var.c_str());
 
-  TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  TLegend * l = new TLegend(0.6,0.8,1.0,1.0);
   for(unsigned i=0;i<SCANS.size();++i) {
     //typeof(SCANS[i]);
     Scan_t  &  s = SCANS[i];
@@ -2865,6 +2866,26 @@ void make_compare(ScanPoint_t & P1, ScanPoint_t & P2, Selection & sel, int bin =
   cmp("Mrho", "M_{#rho}", "GeV");
 }
 
+/* This compare of data and MC fold all points together */
+void make_compare2(std::vector<std::reference_wrapper<Scan_t>>  SCANS, Selection & SEL, int bin)
+{
+  gStyle->Reset("Pub");
+  auto compare = [&](std::string var, int Nb, double min,double max, std::string extracut="") {
+    cmp(SCANS,SEL, var,extracut,"NORM",Nb, min,max);
+  };
+  //compare("ptem",bin,0.1,1.1);
+  //compare("p",bin,0.1,1.1);
+  //compare("pt",bin,0,1.1);
+  //compare("tof",bin,0,6);
+  //compare("cos(theta)", bin,-1,1);
+  //compare("cos_theta_mis2", bin,-1,1);
+  //compare("Mpi0", bin, 0.138,0.141,"Npi0==1");
+  //compare("Mrho[0]",bin,0.5,1.1,"PI0 && Npi0==1");
+  compare("acop",bin,0,TMath::Pi(),"");
+  compare("acol",bin,0,TMath::Pi(),"");
+}
+
+
  std::string test_replace(std::string particle_name_prefix, std::string selection_template, int track)
 {
   std::string track_str = std::to_string(track);
@@ -3062,3 +3083,71 @@ void find_Ep(ScanPoint_t &sp, int Nbin=0, double parmin=0, double parmax=0)
   }
 };
 
+
+void draw_momentum(Scan_t & mc) {
+  gStyle->Reset("Pub");
+  mc[0].tt->SetLineColor(kGreen+3);
+  mc[0].tt->SetLineWidth(3);
+  mc[0].tt->Draw("p[0]","pid[0]==-211 & Nn==0","NORM HIS");
+  auto l = new TLegend(0.9,0.9,1.0,1.0);
+  //l->AddEntry((TObject*)nullptr,"E=M_{#tau}",""); 
+
+  mc[0].tt->GetHistogram()->GetXaxis()->SetTitle("p, GeV");
+  l->AddEntry(mc[0].tt->GetHistogram(),"#pi");
+
+  mc[0].tt->SetLineColor(kBlue);
+  mc[0].tt->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
+  l->AddEntry(mc[0].tt->GetHistogram(),"e");
+  mc[0].tt->SetLineColor(kRed);
+  mc[0].tt->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
+  l->AddEntry(mc[0].tt->GetHistogram(),"#mu");
+
+  auto l2 = new TLegend(0.9,0.9,1.0,1.0);
+  //l2->AddEntry((TObject*)nullptr,"E=M_{#tau}+23 MeV",""); 
+  mc[4].tt->SetLineWidth(3);
+  mc[4].tt->SetLineStyle(7);
+  mc[4].tt->SetLineColor(kGreen+3);
+  mc[4].tt->Draw("p[0]","pid[0]==-211 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt->GetHistogram(),"#pi");
+  mc[4].tt->SetLineColor(kBlue);
+  mc[4].tt->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt->GetHistogram(),"e");
+  mc[4].tt->SetLineColor(kRed);
+  mc[4].tt->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt->GetHistogram(),"#mu");
+  l->Draw();
+  l2->Draw();
+}
+
+void draw_Mpi0(Scan_t & mc, Scan_t & data) {
+  gStyle->Reset("Pub");
+  mc[0].tt->SetLineColor(kRed);
+  mc[0].tt->SetLineWidth(3);
+  mc[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2 && (PI0 || PI1)", "NORM HIST");
+  auto l = new TLegend(0.9,0.9,1.0,1.0);
+  l->AddEntry(mc[0].tt->GetHistogram(),"MC");
+  data[0].tt->SetLineColor(kBlue);
+  data[0].tt->SetLineWidth(3);
+  //data[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2 && (PI0 || PI1)", "SAME NORM HIST");
+  data[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2", "SAME NORM HIST");
+  l->AddEntry(data[0].tt->GetHistogram(),"DATA");
+  l->Draw();
+}
+
+void draw_Mrho(Scan_t & mc, Scan_t & data) {
+  gStyle->Reset("Pub");
+  mc[0].tt->SetLineColor(kRed);
+  mc[0].tt->SetLineWidth(3);
+  const char * var = "abs(Mrho[0]-0.775) < abs(Mrho[1]-0.775) ? Mrho[0] : Mrho[1]";
+  const char * sel = "Npi0==1 && 0.12 < Mpi0[0] && Mpi0[0]<0.14 && Nc==2";
+  mc[0].tt->Draw(var,sel, "NORM HIST");
+  mc[0].tt->GetHistogram()->GetXaxis()->SetTitle("M_{#pi#gamma#gamma}, GeV");
+  auto l = new TLegend(0.9,0.9,1.0,1.0);
+  l->AddEntry(mc[0].tt->GetHistogram(),"MC");
+
+  data[0].tt->SetLineColor(kBlue);
+  data[0].tt->SetLineWidth(3);
+  data[0].tt->Draw(var,sel, "SAME NORM HIST");
+  l->AddEntry(data[0].tt->GetHistogram(),"DATA");
+  l->Draw();
+}

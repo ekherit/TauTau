@@ -34,8 +34,9 @@
 
 #include "SelectionConfig.h"
 
-#include "RootTauTauEvent.h"
+#include "RootTauTauEvent.h" 
 #include "GammaGammaEvent.h"
+#include "BhabhaEvent.h"
 
 class TauTau : public Algorithm 
 {
@@ -46,13 +47,14 @@ class TauTau : public Algorithm
     StatusCode finalize();  
   private:
     SelectionConfig cfg;
-    long int nproceed_events;
-    long int nwrited_events;
-    long int ntautau_events; //number of mu ivents for track #1
-    long int nbhabha_events; 
-    long int ngg_events; 
+    long int nproceed_events; //total event proceed
+    long int nwritten_events;  //number of written events into all tuples
+    long int ntautau_events;  //number of selected (and written) tau tau events
+    long int nbhabha_events;  //number of Bhabha events to measure luminosity
+    long int ngg_events;      //number of Digamma events to measure luminosity
     RootTauTauEvent fEvent; //tau tau events
-    GammaGammaEvent fGG;   //gamma gamma events for luminocity
+    GammaGammaEvent fGG;   //gamma gamma events for luminosity
+    BhabhaEvent     fBB;   //Bhabha events for luminosity
 };
 
 #endif
