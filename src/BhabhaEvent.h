@@ -197,7 +197,7 @@ class BhabhaEvent : public RootTuple
         Tr.push_back(positive_tracks[i]);
       }
       std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
-      for(int i = npairs; i < tmp_trakcs.size() : ++i)  Tr.push_back(tmp_tracks[i]);
+      for(int i = npairs; i < tmp_tracks.size() : ++i)  Tr.push_back(tmp_tracks[i]);
 
 
       //now fill the tuple
