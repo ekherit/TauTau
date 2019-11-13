@@ -216,23 +216,20 @@ class BhabhaEvent : public RootTuple
       acol = Acolinearity(Tr[0], Tr[1]);
       delta_theta =  T.theta[0] + T.theta[1] - M_PI;
       delta_phi =    fabs(T.phi[1]  - T.phi[0]) - M_PI;
-      print_event(result);
+      //print_event(result);
 
       //Calculate pass result
       result = result && fabs( delta_theta) < DELTA_THETA_CUT;
-      print_event(result);
+      //print_event(result);
       result = result && delta_phi > MIN_DELTA_PHI_CUT;
-      print_event(result);
+      //print_event(result);
       result = result && delta_phi < MAX_DELTA_PHI_CUT;
-      print_event(result);
+      //print_event(result);
       for(int i=0;i<2;++i) {
         result = result && cos(T.theta[i]) < COS_THETA_CUT;
         result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
       }
-      print_event(result);
-      std::cout << std::endl;
-      //std::cout << "Before header " << std::endl;
-      //std::cout << "After header " << std::endl;
+      //print_event(result);
       return result;
     }
 
