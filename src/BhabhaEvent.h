@@ -174,6 +174,11 @@ class BhabhaEvent : public RootTuple
     bool pass(const Event::EventHeader * eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn) 
     {
       bool result = true;
+      //fill event number for printing
+      run   = eventHeader->runNumber();
+      event = eventHeader->eventNumber();
+      time  = eventHeader->time();
+
       result = result && Tc.size() >= 2;
       result = result && Tc.size() <= MAX_CHARGED_TRACKS_NUMBER;
       result = result && Tn.size() <= MAX_NEUTRAL_TRACKS_NUMBER;
@@ -198,42 +203,43 @@ class BhabhaEvent : public RootTuple
         Tr.push_back(negative_tracks[i]); //negative charged track goes first
         Tr.push_back(positive_tracks[i]);
       }
-      //std::cout << "After filling pairs: Tc.size()= " << Tc.size() << " Tn.size()  = " << Tn.size() << std::endl;
+
+      result = result && negative_tracks.size() >= 1;
+      result = result && positive_tracks.size() >= 1;
       std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
       for(int i = npairs; i < tmp_tracks.size() ; ++i)  Tr.push_back(tmp_tracks[i]);
-      //std::cout << "After filling remains: negative = " << negative_tracks.size() << "  positive.size = " << positive_tracks.size() << std::endl;
 
 
-      //now fill the tuple
       for(int i=0;i<Tr.size(); ++i) fill(i, Tr[i]); 
-      //std::cout << "After fill Track " << std::endl;
+
 
       acol = Acolinearity(Tr[0], Tr[1]);
-      std::cout << "After acolinearity: " << acol << std::endl;
       delta_theta =  T.theta[0] + T.theta[1] - M_PI;
       delta_phi =    fabs(T.phi[1]  - T.phi[0]) - M_PI;
-      std::cout << "dphi  = " << delta_phi << "  dtheta = " << delta_theta << std::endl;
-
-      //std::cout << "After calculation  delta phi" << std::endl;
-
+      print_event(result);
 
       //Calculate pass result
       result = result && fabs( delta_theta) < DELTA_THETA_CUT;
+      print_event(result);
       result = result && delta_phi > MIN_DELTA_PHI_CUT;
+      print_event(result);
       result = result && delta_phi < MAX_DELTA_PHI_CUT;
+      print_event(result);
       for(int i=0;i<2;++i) {
-        result = result && T.theta[i] < COS_THETA_CUT;
+        result = result && cos(T.theta[i]) < COS_THETA_CUT;
         result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
-        std::cout << E_Eb[i] << "        ";
       }
-      std::cout << " result = " << result;
+      print_event(result);
       std::cout << std::endl;
-
       //std::cout << "Before header " << std::endl;
-      run   = eventHeader->runNumber();
-      event = eventHeader->eventNumber();
-      time  = eventHeader->time();
       //std::cout << "After header " << std::endl;
       return result;
+    }
+
+    void print_event(bool pass) {
+      std::cout << "event = " << event << " N0 = " << N0 << " Nq = " << Nq << " Δθ = " << delta_theta << "  Δφ=" << delta_phi << " θ[0] = " << T.theta[0] << " θ[1] = " << T.theta[1];
+      std::cout << "  E[0]/Eb = " << E_Eb[0] << "   E[1]/Eb = " << E_Eb[1];
+      std::cout << " pass = " << pass;
+      std::cout << endl;
     }
 };
