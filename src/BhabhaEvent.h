@@ -26,6 +26,7 @@
 //#include "SelectionConfig.h"
 
 #include "Utils.h"
+#include "Tracker.h"
 // =====================================================================================
 //        Class:  BhabhaEvent
 //  Description:  Bhabha event to measure luminosity  
@@ -37,13 +38,13 @@ class BhabhaEvent : public RootTuple
     virtual ~BhabhaEvent(void) {};
     BhabhaEvent(void)
     {
-      //default selections
+      //default preselection selections
       MAX_CHARGED_TRACKS_NUMBER = 3;
       MAX_NEUTRAL_TRACKS_NUMBER = 5;
       COS_THETA_CUT = 0.8; //barrel
-      DELTA_THETA_CUT = 0.05;
+      DELTA_THETA_CUT = 0.04;
       MIN_DELTA_PHI_CUT = -0.06;
-      MAX_DELTA_PHI_CUT = 0.02;
+      MAX_DELTA_PHI_CUT = 0.06;
       MIN_PEB_CUT=0.8;
       MAX_PEB_CUT=1.2;
       MIN_EEB_CUT=0.8;
@@ -80,8 +81,8 @@ class BhabhaEvent : public RootTuple
       tuple->addItem ("run", run);
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
-      tuple->addItem ("N0", N0, 0,3); 
-      tuple->addItem ("Nq", Nq, 0,3); 
+      tuple->addItem ("Nn", N0, 0,5); 
+      tuple->addItem ("Nc", Nq, 0,3); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
       tuple->addItem("acol",acol);
@@ -185,30 +186,17 @@ class BhabhaEvent : public RootTuple
       if(!result) return false; //earlier rejection 
       N0 = Tn.size();
       Nq = Tc.size(); 
-      //split track list into positive and negative
-      std::vector<EvtRecTrack*> negative_tracks;
-      std::vector<EvtRecTrack*> positive_tracks;
-      for(int i=0;i<Tc.size();++i) {
-        RecMdcTrack * mdc = Tc[i]->mdcTrack();  
-        if(mdc->charge() < 0) negative_tracks.push_back(Tc[i]);
-        if(mdc->charge() > 0) positive_tracks.push_back(Tc[i]);
-      }
-      //sort them on Momentum order
-      std::sort(negative_tracks.rbegin(),negative_tracks.rend(), EmcEnergyOrder);
-      std::sort(positive_tracks.rbegin(),positive_tracks.rend(), EmcEnergyOrder);
 
-      std::vector<EvtRecTrack*> Tr; //result tracks for filling the tuple
-      size_t npairs = std::min( negative_tracks.size(), positive_tracks.size()); //number of pairs
-      for(int i=0; i < npairs; ++i) {
-        Tr.push_back(negative_tracks[i]); //negative charged track goes first
-        Tr.push_back(positive_tracks[i]);
-      }
+      std::vector< std::vector<EvtRecTrack*> >  Ts = SplitByCharge(Tc);
 
-      result = result && negative_tracks.size() >= 1;
-      result = result && positive_tracks.size() >= 1;
-      std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
-      for(int i = npairs; i < tmp_tracks.size() ; ++i)  Tr.push_back(tmp_tracks[i]);
+      //Alwais there is event one pair
+      for(int i=0;i<2;++i) result = result && !(Ts[i].empty()); 
+      if(!result) return false;
 
+      //sort by EMC energy order
+      for(int i=0;i<3;++i) std::sort(Ts[i].rbegin(), Ts[i].rend(),EmcEnergyOrder);
+
+      std::vector<EvtRecTrack*> Tr = Zip(Ts[0],Ts[1]);
 
       for(int i=0;i<Tr.size(); ++i) fill(i, Tr[i]); 
 
