@@ -174,6 +174,7 @@ class BhabhaEvent : public RootTuple
     bool pass(const Event::EventHeader * eventHeader, const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn) 
     {
       bool result = true;
+      result = result && Tc.size() >= 2;
       result = result && Tc.size() < MAX_CHARGED_TRACKS_NUMBER;
       result = result && Tn.size() < MAX_NEUTRAL_TRACKS_NUMBER;
       if(!result) return false; //earlier rejection 
@@ -205,8 +206,10 @@ class BhabhaEvent : public RootTuple
 
       //now fill the tuple
       for(int i=0;i<Tr.size(); ++i) fill(i, Tr[i]); 
+      std::cout << "After fill Track " << std::endl;
 
       acol = Acolinearity(Tr[0], Tr[1]);
+      std::cout << "Before acolinearity" << std::endl;
       delta_theta =  T.theta[0] + T.theta[1] - M_PI;
       delta_phi =    fabs(T.phi[1]  - T.phi[0]) - M_PI;
 
