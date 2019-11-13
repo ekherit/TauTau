@@ -210,10 +210,10 @@ inline bool EmcEnergyOrder(EvtRecTrack * track1, EvtRecTrack *track2)
     return emcTrk1->energy() < emcTrk2->energy();
 }
 
-inline bool EmcEnergyOrder(const EvtRecTrack * track1, const EvtRecTrack *track2)
-{
-  return EmcEnergyOrder( const_cast<EvtRecTrack*>(track1), const_cast<EvtRecTrack*>(track2) );
-}
+//inline bool EmcEnergyOrder(const EvtRecTrack * track1, const EvtRecTrack *track2)
+//{
+//  return EmcEnergyOrder( const_cast<EvtRecTrack*>(track1), const_cast<EvtRecTrack*>(track2) );
+//}
 
 inline bool ChargeOrder(EvtRecTrack * track1, EvtRecTrack *track2)
 {
