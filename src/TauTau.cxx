@@ -148,9 +148,9 @@ StatusCode TauTau::initialize(void)
   StatusCode status;
   try
   {
-    fEvent.make_tuple(this, "FILE1/tt","Signal tau tau events");
-    fGG.make_tuple(this, "FILE1/gg","Two gamma (luminosity) events");
-    fBB.make_tuple(this, "FILE1/bb","Bhabha (luminosity) events");
+    fTT.make_tuple(this, "FILE1/tt","Signal tau tau events");
+    fGG.make_tuple(this,    "FILE1/gg","Two gamma (luminosity) events");
+    fBB.make_tuple(this,    "FILE1/bb","Bhabha (luminosity) events");
   }
   catch(std::runtime_error & error)
   {
@@ -205,15 +205,15 @@ StatusCode TauTau::execute()
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
   /* ****************** TAU PAIR SELECTION **********************************/
-  if ( Tc.size() == central_tracks.size()  && fEvent.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
+  if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
   {
-    fEvent.nciptrack = central_tracks.size(); //fill the total number of central tracks
-    fEvent.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
-    fEvent.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
-    fEvent.Enmin     = tracker.MinNeutralTracksEnergy();
-    fEvent.Enmax     = tracker.MaxNeutralTracksEnergy();
+    fTT.nciptrack = central_tracks.size(); //fill the total number of central tracks
+    fTT.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
+    fTT.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
+    fTT.Enmin     = tracker.MinNeutralTracksEnergy();
+    fTT.Enmax     = tracker.MaxNeutralTracksEnergy();
 
-    fEvent.write();
+    fTT.write();
     ntautau_events++;
     nwritten_events++;
   }

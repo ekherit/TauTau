@@ -15,22 +15,21 @@
  *
  * =====================================================================================
  */
+#pragma once
 
-#ifndef IBN_TAUEMU_H
-#define IBN_TAUEMU_H
+#ifndef IBN_TAUTAU_H
+#define IBN_TAUTAU_H
 #include "GaudiKernel/AlgFactory.h"
 #include "GaudiKernel/Algorithm.h"
-#include "GaudiKernel/NTuple.h"
+//#include "GaudiKernel/NTuple.h"
 
-#include <TMatrixD.h>
-#include <vector>
-#include <algorithm>
+//#include <TMatrixD.h>
+//#include <vector>
+//#include <algorithm>
 
-#include "EventModel/EventHeader.h"
+//#include "EventModel/EventHeader.h"
 
-#include "ibn/averager.h"
-
-//#include "RootEvent/RootMdc.h"
+//#include "ibn/averager.h"
 
 #include "SelectionConfig.h"
 
@@ -52,7 +51,7 @@ class TauTau : public Algorithm
     long int ntautau_events;  //number of selected (and written) tau tau events
     long int nbhabha_events;  //number of Bhabha events to measure luminosity
     long int ngg_events;      //number of Digamma events to measure luminosity
-    TauTauEvent fEvent; //tau tau events
+    TauTauEvent     fTT;   //tau tau events
     GammaGammaEvent fGG;   //gamma gamma events for luminosity
     BhabhaEvent     fBB;   //Bhabha events for luminosity
 };
