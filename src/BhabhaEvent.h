@@ -214,7 +214,7 @@ class BhabhaEvent : public RootTuple
       result = result && delta_phi < MAX_DELTA_PHI_CUT;
       for(int i=0;i<2;++i) {
         result = result && T.theta[i] < COS_THETA_CUT;
-        result = result && MIN_EEB_CUT < E_Eb  && E_Eb  < MAX_EEB_CUT;
+        result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
       }
       run   = eventHeader->runNumber();
       event = eventHeader->eventNumber();
