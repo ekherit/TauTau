@@ -53,6 +53,7 @@ typedef HepGeom::Point3D<double> HepPoint3D;
 #endif
 
 #include "TauTau.h"
+#include "combinator.h"
 
 #include "Utils.h"
 
