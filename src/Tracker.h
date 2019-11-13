@@ -325,7 +325,7 @@ Container Zip(const Container & C1, const Container & C2, bool is_add_remains = 
     result.push_back(C2[i]);
   }
   if(is_add_remains) { //add unpaired tracks back
-      std::vector<EvtRecTrack*> & tmp = C1.size() > C2.size() ?  C1 :  C2;
+      const std::vector<EvtRecTrack*> & tmp = C1.size() > C2.size() ?  C1 :  C2;
       for(int i = npairs; i < tmp.size() ; ++i)  result.push_back(tmp[i]);
   }
   return result;
