@@ -224,7 +224,10 @@ class BhabhaEvent : public RootTuple
       for(int i=0;i<2;++i) {
         result = result && T.theta[i] < COS_THETA_CUT;
         result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
+        std::cout << E_Eb[i] << "        ";
       }
+      std::cout << std::endl;
+
       //std::cout << "Before header " << std::endl;
       run   = eventHeader->runNumber();
       event = eventHeader->eventNumber();
