@@ -73,7 +73,7 @@ template< class Cs> inline void  print( const Cs & C);
 template<class Cont> inline void print_array(std::string name, const Cont & A);
 template<class It>   inline void print_array(std::string name, const It b, const It e);
 
- void shift(int d){for(int i=0;i<d;++i) std::cout << "     ";};
+inline void shift(int d){for(int i=0;i<d;++i) std::cout << "     ";};
 
 /* 
  * ===  FUNCTION  ======================================================================
