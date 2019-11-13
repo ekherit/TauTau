@@ -198,22 +198,22 @@ class BhabhaEvent : public RootTuple
         Tr.push_back(negative_tracks[i]); //negative charged track goes first
         Tr.push_back(positive_tracks[i]);
       }
-      std::cout << "After filling pairs" << std::endl;
+      //std::cout << "After filling pairs" << std::endl;
       std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
       for(int i = npairs; i < tmp_tracks.size() ; ++i)  Tr.push_back(tmp_tracks[i]);
-      std::cout << "After filling remains" << std::endl;
+      //std::cout << "After filling remains" << std::endl;
 
 
       //now fill the tuple
       for(int i=0;i<Tr.size(); ++i) fill(i, Tr[i]); 
-      std::cout << "After fill Track " << std::endl;
+      //std::cout << "After fill Track " << std::endl;
 
       acol = Acolinearity(Tr[0], Tr[1]);
-      std::cout << "Before acolinearity" << std::endl;
+      //std::cout << "Before acolinearity" << std::endl;
       delta_theta =  T.theta[0] + T.theta[1] - M_PI;
       delta_phi =    fabs(T.phi[1]  - T.phi[0]) - M_PI;
 
-      std::cout << "After calculation  delta phi" << std::endl;
+      //std::cout << "After calculation  delta phi" << std::endl;
 
 
       //Calculate pass result
@@ -224,11 +224,11 @@ class BhabhaEvent : public RootTuple
         result = result && T.theta[i] < COS_THETA_CUT;
         result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
       }
-      std::cout << "Before header " << std::endl;
+      //std::cout << "Before header " << std::endl;
       run   = eventHeader->runNumber();
       event = eventHeader->eventNumber();
       time  = eventHeader->time();
-      std::cout << "After header " << std::endl;
+      //std::cout << "After header " << std::endl;
       return result;
     }
 };

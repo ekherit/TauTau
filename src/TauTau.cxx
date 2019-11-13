@@ -232,9 +232,9 @@ StatusCode TauTau::execute()
   //see selection detail in BhabhaEvent.h
   if(fBB.pass(eventHeader.ptr(), Tc,Tn))
   {
-    std::cout << "Before BB write" << std::endl;
+    //std::cout << "Before BB write" << std::endl;
     fBB.write();
-    std::cout << "After BB write" << std::endl;
+    //std::cout << "After BB write" << std::endl;
     nbhabha_events++;
     nwritten_events++;
   }
