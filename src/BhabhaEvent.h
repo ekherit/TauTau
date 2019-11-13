@@ -198,10 +198,10 @@ class BhabhaEvent : public RootTuple
         Tr.push_back(negative_tracks[i]); //negative charged track goes first
         Tr.push_back(positive_tracks[i]);
       }
-      std::cout << "After filling pairs: Tc.size()= " << Tc.size() << " Tn.size()  = " << Tn.size() << std::endl;
+      //std::cout << "After filling pairs: Tc.size()= " << Tc.size() << " Tn.size()  = " << Tn.size() << std::endl;
       std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
       for(int i = npairs; i < tmp_tracks.size() ; ++i)  Tr.push_back(tmp_tracks[i]);
-      std::cout << "After filling remains: negative = " << negative_tracks.size() << "  positive.size = " << positive_tracks.size() << std::endl;
+      //std::cout << "After filling remains: negative = " << negative_tracks.size() << "  positive.size = " << positive_tracks.size() << std::endl;
 
 
       //now fill the tuple
@@ -226,6 +226,7 @@ class BhabhaEvent : public RootTuple
         result = result && (MIN_EEB_CUT < E_Eb[i])  && (E_Eb[i]  < MAX_EEB_CUT);
         std::cout << E_Eb[i] << "        ";
       }
+      std::cout << " result = " << result;
       std::cout << std::endl;
 
       //std::cout << "Before header " << std::endl;
