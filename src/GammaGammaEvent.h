@@ -101,7 +101,7 @@ class GammaGammaEvent : public RootTuple
       }
     }
 
-    bool pass(const Event::EventHeader * eventHeader, double W, const  std::vector<EvtRecTrack*>  & Tc /* charged tracks */, const  std::vector<EvtRecTrack*>  & Tn /* netural tracks */) 
+    bool pass(const Event::EventHeader * eventHeader, double W, const  std::vector<EvtRecTrack*>  & Tc /* charged tracks */, std::vector<EvtRecTrack*>  Tn /* netural tracks */) 
     {
       bool result = true;
       N0 = Tn.size();
