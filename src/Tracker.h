@@ -304,11 +304,10 @@ std::vector< Container >  SplitByCharge(const Container & input) {
    * result[2] - other (no MDC and neutarls)
    */
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
-    size_t idx=0;
+    size_t idx;
     if((*it)->isMdcTrackValid()) {
       double q =(*it)->mdcTrack()->charge();
-      idx = q < 0 ? 0 : (q > 0 ? 1 : 2;
-      result[].push_back(*it);
+      idx = q < 0 ? 0 : (q > 0 ? 1 : 2 );
     } else {
       idx=2;
     }
