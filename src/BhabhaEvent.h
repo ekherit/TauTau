@@ -41,7 +41,7 @@ class BhabhaEvent : public RootTuple
       //default preselection selections
       MAX_CHARGED_TRACKS_NUMBER = 3;
       MAX_NEUTRAL_TRACKS_NUMBER = 5;
-      COS_THETA_CUT = 0.8; //barrel
+      COS_THETA_CUT = 0.93; //good neutral tracks
       DELTA_THETA_CUT = 0.04;
       MIN_DELTA_PHI_CUT = -0.06;
       MAX_DELTA_PHI_CUT = 0.06;

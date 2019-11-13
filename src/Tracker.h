@@ -301,7 +301,7 @@ std::vector< Container >  SplitByCharge(const Container & input) {
   std::vector<Container> result(3);
   /* result[0] - negative charged particles
    * result[1] - positive charged particles
-   * result[2] - other (no MDC and neutarls)
+   * result[2] - other (no MDC or neutarls)
    */
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
     size_t idx;
