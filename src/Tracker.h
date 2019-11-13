@@ -296,3 +296,41 @@ inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const dou
   return result;
 }
 
+template<typename Container>
+std::vector< Container >  SplitByCharge(const Container & input) {
+  std::vector<Container> result(3);
+  /* result[0] - negative charged particles
+   * result[1] - positive charged particles
+   * result[2] - other (no MDC and neutarls)
+   */
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
+    size_t idx=0;
+    if((*it)->isMdcTrackValid()) {
+      double q =(*it)->mdcTrack()->charge();
+      idx = q < 0 ? 0 : (q > 0 ? 1 : 2;
+      result[].push_back(*it);
+    } else {
+      idx=2;
+    }
+    result[idx].push_back(*it);
+  }
+  return result;
+}
+
+template <typename Container>
+Container Zip(const Container & C1, const Container & C2, bool is_add_remains = false) {
+  Container result;
+  size_t npairs = std::min( C1.size(), C2.size()); //number of pairs
+  for(int i=0; i < npairs; ++i) {
+    result.push_back(C1[i]);
+    result.push_back(C2[i]);
+  }
+  if(is_add_remains) { //add unpaired tracks back
+      std::vector<EvtRecTrack*> & tmp = C1.size() > C2.size() ?  C1 :  C2;
+      for(int i = npairs; i < tmp.size() ; ++i)  result.push_back(tmp[i]);
+  }
+  return result;
+}
+
+
+
