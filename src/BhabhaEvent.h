@@ -175,8 +175,8 @@ class BhabhaEvent : public RootTuple
     {
       bool result = true;
       result = result && Tc.size() >= 2;
-      result = result && Tc.size() < MAX_CHARGED_TRACKS_NUMBER;
-      result = result && Tn.size() < MAX_NEUTRAL_TRACKS_NUMBER;
+      result = result && Tc.size() <= MAX_CHARGED_TRACKS_NUMBER;
+      result = result && Tn.size() <= MAX_NEUTRAL_TRACKS_NUMBER;
       if(!result) return false; //earlier rejection 
       N0 = Tn.size();
       Nq = Tc.size(); 
@@ -198,10 +198,10 @@ class BhabhaEvent : public RootTuple
         Tr.push_back(negative_tracks[i]); //negative charged track goes first
         Tr.push_back(positive_tracks[i]);
       }
-      //std::cout << "After filling pairs" << std::endl;
+      std::cout << "After filling pairs: Tc.size()= " << Tc.size() << " Tn.size()  = " << Tn.size() << std::endl;
       std::vector<EvtRecTrack*> & tmp_tracks = negative_tracks.size() > positive_tracks.size() ?  negative_tracks :  positive_tracks;
       for(int i = npairs; i < tmp_tracks.size() ; ++i)  Tr.push_back(tmp_tracks[i]);
-      //std::cout << "After filling remains" << std::endl;
+      std::cout << "After filling remains: negative = " << negative_tracks.size() << "  positive.size = " << positive_tracks.size() << std::endl;
 
 
       //now fill the tuple
@@ -209,9 +209,10 @@ class BhabhaEvent : public RootTuple
       //std::cout << "After fill Track " << std::endl;
 
       acol = Acolinearity(Tr[0], Tr[1]);
-      //std::cout << "Before acolinearity" << std::endl;
+      std::cout << "After acolinearity: " << acol << std::endl;
       delta_theta =  T.theta[0] + T.theta[1] - M_PI;
       delta_phi =    fabs(T.phi[1]  - T.phi[0]) - M_PI;
+      std::cout << "dphi  = " << delta_phi << "  dtheta = " << delta_theta << std::endl;
 
       //std::cout << "After calculation  delta phi" << std::endl;
 
