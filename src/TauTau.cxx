@@ -228,14 +228,14 @@ StatusCode TauTau::execute()
     nwritten_events++;
   }
 
-  /* *******************  SELECT  BHABHA EVENTS ********************************** */
-  //see selection detail in BhabhaEvent.h
-  if(fBB.pass(eventHeader.ptr(), Tc,Tn))
-  {
-    fBB.write();
-    nbhabha_events++;
-    nwritten_events++;
-  }
+  ///* *******************  SELECT  BHABHA EVENTS ********************************** */
+  ////see selection detail in BhabhaEvent.h
+  //if(fBB.pass(eventHeader.ptr(), Tc,Tn))
+  //{
+  //  fBB.write();
+  //  nbhabha_events++;
+  //  nwritten_events++;
+  //}
 
   return StatusCode::SUCCESS;
 }
