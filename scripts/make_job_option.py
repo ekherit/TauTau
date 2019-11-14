@@ -160,7 +160,7 @@ else:
     for key, flist in input_file_dict.items():
         files=""
         for f in flist:
-            files=files+'"'+os.path.abspath(f)+'",\n'
+            files=files+'"'+os.path.realpath(os.path.abspath(f))+'",\n'
         files=files[:-2]
         run = int(key)
         b = filter( lambda point: point.runlist.count(run)>0, Scan)
