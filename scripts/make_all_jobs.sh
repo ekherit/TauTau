@@ -3,6 +3,7 @@ CDIR=`pwd`
 WDIR=$HOME/batch4/TAU2018
 cd $WDIR
 TDIR=$WDIR/$1
+mkdir $TDIR
 cd $TDIR
 mkdir data
 $TAUTAUROOT/scripts/make_job_option.py $WDIR/data --config=$TAUTAUROOT/share/all_scan_points_ems3.txt 
