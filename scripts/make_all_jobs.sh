@@ -13,4 +13,4 @@ mkdir mc
 cd mc
 mkdir bhabha
 cd bhabha
-$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/lumi/bhabha -W
+$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/lumi/bhabha bb --W
