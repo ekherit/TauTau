@@ -165,7 +165,7 @@ else:
         run = int(key)
         b = filter( lambda point: point.runlist.count(run)>0, Scan)
         if len(b) == 0:  continue
-        W = b.W
+        W = b[0].W
         cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
         output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
         f = open(cfg_file,'w')
