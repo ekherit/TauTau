@@ -156,7 +156,7 @@ if cfg.config == '':
         submit_file.write("boss.condor "+cfg_file+"\n")
         submit_file2.write("boss.condor "+cfg_file+"\n")
 else:
-    Scan = read_scan_point_table(cfg.config)
+    Scan = ScanPoint.read_scan_point_table(cfg.config)
     for key, flist in input_file_dict.items():
         files=""
         for f in flist:
