@@ -163,7 +163,7 @@ else:
             files=files+'"'+os.path.abspath(f)+'",\n'
         files=files[:-2]
         run = int(key)
-        b = filter( lambda point: point.rulist.count(run)>0, Scan)
+        b = filter( lambda point: point.runlist.count(run)>0, Scan)
         if len(b) == 0:  continue
         W = b.W
         cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
