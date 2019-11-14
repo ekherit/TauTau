@@ -27,3 +27,5 @@ $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bk
 
 find -name "submit.sh" -exec echo {} \;  > submit_all.sh
 find -name "submit.csh" -exec echo {} \; > submit_all.csh
+chmod u+x submit_all.sh
+chmod u+x submit_all.csh
