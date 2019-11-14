@@ -19,7 +19,7 @@ $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/lu
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/hadrons    mc/hadrons --W=1 --combine='\d\.\d+'
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/mumu     mc/mumu --W=1 --combine='\d\.\d+'
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/pipi     mc/pipi --W=1 --combine='\d\.\d+'
-mkdir galuga
+mkdir mc/galuga
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEee        mc/galuga/ee   --W=1 --combine='\d\.\d+'
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEkk        mc/galuga/KK   --W=1 --combine='\d\.\d+'
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEpipinew   mc/galuga/pipi --W=1 --combine='\d\.\d+'
