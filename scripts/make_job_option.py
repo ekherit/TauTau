@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Create tau tau selection configura
 parser.add_argument('dirs',   default="data", nargs="+",help='Input directories where recursivily files will be searched. Last one will be output dir')
 parser.add_argument('--output_dir', default='', help='Output dir')
 parser.add_argument('--filter', default='.+.dst$', help='regexp filter of input file name')
-parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
+parser.add_argument('--combine', default=r'\d{7}', help='regex template to combine several files into one job')
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
 parser.add_argument('--config', default='')
@@ -113,35 +113,7 @@ for f in file_list:
 if len(input_file_dict) == 0:
   print "Empty file list. Do nothing."
   sys.exit(0)
-#=======
-#if cfg.config == '':
-#    print "epty config file"
-#    for f in file_list:
-#        n = re.findall(cfg.combine, f)
-#        if len(n) != 0:
-#            if n[0] in input_file_dict:
-#                input_file_dict[n[0]].append(f)
-#            else:
-#                input_file_dict[n[0]]=[f]
-#else:
-#    #read config file with runtable
-#    cfg_file = open(cfg.config, "r")
-#    comment_r = re.compile("\s*#\.$")
-#    for line in cfg_file:
-#        if  not re.match("#",line):
-#            v=line.split();
-#            title = v[0]
-#            W = float(v[1])
-#            dW = float(v[2])
-#            S = float(v[3])
-#            dS = float(v[4])
-#            L = float(v[5])
-#            for i in range (6, len(v)):
-#                print W, v[i];
-#        else:
-#            print "Not match"
-#    #for f in file_list:
-#exit(1)
+
 
 print "Output dir: ", cfg.output_dir
 
@@ -156,33 +128,52 @@ else:
 submit_file = open(cfg.output_dir+'/submit.csh',"w");
 submit_file2 = open(cfg.output_dir+'/submit.sh',"w");
 
-
-for key, flist in input_file_dict.items():
-    files=""
-    for f in flist:
-        files=files+'"'+os.path.abspath(f)+'",\n'
-    files=files[:-2]
-    W = 1.77686*2
-    if cfg.W:
-      W=float(key)
-    else:
-      run = int(key)
-      if not (55115 <= run <= 55361) : continue
-      if 55115 <= run <= 55155: W=3.539068
-      if 55157 <= run <= 55161: W=3.550872
-      if 55162 <= run <= 55199: W=3.552865
-      if 55200 <= run <= 55231: W=3.553934
-      if 55232 <= run <= 55239: W=3.560356
-      if 55240 <= run <= 55257: W=3.599572
-      if 55347 <= run <= 55361: W=3.601510
-    cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
-    output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
-    f = open(cfg_file,'w')
-    print "Creating ", cfg_file, "..."
-    config = template % (files, cfg.N, output_file, W)
-    f.write(config)
-    submit_file.write("boss.condor "+cfg_file+"\n")
-    submit_file2.write("boss.condor "+cfg_file+"\n")
+if cfg.config == '':
+    for key, flist in input_file_dict.items():
+        files=""
+        for f in flist:
+            files=files+'"'+os.path.abspath(f)+'",\n'
+        files=files[:-2]
+        W = 1.77686*2
+        if cfg.W:
+          W=float(key)
+        else:
+          run = int(key)
+          if not (55115 <= run <= 55361) : continue
+          if 55115 <= run <= 55155: W=3.539068
+          if 55157 <= run <= 55161: W=3.550872
+          if 55162 <= run <= 55199: W=3.552865
+          if 55200 <= run <= 55231: W=3.553934
+          if 55232 <= run <= 55239: W=3.560356
+          if 55240 <= run <= 55257: W=3.599572
+          if 55347 <= run <= 55361: W=3.601510
+        cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
+        output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
+        f = open(cfg_file,'w')
+        print "Creating ", cfg_file, "..."
+        config = template % (files, cfg.N, output_file, W)
+        f.write(config)
+        submit_file.write("boss.condor "+cfg_file+"\n")
+        submit_file2.write("boss.condor "+cfg_file+"\n")
+else:
+    Scan = read_scan_point_table(cfg.config)
+    for key, flist in input_file_dict.items():
+        files=""
+        for f in flist:
+            files=files+'"'+os.path.abspath(f)+'",\n'
+        files=files[:-2]
+        run = int(key)
+        b = filter( lambda point: point.rulist.count(run)>0, Scan)
+        if len(b) == 0:  continue
+        W = b.W
+        cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
+        output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
+        f = open(cfg_file,'w')
+        print "Creating ", cfg_file, "..."
+        config = template % (files, cfg.N, output_file, W)
+        f.write(config)
+        submit_file.write("boss.condor "+cfg_file+"\n")
+        submit_file2.write("boss.condor "+cfg_file+"\n")
 
 print "To run signle file: boss.exe <filename.cfg>"
 print "To run all file: source submit.csh"

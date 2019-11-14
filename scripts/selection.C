@@ -33,8 +33,6 @@
 #include "time.h"
 #include "stdlib.h"
 
-#include <TSystem.h>
-#include <TSystemDirectory.h>
 #include <TCanvas.h>
 #include <TChain.h>
 #include <TGraph.h>
@@ -47,11 +45,6 @@
 #include <TLegend.h>
 #include <TLatex.h>
 #include <TLine.h>
-#include <TTree.h>
-
-
-
-//gSystem->AddLinkedLibs("-lfmt");
 
 const double GeV=1.0;
 const double MeV=1e-3*GeV;
@@ -81,165 +74,15 @@ static const double PIALPHA=ALPHA*TMath::Pi();
 //std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
 std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
 
+
 void clean_taufit(void) {
   system("killall -9 taufit");
 }
 
-/* ==================== WORKING WITH UTF-8 ================================================== */
+static std::string BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
 
-template <class String > 
-size_t count_utf8_symbols( String s )
-{
-  return std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
-}
-template <class String > 
-size_t count_utf8_extra_byte( String s )
-{
-  return s.size() - std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
-}
-template< typename D>
-void print_utf(int width, D d)
-{
-  std::cout << std::setw(width) << d;
-};
+#include "utils.h"
 
-template<>
-void print_utf(int width, std::string s)
-{
-
-  std::cout << std::setw(width+count_utf8_extra_byte(std::string(s))) << s;
-};
-
-template<>
-void print_utf(int width, const char * s)
-{
-  print_utf(width, std::string(s));
-};
-
-template<typename...Ts>
-std::string myfmt(std::string format, Ts...ts)
-{
-  static char MY_FORMAT_BUF[65535];
-  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
-  return std::string(MY_FORMAT_BUF);
-};
-
-/* ========================================================================================== */
-
-//Get recursive file list
-std::list<std::string> get_recursive_file_list(std::string dirname)
-{
-  std::list<std::string> flst;
-  TSystemDirectory dir(dirname.c_str(), dirname.c_str());
-  for(auto  file: * dir.GetListOfFiles())
-  {
-    std::string file_name(file->GetName());
-    if(file->IsFolder())
-    {
-      if(file_name != "." && file_name != "..")
-      {
-        flst.merge(get_recursive_file_list(dirname+"/"+file_name));
-      }
-    }
-    else
-    {
-      flst.push_back(dirname+"/"+file_name);
-    }
-  }
-  flst.sort();
-  return flst;
-}
-
-std::list<std::string> filter_file_list(const std::list<std::string> LST, std::string regexpr=R"(.+\.root)")
-{
-  std::list<std::string> flst;
-  std::regex file_re(regexpr); //regular expression to filter files
-  std::smatch file_match;
-  for( auto & file : LST)
-  {
-    if(std::regex_match (file,file_match,file_re))
-    {
-      flst.push_back(file);
-    }
-  }
-  return flst;
-}
-
-
-template<class Discriminator>
-std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, Discriminator D)
-{
-  std::map<std::string, std::list<std::string> > fmap;
-  for(const std::string & file : LST)
-  {
-    fmap[D(file)].push_back(file);
-  }
-  return fmap;
-}
-
-std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, std::string regexpr=R"(^\D*(\d+\.?\d+).root$)")
-{
-  std::regex re(regexpr);
-  return combine(LST, [&re](const std::string & file)
-                          {  
-                            std::string result;
-                            std::smatch match;
-                            if(std::regex_match(file, match,re))
-                            {
-                              if(match.size()>1)
-                              {
-                                result =  match[1];
-                              }
-                            }
-                            return result;
-                          }
-                 );
-};
-
-
-//template < typename Map>
-//void print(const Map & fmap)
-void print(const std::map<std::string, std::list<std::string> > & fmap)
-{
-  for(const auto & point :  fmap)
-  {
-    for(const auto & file : point.second)
-    {
-      std::cout << point.first << ": " << file << std::endl;
-    }
-    std::cout << std::endl;
-  }
-}
-
-TChain * get_chain(std::string name, std::string newname, std::string title, std::string filename)
-{
-  TChain * chain = new TChain(name.c_str(), title.c_str());
-  chain->AddFile(filename.c_str());
-  chain->SetName(newname.c_str());
-  return chain;
-}
-
-TChain * get_chain(const char * name, const char * newname, std::string title, const char * file_name)
-{
-  TChain * chain = new TChain(name, title.c_str());
-  chain->AddFile(file_name);
-  chain->SetName(newname);
-  return chain;
-}
-
-TChain * get_chain(const char * name, const char * newname, std::string title, int run_begin, int run_end, std::string dir="")
-{
-  TChain * chain = new TChain(name, title.c_str());
-  for(int run = run_begin; run<=run_end; ++run)
-  {
-    char buf[1024];
-    if(dir=="") sprintf(buf, "%d.root",run);
-    else sprintf(buf, "%s/%d.root", dir.c_str(), run);
-    chain->AddFile(buf);
-  }
-  chain->SetName(newname);
-  return chain;
-}
 
 
 struct Restriction_t
@@ -269,6 +112,7 @@ struct PointSelectionResult_t
   std::string cut;
   long Ntt=0; //number of tau tau events;
   long Ngg=0; //number of gamma gamma events for luminocity
+  long Nbb=0; //number of Bhabha events for luminocity
   double W=0;   //point energy
   double dW=0.01;  
   double L=0;
@@ -293,16 +137,18 @@ std::map<std::string, std::string > SelMap;
 struct ScanPoint_t
 {
   std::string title;
-  int begin_run;
-  int end_run;
+  //int begin_run;
+  //int end_run;
   double W;
   double dW;
   TTree * tt;
-  TTree * gg;
+  TTree * gg; 
+  TTree * bb;
   double L=0;
   std::list<std::pair<int,double> > runs;
-  int Ntt;
-  int Ngg;
+  long Ntt;
+  long Ngg;
+  long Nbb;
   std::string selection;
   std::map<std::string, int> NttMap;
   double ppi;
@@ -662,8 +508,8 @@ Scan_t read_simple_runtable(std::string filename)
     {
       sp.file_list.push_back(it->str());
     }
-    sp.begin_run=-1;
-    sp.end_run=-1;
+    //sp.begin_run=-1;
+    //sp.end_run=-1;
     //std::cout << point_name << " " << point_energy << " " << std::endl;
     //sp.run_list = get_run_list(point_runs);
     //if(sp.run_list.empty()) continue;
@@ -794,18 +640,23 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     //read gamma gamma events
     auto gg = new TChain("gg", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile(file.c_str());
+
+    auto bb = new TChain("bb", sp.title.c_str());
+    for(auto & file : sp.file_list) bb->AddFile(file.c_str());
     //change chain names
     tt->SetName(("tt"+std::to_string(index)).c_str());
-    gg->SetName(("gg"+std::to_string(index)).c_str());
+    bb->SetName(("bb"+std::to_string(index)).c_str());
     set_alias(tt,sp.W,sp.L);
     sp.tt = tt;
     sp.gg = gg;
+    sp.bb = bb;
     sp.type = data_dir;
   }
   print(scan);
   return scan;
 }
 
+/*
 std::vector<ScanPoint_t> read_data2(std::string data_dir, std::string privalov_runtable)
 {
   auto cfg = read_privalov_runtable(privalov_runtable); //read scan configuration
@@ -871,8 +722,8 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
   }
   return scan;
 }
+*/
 
-#include <regex>
 std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
@@ -890,15 +741,18 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
       if(std::regex_match(file_name,energy_match,energy_re)) {
         double W = std::stod(energy_match[1]);
         if(cfg.empty()){
+          /*
           //std::cout << file_name <<  "  W = " << W << "  " << W-MTAU << std::endl;
           if(W*0.5-MTAU > -0.010 &&  W*0.5-MTAU < 0.030) 
           {
             P.push_back({"P"+std::to_string(point), 55116, 55155,  W, 1e-5,0,0});
             P.back().tt = get_chain("tt",("tt"+std::to_string(point)).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
             P.back().gg = get_chain("gg",("gg"+std::to_string(point)).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
+            P.back().bb = get_chain("bb",("bb"+std::to_string(point)).c_str(), "bb lum", (dirname+"/"+file_name).c_str());
             P.back().type = dirname;
             set_alias(P.back().tt, P.back().W,1.0);
           }
+          */
         }
         else {
           //find closest energy
@@ -910,8 +764,9 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             p.title = "mc"+p.title;
             p.W = W;
             p.L = -p.L;
-            p.tt = get_chain("tt",("tt"+p.title).c_str(), "MC GALUGA", (dirname+"/"+file_name).c_str());
+            p.tt = get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str());
             p.gg = get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
+            p.bb = get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str());
             set_alias(p.tt, p.W,p.L);
           }
         }
@@ -1080,6 +935,7 @@ void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nof
 {
   long totalNtt=0;
   long totalNgg = 0;
+  long totalNbb = 0;
   double totalL=0;
   std::string total_title="";
   for(int i=0; i<P.size();++i)
@@ -1089,7 +945,9 @@ void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nof
       totalNtt += item.second;
     }
     if(P[i].Ngg==0) P[i].Ngg = P[i].gg->GetEntries();
+    if(P[i].Nbb==0) P[i].Nbb = P[i].bb->GetEntries(BB_SEL.c_str());
     totalNgg+=P[i].Ngg;
+    totalNbb+=P[i].Nbb;
     totalL += P[i].L;
   }
   //total_title = total_title + " " + P[i].selection;
@@ -1109,14 +967,15 @@ void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nof
   ofs << std::setw(10) << "Ntt" << std::setw(10) << "Nee" << std::setw(10) << "Ngg" << std::setw(10) << "effcor" << std::endl;
   for(int i=0; i<P.size();++i)
   {
-    int Ntt=0;
+    long Ntt=0;
     for(auto & item: P[i].NttMap) Ntt+=item.second;
-    int Ngg = P[i].Ngg;
+    long Ngg = P[i].Ngg;
+    long Nbb = P[i].Nbb;
     double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
     L = P[i].L;
     ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << P[i].dL << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
     ofs << std::setw(10) << 1.24 << " " << std::setw(10) << 0.017;
-    ofs << std::setw(10) << Ntt << std::setw(10) <<  1 << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
+    ofs << std::setw(10) << Ntt << std::setw(10) <<  Nbb << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
   }
   if(!nofit)
   {
@@ -1173,6 +1032,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
   {
     double Ntt = Points[i].tt->GetEntries(selection);
     double Ngg = Points[i].gg->GetEntries();
+    double Nbb = Points[i].bb->GetEntries(BB_SEL.c_str());
     double xs  = 0;
     double dxs = 0;
     totalNtt += Ntt;
@@ -1187,7 +1047,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
     auto & P = Points[i];
     ofs << std::setw(5) << i <<  std::setw(15) << 20000 << "  " << 10 << std::setw(15) << P.W/MeV  << std::setw(15) << P.dW/MeV;
     ofs << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
-    ofs << std::setw(10) << Ntt << std::setw(10) << " " << 1 << "  " << Ngg <<  " " << 1 << std::endl;
+    ofs << std::setw(10) << Ntt << std::setw(10) << " " << Nbb << "  " << Ngg <<  " " << 1 << std::endl;
   }
   std::cout << "Total number of tau-tau candidates:" << totalNtt << std::endl;
   TCanvas * c = new TCanvas("cross","cross");
@@ -1223,6 +1083,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
 {
   long Ntt=0; //total number of events for all points
   long Ngg=0; //total number of gg events
+  long Nbb=0; //total number of Bhabha events
   double L=0; //total luminocity
   std::vector<PointSelectionResult_t> Points;
   std::string cut;
@@ -1235,6 +1096,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     {
       Ntt+=p.Ntt;
       Ngg+=p.Ngg;
+      Nbb+=p.Nbb;
       cut = p.cut;
     } 
 
@@ -1243,11 +1105,13 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
   {
     Ntt=0;
     Ngg=0;
+    Nbb=0;
     Points = P;
     for(auto & p : Points)
     {
       Ntt+=p.Ntt;
       Ngg+=p.Ngg;
+      Nbb+=p.Nbb;
       cut = p.cut;
       L += p.L;
     } 
@@ -1404,6 +1268,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     auto & p       = P[i];
     r.Ntt          = p.tt->GetEntries(sel.c_str());
     if(p.gg) r.Ngg = p.gg->GetEntries();
+    if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
     r.name         = p.title;
     r.root_name    = p.title;
     r.tex_name     = p.title;
@@ -1476,6 +1341,7 @@ std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::ve
       std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
       p.tt->GetHistogram()->SetTitle(result_title.c_str());
       if(p.gg) r.Ngg = p.gg->GetEntries();
+      if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
       r.name         = p.title;
       r.root_name    = p.title;
       r.tex_name     = p.title;
@@ -1514,6 +1380,7 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
     std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
     p.tt->GetHistogram()->SetTitle(result_title.c_str());
     if(p.gg) r.Ngg = p.gg->GetEntries();
+    if(p.bb) r.Nbb = p.gg->GetEntries();
     r.name         = p.title;
     r.root_name    = p.title;
     r.tex_name     = p.title;
@@ -1855,6 +1722,7 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
       eps_error2 += p.eps_error*p.eps_error;
       rp.Ntt     += p.Ntt;
       rp.Ngg      = p.Ngg;
+      rp.Nbb      = p.Nbb;
       rp.L        = p.L;
       rp.dL       = p.dL;
       rp.W        = p.W;
@@ -2911,7 +2779,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt")
     else           os << std::setw(5) << p.name;
     os << std::setw(15) << p.L*1000 << std::setw(10) << 10 << std::setw(15) << p.W/MeV  << std::setw(15) << p.dW/MeV;
     os << std::setw(10) << 1.306 << " " << std::setw(10) << 0.017;
-    os << std::setw(10) << p.Ntt << std::setw(10) <<  1 << std::setw(10) << p.Ngg <<  std::setw(10) << p.effcor << "\n";
+    os << std::setw(10) << p.Ntt << std::setw(10) <<  p.Nbb << std::setw(10) << p.Ngg <<  std::setw(10) << p.effcor << "\n";
   }
   std::cout << os.str();
   std::ofstream ofs(filename);
