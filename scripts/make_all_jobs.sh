@@ -6,6 +6,7 @@ TDIR=$WDIR/$1
 mkdir $TDIR
 cd $TDIR
 mkdir data
+cd data
 $TAUTAUROOT/scripts/make_job_option.py $WDIR/data --config=$TAUTAUROOT/share/all_scan_points_ems3.txt 
 cd ../
 mkdir mc
