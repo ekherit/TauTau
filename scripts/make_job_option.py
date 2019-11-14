@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Create tau tau selection configura
 parser.add_argument('dirs',   default="data", nargs="+",help='Input directories where recursivily files will be searched. Last one will be output dir')
 parser.add_argument('--output_dir', default='', help='Output dir')
 parser.add_argument('--filter', default='.+.dst$', help='regexp filter of input file name')
-parser.add_argument('--combine', default=r'\d+\.\d+', help='regex template to combine several files into one job')
+parser.add_argument('--combine', default=r'\d{7}', help='regex template to combine several files into one job')
 parser.add_argument('--prefix', default="", help='prefix for output files')
 parser.add_argument('--N', type=int,default=1000000000, help='Number of event per job')
 parser.add_argument('--config', default='')
