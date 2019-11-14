@@ -125,8 +125,11 @@ else:
         print "exit"
         sys.exit(0)
 
-submit_file = open(cfg.output_dir+'/submit.csh',"w");
-submit_file2 = open(cfg.output_dir+'/submit.sh',"w");
+submit_filename = cfg.output_dir+'/submit.csh'
+submit_filename2 = cfg.output_dir+'/submit.sh';
+
+submit_file = open(submit_filename,"w");
+submit_file2 = open(submit_filename2,"w");
 
 if cfg.config == '':
     for key, flist in input_file_dict.items():
@@ -174,6 +177,11 @@ else:
         f.write(config)
         submit_file.write("boss.condor "+cfg_file+"\n")
         submit_file2.write("boss.condor "+cfg_file+"\n")
+
+submit_file.close()
+submit_file2.close()
+os.chmod(submit_filename,0722)
+os.chmod(submit_filename2,0722)
 
 print "To run signle file: boss.exe <filename.cfg>"
 print "To run all file: source submit.csh"
