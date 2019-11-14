@@ -166,8 +166,8 @@ else:
         b = filter( lambda point: point.runlist.count(run)>0, Scan)
         if len(b) == 0:  continue
         W = b[0].W
-        cfg_file = cfg.output_dir+'/'+cfg.prefix+key+".cfg"
-        output_file = cfg.output_dir+'/'+cfg.prefix + key + ".root"
+        cfg_file = cfg.output_dir+'/'+cfg.prefix+str(run)+ ".cfg"
+        output_file = cfg.output_dir+'/'+cfg.prefix + str(run) + ".root"
         f = open(cfg_file,'w')
         print "Creating ", cfg_file, "..."
         config = template % (files, cfg.N, output_file, W)
