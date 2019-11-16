@@ -145,8 +145,6 @@ class GammaGammaEvent : public RootTuple
         keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
         E[i] = E[i];
         E_Eb[i] = x[i];
-        phi[i] = phi[i];
-        theta[i] = theta[i];
       }
       delta_theta =  theta[0] + theta[1] - M_PI;
       delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
