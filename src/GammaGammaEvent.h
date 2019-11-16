@@ -139,7 +139,6 @@ class GammaGammaEvent : public RootTuple
         x[i] = 2.0*E[i] / W;
         phi[i] = emc->phi();
         theta[i] = emc->theta();
-        std::cout << "Nn = " << Tn.size() << "  phi = " << phi[i] << "   theta = " << theta[i] << std::endl;
         keep = keep && ( EEB_MIN_CUT < x[i]  && x[i] < EEB_MAX_CUT );
         keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
         E[i] = E[i];
