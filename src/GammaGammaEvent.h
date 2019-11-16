@@ -81,7 +81,7 @@ class GammaGammaEvent : public RootTuple
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
       tuple->addItem ("N0", N0, 0,5); 
-      tuple->addItem ("Nq", Nq, 0,0); 
+      tuple->addItem ("Nq", Nq); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
       tuple->addIndexedItem ("E", N0, E);
@@ -133,8 +133,6 @@ class GammaGammaEvent : public RootTuple
       bool keep=true;
       double E[2];
       double x[2]; //E/Ebeam
-      double theta[2];
-      double phi[2];
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();
         E[i] = emc->energy();
