@@ -761,9 +761,12 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             P.push_back(sp);
             auto & p = P.back();
             P.back().type = dirname;
-            p.title = "mc"+p.title;
+            p.title = dirname+p.title;
+            p.title = sub(p.title,R"(mc/)","");
+            p.title = sub(p.title,R"(T)","");
             p.W = W;
             p.L = -p.L;
+            //std::string ttl = p.title;//sub(dirname,R"(/)","_") + p.title;
             p.tt = get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str());
             p.gg = get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
             p.bb = get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str());
@@ -1268,7 +1271,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     auto & p       = P[i];
     r.Ntt          = p.tt->GetEntries(sel.c_str());
     if(p.gg) r.Ngg = p.gg->GetEntries();
-    if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
+    if(p.bb) r.Nbb = p.bb->GetEntries(BB_SEL.c_str());
     r.name         = p.title;
     r.root_name    = p.title;
     r.tex_name     = p.title;
@@ -1871,6 +1874,32 @@ void print_Ntt(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg,
       );
 };
 
+void print_Ngg(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg, std::string title="Ngg")
+{
+  print_smth(pts, cfg, 
+      [&title](){ return title; }, 
+      [](auto & p) { return p.Ngg; }, 
+      [](auto & s) { 
+        long N=0; 
+        for(auto & x: s)  N+=x.Ngg;  
+        return N; 
+        } 
+      );
+};
+
+void print_Nbb(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg, std::string title="Nbb")
+{
+  print_smth(pts, cfg, 
+      [&title](){ return title; }, 
+      [](auto & p) { return p.Nbb; }, 
+      [](auto & s) { 
+        long N=0; 
+        for(auto & x: s)  N+=x.Nbb;  
+        return N; 
+        } 
+      );
+};
+
 template<typename Fdata, typename Ftotal>
 void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
 {
@@ -1903,6 +1932,34 @@ void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
       [](auto & s) { 
         double sum=0;
         for(auto & x: s)  sum+=x.Ntt;  
+        return sum; 
+      } 
+  );
+};
+
+void print_Ngg(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+{
+  print_smth(SR,cfg, 
+      [](auto & p) { 
+        return p.Ngg; 
+      },
+      [](auto & s) { 
+        double sum=0;
+        for(auto & x: s)  sum+=x.Ngg;  
+        return sum; 
+      } 
+  );
+};
+
+void print_Nbb(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+{
+  print_smth(SR,cfg, 
+      [](auto & p) { 
+        return p.Nbb; 
+      },
+      [](auto & s) { 
+        double sum=0;
+        for(auto & x: s)  sum+=x.Nbb;  
         return sum; 
       } 
   );
@@ -2007,6 +2064,8 @@ void print(const  std::vector<ChannelSelectionResult_t> & SR )
 {
   PrintConfig_t cfg;
   print_Ntt(SR,cfg);
+  print_Ngg(SR[0].Points,cfg);
+  print_Nbb(SR[0].Points,cfg);
 };
 
 std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::string ResultTitle="", std::string fit_file="")
@@ -3019,3 +3078,6 @@ void draw_Mrho(Scan_t & mc, Scan_t & data) {
   l->AddEntry(data[0].tt->GetHistogram(),"DATA");
   l->Draw();
 }
+
+
+
