@@ -17,7 +17,7 @@ use BesROOT      BesROOT-00-*     External
 use RootEvent   RootEvent-00-* 
 
 apply_pattern component_library 
-library TauTau  *.cxx  components/*.cxx RootEvent/*.cxx RootTauTauEvent.cxx
+library TauTau  *.cxx  components/*.cxx RootEvent/*.cxx TauTauEvent.cxx
 
 apply_pattern declare_runtime files=*.txt
 
