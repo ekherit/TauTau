@@ -21,8 +21,6 @@
 #include <map>
 
 const char * runtable_name = "scan_points_ems3_privalov_lum.txt";
-//const char * runtable_name = "scan_points_ems3.txt";
-//const char * runtable_name = "scan_points_ems2_privalov_lum.txt";
 
 auto RUNTABLE  = read_my_runtable(runtable_name);
 
@@ -35,16 +33,18 @@ auto MC          = read_mc("mc/signal", RUNTABLE);
 //background GALUGA
 std::map<std::string, Scan_t> GALUGA =
 {
-  {"ee"   , read_mc("mc/galuga/EEee"   , RUNTABLE)} ,
-  {"uu"   , read_mc("mc/galuga/EEuu"   , RUNTABLE)} ,
-  {"pipi" , read_mc("mc/galuga/EEpipi" , RUNTABLE)} ,
-  {"KK"   , read_mc("mc/galuga/EEkk"   , RUNTABLE)}
+  {"ee"   , read_mc("mc/galuga/ee"   , RUNTABLE)} ,
+  {"uu"   , read_mc("mc/galuga/uu"   , RUNTABLE)} ,
+  {"pipi" , read_mc("mc/galuga/pipi" , RUNTABLE)} ,
+  {"KK"   , read_mc("mc/galuga/KK"   , RUNTABLE)}
 };
 
 //hadronic background
 auto HADR       = read_mc("mc/hadrons", RUNTABLE);
 //bhabha background
-auto BB         = read_mc("mc/bhabha", RUNTABLE);
+auto BB         = read_mc("mc/bb", RUNTABLE);
+auto UU         = read_mc("mc/uu", RUNTABLE);
+auto PIPI         = read_mc("mc/pipi", RUNTABLE);
 
 // for luminocity measurement
 auto GG         = read_mc("mc/gg", RUNTABLE);
@@ -284,6 +284,8 @@ void select()
   set_pid_kptem(HADR       , PID , Kptem);
   set_pid_kptem(BB         , PID , Kptem);
   set_pid_kptem(GG         , PID , Kptem);
+  set_pid_kptem(UU         , PID , Kptem);
+  set_pid_kptem(PIPI         , PID , Kptem);
   for( auto & p: GALUGA) {
     set_pid_kptem(p.second , PID , Kptem);
   }

@@ -129,7 +129,6 @@ class GammaGammaEvent : public RootTuple
           */
 
       std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
-      //std::reverse(Tn.begin(),Tn.end());
       bool keep=true;
       double E[2];
       double x[2]; //E/Ebeam
