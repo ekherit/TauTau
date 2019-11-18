@@ -286,6 +286,8 @@ void select()
   set_pid_kptem(GG         , PID , Kptem);
   set_pid_kptem(UU         , PID , Kptem);
   set_pid_kptem(PIPI         , PID , Kptem);
+  read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
+  read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
   for( auto & p: GALUGA) {
     set_pid_kptem(p.second , PID , Kptem);
   }

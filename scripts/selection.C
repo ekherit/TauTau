@@ -104,6 +104,20 @@ struct ParticleID_t
   std::vector<Restriction_t> restrictions;
 };
 
+struct Luminosity_t 
+{
+  long N; //number of selected events in data
+  long Nmc; //number of selected events in MC
+  long N0mc; //initial number of MC events
+  double cross_section;
+  double cross_section_error;
+  double efficiency;
+  double efficiency_error;
+  double luminosity;      
+  double luminosity_error; 
+
+};
+
 struct PointSelectionResult_t
 {
   std::string name;
@@ -121,12 +135,9 @@ struct PointSelectionResult_t
   double eps_error=0; //registration efficiencey error
   double effcor = 1.0; // efficiency correction
   double effcor_error = 0; //error of the efficiency correction
+  Luminosity_t Lbb, Lgg;
 };
 
-//struct SelectionResult_t
-//{
-//  std::vector<point_t> data;
-//};
 
 struct ScanPoint_t; 
 
@@ -146,9 +157,28 @@ struct ScanPoint_t
   TTree * bb;
   double L=0;
   std::list<std::pair<int,double> > runs;
+
   long Ntt;
+  double tau_tau_cross_section;
+
+  /*
   long Ngg;
+  double gg_cross_section;
+  double gg_cross_section_error;
+  double eps_gg;    // eps_gg = Ngg/N0gg from Monte Carlo
+  double Lgg;       // Lgg = Ngg/eps_gg/gg_cross_section
+  double Lgg_error; // Lgg_error
+
   long Nbb;
+  double bhabha_cross_section;
+  double bhabha_cross_section_error;
+  double eps_bb;    // eps_bb = Nbb/N0bb from Monte Carlo
+  double Lbb;       // Lgg = Ngg/eps_gg/gg_cross_section
+  double Lbb_error; // Lgg_error
+  */
+  Luminosity_t Lbb,Lgg;
+
+
   std::string selection;
   std::map<std::string, int> NttMap;
   double ppi;
@@ -163,6 +193,7 @@ struct ScanPoint_t
   std::list<std::string> regexprs; //regular expessions to match files
   std::string scan_title;
   double dL=0; 
+
 
   struct by_regexp
   {
@@ -934,6 +965,7 @@ void set_last(std::vector<ScanPoint_t> & P)
     p.NttMap[p.selection]=p.Ntt;
   }
 }
+/*
 void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nofit=false, std::string title="")
 {
   long totalNtt=0;
@@ -996,6 +1028,7 @@ void fit_last(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bo
   fit(P,filename,nofit,title);
 }
 
+*/
 
 
 void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const char * cut, const char * his="")
@@ -3081,3 +3114,131 @@ void draw_Mrho(Scan_t & mc, Scan_t & data) {
 
 
 
+/*
+void set_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::ifstream ifs(filename);
+  if(!ifs) { 
+    std::cerr << "Unable to open file for Bhabha cross section" << std::endl;
+    return;
+  }
+  std::vector<ScanPoint_t>  tmpSP;
+  double W; //in GeV
+  double sigma; //in nanobarn
+  double sigma_error; // in nanobarn
+  std::string tmp; //this is for skip +-
+  std::cout << "Cross section for bhabha process: ";
+  std::cout << setw(10) << "Wmc, GeV" << setw(15) << "W in file, GeV" << setw(10) << "sigma, nb" << setw(10) << "error, nb" << std::endl;
+  while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
+    ScanPoint_t sp;
+    sp.W = W;
+    sp.bhabha_cross_section = sigma;
+    sp.bhabha_cross_section_error = sigma_error;
+    tmpSP.push_back(sp);
+  }
+
+  for(auto & sp : P) {
+    auto & p  = *std::min_element(tmpSP.begin(), tmpSP.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
+    sp.bhabha_cross_section = p.bhabha_cross_section;
+    sp.bhabha_cross_section_error = p.bhabha_cross_section_error;
+    if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
+    std::cout << setw(10) << sp.W << setw(15) << p.W << setw(10) << sp.bhabha_cross_section << setw(10) << sp.bhabha_cross_section_error << std::endl;
+  }
+}
+*/
+
+
+template<typename FCX>
+void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX  fcx) {
+  std::ifstream ifs(filename);
+  if(!ifs) { 
+    std::cerr << "Unable to open file for Bhabha cross section" << std::endl;
+    return;
+  }
+  std::vector<ScanPoint_t>  tmpSP;
+  double W; //in GeV
+  double sigma; //in nanobarn
+  double sigma_error; // in nanobarn
+  std::string tmp; //this is for skip +-
+  std::cout << setw(10) << "Wmc, GeV" << setw(15) << "W in file, GeV" << setw(10) << "sigma, nb" << setw(10) << "error, nb" << std::endl;
+  while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
+    ScanPoint_t sp;
+    sp.W = W;
+    fcx(sp).cross_section = sigma;
+    fcx(sp).cross_section_error = sigma_error;
+    tmpSP.push_back(sp);
+  }
+
+  for(auto & sp : P) {
+    auto & p  = *std::min_element(tmpSP.begin(), tmpSP.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
+    fcx(sp).cross_section = fcx(p).cross_section;
+    fcx(sp).cross_section_error = fcx(p).cross_section_error;
+    if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
+    std::cout << setw(10) << sp.W << setw(15) << p.W << setw(10) << fcx(sp).cross_section << setw(10) << fcx(sp).cross_section_error << std::endl;
+  }
+}
+
+void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for bhabha process: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> Luminosity_t & { return sp.Lbb; } );
+}
+void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for bhabha process: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> Luminosity_t & { return sp.Lgg; } );
+}
+
+
+template<typename FL, typename FT>
+void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, FL fl, FT ft) {
+  //determine selection efficiency for Monte Carlo
+  for(auto & sp : mc) {
+    auto & l = fl(sp);
+    l.N0mc = N0_MC;
+    l.Nmc = ft(sp)->GetEntries(sel.c_str());
+    l.efficiency = double(l.Nmc)/l.N0mc;
+    l.efficiency_error = sqrt( l.efficiency * ( 1.0 - l.efficiency )/l.N0mc );
+    std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << std::endl;
+  }
+  //find close point and select
+  for(auto & sp :data) {
+    auto & p  = *std::min_element(mc.begin(), mc.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
+    if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
+    auto & l = fl(sp);
+    l = fl(p); //copy monte carlo
+    l.N = ft(sp)->GetEntries(sel.c_str());
+    double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
+    double vis_cx_error = sqrt(  pow(l.cross_section_error*l.efficiency,2.0) +  pow(l.cross_section*l.efficiency_error,2.0) );
+    l.luminosity  = l.N / vis_cx;
+    l.luminosity_error = l.luminosity*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
+    std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << "  " << l.luminosity << " " << l.luminosity_error <<  std::endl;
+  }
+}
+
+void measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> Luminosity_t & { return sp.Lbb; }, [](ScanPoint_t &sp) -> TTree * { return sp.bb; } );
+}
+
+void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> Luminosity_t & { return sp.Lgg; }, [](ScanPoint_t &sp) -> TTree * { return sp.gg; } );
+}
+
+
+void measure_luminosity(Scan_t & data, Scan_t & bb, Scan_t & gg, long N0_MC) {
+  measure_gg_luminosity(data,gg,N0_MC, "");
+  measure_bhabha_luminosity(data,bb,N0_MC, BB_SEL);
+}
+
+
+void print_luminosity(Scan_t & data) {
+  //char buf[1024*16];
+  printf("%5s %10.6s %10.6s %10.6s %10.6s %10s %10.6s %10.6s %10s\n",
+      "point", "E,GeV", "Lonline,pb^-1","Lgg, pb^-1", "dLgg,pb^-1", "Ngg","Lbb,pb^-1", "dLbb,pb^-1", "Nbb"
+      );
+  for(auto & sp : data) {
+    printf("%5s %10.6f %10.6f %10.6f %10.6f %10d %10.6f %10.6f %10d %10.6f \n",
+        sp.title.c_str(), sp.W, sp.L, 
+        sp.Lgg.luminosity*1e-3, sp.Lgg.luminosity_error*1e-3, sp.Lgg.N,
+        sp.Lbb.luminosity*1e-3, sp.Lbb.luminosity_error*1e-3, sp.Lbb.N,
+        sp.Lbb.luminosity/sp.Lgg.luminosity
+        );
+  }
+}

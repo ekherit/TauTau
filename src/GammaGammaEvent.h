@@ -69,6 +69,7 @@ class GammaGammaEvent : public RootTuple
     NTuple::Array<double> phi;        //phi
     NTuple::Array<double> theta;      //theta
     NTuple::Array<double> E_Eb;       //E/Ebeam
+    NTuple::Array<double> t;       //time
 
 
     //void init_tuple(Algorithm * algo, const char * dir, const char * title)
@@ -88,6 +89,7 @@ class GammaGammaEvent : public RootTuple
       tuple->addIndexedItem ("E_Eb", N0, E_Eb);
       tuple->addIndexedItem ("phi", N0, phi);
       tuple->addIndexedItem ("theta", N0, theta);
+      tuple->addIndexedItem ("t", N0, t);
     };
 
     virtual void init(void) {};
@@ -142,6 +144,7 @@ class GammaGammaEvent : public RootTuple
         keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
         E[i] = E[i];
         E_Eb[i] = x[i];
+        t[i] = emc->time();
       }
       delta_theta =  theta[0] + theta[1] - M_PI;
       delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
