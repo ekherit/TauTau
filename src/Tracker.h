@@ -101,11 +101,11 @@ struct Tracker
         bool endcup_good_track = hit_endcup && (E > 0.050);
         bool good_time = 0 < t && t < 14;
         bool no_close_charged = angle > 20;
-        if(//good_time 
-           // && 
+        if(good_time 
+            && 
             (barrel_good_track || endcup_good_track) 
-         //   && 
-         //   no_close_charged
+            && 
+            no_close_charged
           ) {
           result.push_back(*it);
         }
