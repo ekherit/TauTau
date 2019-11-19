@@ -131,6 +131,10 @@ class GammaGammaEvent : public RootTuple
           */
 
       std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
+      for(int i=0;i<Tn.size();++i) {
+        std::cout << track2->emcShower()->energy() << "  ";
+      }
+      std::cout << std::endl;
       bool keep=true;
       double x[2]; //E/Ebeam
       for(int i=0;i<2;i++) {
