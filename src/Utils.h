@@ -203,17 +203,12 @@ inline std::list<EvtRecTrack*> createGoodNeutralTrackList2(
  *   */
 inline bool EmcEnergyOrder(EvtRecTrack * track1, EvtRecTrack *track2)
 {
-    //if(!track2->isEmcShowerValid())  return false;
-    //RecEmcShower *emcTrk1 = track2->emcShower();
-    //if(!track1->isEmcShowerValid())  return true;
-    //RecEmcShower *emcTrk2 = track1->emcShower();
-    return track1->emcShower()->energy() < track2->emcShower()->energy();
+    if(!track2->isEmcShowerValid())  return false;
+    RecEmcShower *emc2 = track2->emcShower();
+    if(!track1->isEmcShowerValid())  return true;
+    RecEmcShower *emc1 = track1->emcShower();
+    return emc1->energy() < emc2->energy();
 }
-
-//inline bool EmcEnergyOrder(const EvtRecTrack * track1, const EvtRecTrack *track2)
-//{
-//  return EmcEnergyOrder( const_cast<EvtRecTrack*>(track1), const_cast<EvtRecTrack*>(track2) );
-//}
 
 inline bool ChargeOrder(EvtRecTrack * track1, EvtRecTrack *track2)
 {

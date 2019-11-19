@@ -130,13 +130,12 @@ class GammaGammaEvent : public RootTuple
           std::cout << std::endl;
           */
 
-      std::sort(Tn.begin(),Tn.end(), EmcEnergyOrder);
+      std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
       for(int i=0;i<Tn.size();++i) {
         std::cout << Tn[i]->emcShower()->energy() << "  ";
       }
       std::cout << std::endl;
       bool keep=true;
-      //double x[2]; //E/Ebeam
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();
         E[i] = emc->energy();
@@ -147,7 +146,6 @@ class GammaGammaEvent : public RootTuple
         keep = keep && ( (EEB_MIN_CUT < E_Eb[i])  && (E_Eb[i] < EEB_MAX_CUT ) );
         keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
       }
-      //std::cout << E[0] << " " << E[1] << "   " << E[0]-E[1] << std::endl;
       delta_theta =  theta[0] + theta[1] - M_PI;
       delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
       keep = keep && fabs( delta_theta) < DELTA_THETA_CUT;
