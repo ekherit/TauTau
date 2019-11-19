@@ -148,7 +148,7 @@ class GammaGammaEvent : public RootTuple
         E_Eb[i] = x[i];
         t[i] = emc->time();
       }
-      std::cout << E[0] << " " << E[1] << "   " << E[0]-E[1] << std::endl;
+      //std::cout << E[0] << " " << E[1] << "   " << E[0]-E[1] << std::endl;
       delta_theta =  theta[0] + theta[1] - M_PI;
       delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
       keep = keep && fabs( delta_theta) < DELTA_THETA_CUT;
