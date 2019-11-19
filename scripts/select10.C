@@ -20,7 +20,11 @@
 #include "selection.C"
 #include <map>
 
-const char * runtable_name = "scan_points_ems3_privalov_lum.txt";
+std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity";
+
+//const char * runtable_name = "scan_points_ems3_privalov_lum.txt";
+//const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
+const char * runtable_name = "scan_points_ems3_online_lum.txt";
 
 auto RUNTABLE  = read_my_runtable(runtable_name);
 
@@ -51,7 +55,7 @@ auto GG         = read_mc("mc/gg", RUNTABLE);
 
 
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
-std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8";
+std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.7 && Ep[1]>0.7";
 
 //particla identification configuration
 std::vector<ParticleID_t> PID = 
@@ -250,14 +254,15 @@ Selection SELRHO =
 
 auto & SEL = SEL8;
 
-void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::vector<int> skip_list = {})
+void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
 {
   set_kptem(D,kptem); 
+  measure_luminosity(D, BB, GG,1e6);
   auto result = new_select(D,S); 
-
+  print_luminosity(D);
   set_kptem(M,kptem);
   set_efficiency(result,M,1000000);
-  fit(result, name + ".txt",  S.name);
+  fit(result, name + ".txt",  S.name, default_lum);
   sleep(10);
   make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
 };
@@ -278,6 +283,7 @@ void cmpall(Selection &S=SEL) {
 void select() 
 {
   BB_SEL = LOCAL_BB_SEL;
+  TAUFIT_STR = TAUFIT;
   double Kptem = 1.0;
   set_pid_kptem(DATA       , PID , Kptem);
   set_pid_kptem(MC         , PID , Kptem);
