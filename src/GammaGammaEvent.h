@@ -131,10 +131,10 @@ class GammaGammaEvent : public RootTuple
           */
 
       std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
-      for(int i=0;i<Tn.size();++i) {
-        std::cout << Tn[i]->emcShower()->energy() << "  ";
-      }
-      std::cout << std::endl;
+      //for(int i=0;i<Tn.size();++i) {
+      //  std::cout << Tn[i]->emcShower()->energy() << "  ";
+      //}
+      //std::cout << std::endl;
       bool keep=true;
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();
