@@ -136,17 +136,16 @@ class GammaGammaEvent : public RootTuple
       }
       std::cout << std::endl;
       bool keep=true;
-      double x[2]; //E/Ebeam
+      //double x[2]; //E/Ebeam
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();
         E[i] = emc->energy();
-        x[i] = 2.0*E[i] / W;
+        E_Eb[i] = 2.0*E[i] / W;
         phi[i] = emc->phi();
         theta[i] = emc->theta();
-        keep = keep && ( EEB_MIN_CUT < x[i]  && x[i] < EEB_MAX_CUT );
-        keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
-        E_Eb[i] = x[i];
         t[i] = emc->time();
+        keep = keep && ( (EEB_MIN_CUT < E_Eb[i])  && (E_Eb[i] < EEB_MAX_CUT ) );
+        keep = keep && fabs(cos(theta[i])) < COS_THETA_CUT;
       }
       //std::cout << E[0] << " " << E[1] << "   " << E[0]-E[1] << std::endl;
       delta_theta =  theta[0] + theta[1] - M_PI;
