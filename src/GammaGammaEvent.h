@@ -39,7 +39,7 @@ class GammaGammaEvent : public RootTuple
     {
       //default selections
       MAX_CHARGED_TRACKS_NUMBER = 0;
-      MAX_NEUTRAL_TRACKS_NUMBER = 5;
+      MAX_NEUTRAL_TRACKS_NUMBER = 11;
       DELTA_THETA_CUT = 0.05;
       MIN_DELTA_PHI_CUT = -0.06;
       MAX_DELTA_PHI_CUT = 0.02;
@@ -144,6 +144,7 @@ class GammaGammaEvent : public RootTuple
         E_Eb[i] = x[i];
         t[i] = emc->time();
       }
+      std::cout << E[0] << " " << E[1] << "   " << E[0]-E[1] << std::endl;
       delta_theta =  theta[0] + theta[1] - M_PI;
       delta_phi = fabs(phi[1]  - phi[0]) - M_PI;
       keep = keep && fabs( delta_theta) < DELTA_THETA_CUT;
