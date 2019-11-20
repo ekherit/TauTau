@@ -38,7 +38,7 @@ class GammaGammaEvent : public RootTuple
     GammaGammaEvent(void)
     {
       //default selections
-      MAX_CHARGED_TRACKS_NUMBER = 0;
+      MAX_CHARGED_TRACKS_NUMBER = 0; //number of maximum good charged tracks
       MAX_NEUTRAL_TRACKS_NUMBER = 11;
       DELTA_THETA_CUT = 0.05;
       MIN_DELTA_PHI_CUT = -0.06;
@@ -131,10 +131,6 @@ class GammaGammaEvent : public RootTuple
           */
 
       std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
-      //for(int i=0;i<Tn.size();++i) {
-      //  std::cout << Tn[i]->emcShower()->energy() << "  ";
-      //}
-      //std::cout << std::endl;
       bool keep=true;
       for(int i=0;i<2;i++) {
         RecEmcShower * emc = Tn[i]->emcShower();

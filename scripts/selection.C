@@ -3254,7 +3254,6 @@ void print_luminosity(Scan_t & data) {
 
 
 void data_vs_mc_bhabha(const ScanPoint_t & D, const ScanPoint_t & B) {
-
   gStyle->Reset("Pub");
   int idx=0;
   auto draw = [&](const char * var, int Nbin, double min, double max, double ymax) {
