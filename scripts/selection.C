@@ -145,37 +145,35 @@ typedef std::vector<ScanPoint_t>  Scan_t;
 
 std::map<std::string, std::string > SelMap;
 
+
+#include "valer.h"
+
+struct DataSample_t 
+{
+  std::string title;
+  std::shared_ptr<TTree> tree;
+  ibn::valer<double> cross_section;
+  ibn::valer<double> energy;     //beam c.m. energy
+  ibn::valer<double> efficiency; //registration efficiency
+};
+
+
 struct ScanPoint_t
 {
   std::string title;
-  //int begin_run;
-  //int end_run;
-  double W;
-  double dW;
+  ibn::valer<double> W; //c.m. energy
+  ibn::valer<double> L; //luminosity
+  std::list<int> run_list;
+
   TTree * tt;
   TTree * gg; 
   TTree * bb;
-  double L=0;
-  std::list<std::pair<int,double> > runs;
+
+  std::list<std::pair<int,double> > runs; //for drawing luminosity per runs
 
   long Ntt;
   double tau_tau_cross_section;
 
-  /*
-  long Ngg;
-  double gg_cross_section;
-  double gg_cross_section_error;
-  double eps_gg;    // eps_gg = Ngg/N0gg from Monte Carlo
-  double Lgg;       // Lgg = Ngg/eps_gg/gg_cross_section
-  double Lgg_error; // Lgg_error
-
-  long Nbb;
-  double bhabha_cross_section;
-  double bhabha_cross_section_error;
-  double eps_bb;    // eps_bb = Nbb/N0bb from Monte Carlo
-  double Lbb;       // Lgg = Ngg/eps_gg/gg_cross_section
-  double Lbb_error; // Lgg_error
-  */
   Luminosity_t Lbb,Lgg;
 
 
@@ -188,11 +186,9 @@ struct ScanPoint_t
   double eps_error=1.0; //registration efficiency error
   double effcor=1.0; //registration efficiency correction
   double Sw, dSw; //energy spread
-  std::list<int> run_list;
   std::list<std::string> file_list;
   std::list<std::string> regexprs; //regular expessions to match files
   std::string scan_title;
-  double dL=0; 
 
 
   struct by_regexp
@@ -327,11 +323,11 @@ void print(const std::vector<ScanPoint_t> & SPL)
     std::cout <<  pr 
       % point_number++ 
       % p.title.c_str() 
-      % p.W % p.dW 
-      % ((0.5*p.W-MTAU)/MeV) 
+      % p.W.value % p.W.error 
+      % ((0.5*p.W.value-MTAU)/MeV) 
       % p.Sw 
       % p.dSw 
-      % p.L 
+      % p.L.value 
       % get_run_formula(p.run_list).c_str() << std::endl;
 }
 
@@ -474,12 +470,12 @@ Scan_t read_my_runtable(std::string filename)
   if(!ifs) { std::cerr << "Unable to open file: " << filename << std::endl; return theScan; }
   std::string point_name;
   std::string point_runs;
-  double point_energy; //beam energy in GeV
-  double point_energy_error;
+  ibn::valer<double>point_energy; //GeV
+  ibn::valer<double>point_lum; 
+  //double point_energy; //beam energy in GeV
+  //double point_energy_error;
   double point_spread;
   double point_spread_error;
-  double point_lum;
-  double point_lum_error;
   std::regex comment_re(R"(^\s*#.*)");
   std::string line;
   std::smatch sm;
@@ -488,7 +484,7 @@ Scan_t read_my_runtable(std::string filename)
     if ( line.find_first_of('#') != std::string::npos ) continue;
     //std::cout << line << std::endl;
     std::istringstream iss(line);
-    iss >> point_name >> point_energy >> point_energy_error >> point_spread >> point_spread_error >> point_lum >> point_lum_error;
+    iss >> point_name >> point_energy.value >> point_energy.error >> point_spread >> point_spread_error >> point_lum.value >> point_lum.error;
     std::getline(iss,point_runs); 
     ScanPoint_t sp;
     sp.run_list = get_run_list(point_runs);
@@ -501,11 +497,9 @@ Scan_t read_my_runtable(std::string filename)
     else for(auto & r : sp.run_list) sp.regexprs.push_back(std::to_string(r));
     sp.title = point_name;
     sp.W = point_energy;
-    sp.dW = point_energy_error;
     sp.Sw = point_spread;
     sp.dSw = point_spread_error;
     sp.L = point_lum;
-    sp.dL = point_lum_error;
     theScan.emplace_back(std::move(sp));
   };
   return theScan;
@@ -518,8 +512,7 @@ Scan_t read_simple_runtable(std::string filename)
   if(!ifs) { std::cerr << "Unable to open file: " << filename << std::endl; return theScan; }
   std::string point_name;
   std::string point_runs;
-  double point_energy; //beam energy in GeV
-  double point_energy_error;
+  ibn::valer<double> point_energy; //GeV
   double point_spread;
   double point_spread_error;
   double point_lum;
@@ -532,7 +525,7 @@ Scan_t read_simple_runtable(std::string filename)
     if(regex_match(line,sm,sharp_re)) continue;
     std::stringstream iss(line);
     //std::cout << point_name << std::endl;
-    iss >> point_name >> point_energy >> point_energy_error >> point_spread >> point_spread_error >> point_lum;
+    iss >> point_name >> point_energy.value >> point_energy.error >> point_spread >> point_spread_error >> point_lum;
     std::getline(iss,point_runs); 
     ScanPoint_t sp;
     for (std::sregex_iterator it(point_runs.begin(), point_runs.end(), files_re); it != std::sregex_iterator(); ++it)
@@ -546,7 +539,7 @@ Scan_t read_simple_runtable(std::string filename)
     //if(sp.run_list.empty()) continue;
     sp.title = point_name;
     sp.W = point_energy;
-    sp.dW = point_energy_error;
+    //sp.dW = point_energy_error;
     sp.Sw = point_spread;
     sp.dSw = point_spread_error;
     sp.L = point_lum;
@@ -907,9 +900,9 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
       xs = Ntt/Ngg;
       dxs = sqrt( Ntt/(Ngg*Ngg) + pow(Ntt/(Ngg*Ngg), 2.0)*Ngg );
     }
-    g->SetPoint(i, Points[i].W/2.0-MTAU, xs);
-    g->SetPointError(i, Points[i].dW/2.0, dxs);
-    std::cout << i << " " << Points[i].W/2.0-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
+    g->SetPoint(i, 0.5*Points[i].W-MTAU, xs);
+    g->SetPointError(i, 0.5*Points[i].W.error, dxs);
+    std::cout << i << " " << 0.5*Points[i].W-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
   }
   std::cout << "Total number of tau-tau candidates:" << totalNtt << std::endl;
   g->SetMarkerStyle(21);
@@ -1068,11 +1061,11 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
       xs = Ntt/Ngg;
       dxs = sqrt( Ntt/(Ngg*Ngg) + pow(Ntt/(Ngg*Ngg), 2.0)*Ngg );
     }
-    g->SetPoint(i, Points[i].W/2.0-MTAU, xs);
-    g->SetPointError(i, Points[i].dW/2.0, dxs);
+    g->SetPoint(i, 0.5*Points[i].W-MTAU, xs);
+    g->SetPointError(i, 0.5*Points[i].W.error, dxs);
     std::cout << i << " " << Points[i].W/2.0-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
     auto & P = Points[i];
-    ofs << std::setw(5) << i <<  std::setw(15) << 20000 << "  " << 10 << std::setw(15) << P.W/MeV  << std::setw(15) << P.dW/MeV;
+    ofs << std::setw(5) << i <<  std::setw(15) << 20000 << "  " << 10 << std::setw(15) << P.W/MeV  << std::setw(15) << P.W.error/MeV;
     ofs << std::setw(10) << 1.256 << " " << std::setw(10) << 0.019;
     ofs << std::setw(10) << Ntt << std::setw(10) << " " << Nbb << "  " << Ngg <<  " " << 1 << std::endl;
   }
@@ -1300,7 +1293,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     r.root_name    = p.title;
     r.tex_name     = p.title;
     r.W            = p.W;
-    r.dW           = p.dW;
+    r.dW           = p.W.error;
     r.L            = p.L;
     r.cut          = sel.c_str();
   }
@@ -1373,7 +1366,7 @@ std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::ve
       r.root_name    = p.title;
       r.tex_name     = p.title;
       r.W            = p.W;
-      r.dW           = p.dW;
+      r.dW           = p.W.error;
       r.L            = p.L;
     }
   };
@@ -1412,7 +1405,7 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
     r.root_name    = p.title;
     r.tex_name     = p.title;
     r.W            = p.W;
-    r.dW           = p.dW;
+    r.dW           = p.W.error;
     r.L            = p.L;
   }
   return R;
@@ -3244,7 +3237,7 @@ void print_luminosity(Scan_t & data) {
       );
   for(auto & sp : data) {
     printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
-        sp.title.c_str(), sp.W, sp.L, 
+        sp.title.c_str(), sp.W.value, sp.L.value, 
         sp.Lgg.luminosity*1e-3, sp.Lgg.luminosity_error*1e-3, sp.Lgg.N,
         sp.Lbb.luminosity*1e-3, sp.Lbb.luminosity_error*1e-3, sp.Lbb.N,
         sp.Lbb.luminosity/sp.Lgg.luminosity
@@ -3292,3 +3285,159 @@ void data_vs_mc_bhabha(const ScanPoint_t & D, const ScanPoint_t & B) {
   D.bb->Draw("dtheta:dphi", BB_SEL.c_str(),"col");
 }
 
+
+#include <chrono>
+#include <TMinuitMinimizer.h>
+#include <Math/WrappedFunction.h>
+
+template<typename Func>
+std::tuple<double,double> find_maximum(Func func, double a, double b, double prec=-1) {
+  TMinuitMinimizer m(ROOT::Minuit::kSimplex,1);
+  m.SetFunction(ROOT::Math::WrappedMultiFunction(
+        [&](const double *x) { 
+          return -func(x[0]);
+        }));
+  m.SetStrategy(2);
+  m.SetPrecision(prec);
+  m.SetLimitedVariable(0,"test",0.5*(a+b),0.2*(b-a),a,b);
+  m.Minimize();
+  m.PrintResults();
+  return {0,0};
+}
+
+
+void find_optimal_cut(ScanPoint_t & SIG, ScanPoint_t & BG, std::string sel, long N0, std::string param, double param_min, double param_max, double prec=1e-6) {
+  auto c = new TCanvas;
+  double sigxs = 0.1*1e3; //pb
+  double bgxs  = 22*1e3; //pb
+  auto g = new TGraphErrors;
+  int idx=0;
+  double error;
+  auto fun = [&](double par) {
+    char cut[1024];
+    sprintf(cut,"%s && (%s%f)",sel.c_str(),  param.c_str(), par);
+    long Nsig = SIG.tt->GetEntries(cut);
+    long Nbg  = BG.tt ->GetEntries(cut);
+
+    struct mc_t {
+      long  N; //number of selected events
+      long  N0; //initial MC number
+      double sigma; //the cross section
+      double L; //the integrated luminosity
+      double eps; //registration efficiency
+      double eps_error;
+      double Nexp; //expected number of events
+      double Nvis; //visible number of events
+      double Nvis_error; //visible number of events
+      mc_t(long n, long n0, double sig, double lum) {
+        N = n;
+        N0 = n0;
+        sigma = sig;
+        L = lum;
+        eps = double(N)/N0;
+        eps_error = sqrt(double(N))/N0;
+        Nexp = fabs(sigma*L);
+        Nvis =  eps * Nexp;
+        Nvis_error = eps_error * Nexp;
+      }
+    };
+
+    mc_t sig(Nsig,N0,0.1*1e3, SIG.L);
+    mc_t    bg(Nbg,N0,24*1e3, SIG.L);
+
+    double ntot = sig.Nvis + bg.Nvis;
+    double x = ntot <=0 ? 0 : sig.Nvis/sqrt(ntot);
+
+    error = std::hypot( sig.Nvis_error*(1./sqrt(ntot) - sig.Nvis*0.5*pow(ntot,-1.5)), bg.Nvis_error*sig.Nvis*0.25*pow(ntot,-1.5));
+    return x;
+  };
+  using clock = std::chrono::system_clock;
+  auto t1 = clock::now();
+  double xm=std::numeric_limits<double>::lowest();
+  double fmax=std::numeric_limits<double>::lowest();
+  for(double ptem = 0; ptem < 1.0; ptem+=0.05) {
+    double f = fun(ptem);
+    if(f>fmax) { xm = ptem; fmax = f;}
+    g->SetPoint(idx, ptem, f);
+    g->SetPointError(idx++, 0, error);
+  }
+  std::cout << "time1: " << std::chrono::duration_cast<std::chrono::seconds>(clock::now()-t1).count() << " s" << std::endl;
+  g->Draw("ac*");
+  t1 = clock::now();
+  auto [xmax, edm] = find_maximum(fun, param_min, param_max);
+  std::cout << "time2: " << std::chrono::duration_cast<std::chrono::seconds>(clock::now()-t1).count() << " s" << std::endl;
+}
+
+void find_optimal_ptem_cut(ScanPoint_t & SIG, ScanPoint_t & BG, std::string sel, long N0, double prec=1e-6) {
+  find_optimal_cut(SIG,BG,sel,N0,"ptem>",0,1);
+}
+
+struct PhysicsChannel_t {
+  double sigma; //cross section
+  ScanPoint_t & point;
+};
+/*
+
+void find_optimal_cut(ScanPoint_t & SIG, ScanPoint_t & BG, std::string sel, long N0, std::string param, double param_min, double param_max, double prec=1e-6) {
+  auto c = new TCanvas;
+  double sigxs = 0.1*1e3; //pb
+  double bgxs  = 22*1e3; //pb
+  auto g = new TGraphErrors;
+  int idx=0;
+  double error;
+  auto fun = [&](double par) {
+    char cut[1024];
+    sprintf(cut,"%s && (%s%f)",sel.c_str(),  param.c_str(), par);
+    long Nsig = SIG.tt->GetEntries(cut);
+    long Nbg  = BG.tt ->GetEntries(cut);
+
+    struct mc_t {
+      long  N; //number of selected events
+      long  N0; //initial MC number
+      double sigma; //the cross section
+      double L; //the integrated luminosity
+      double eps; //registration efficiency
+      double eps_error;
+      double Nexp; //expected number of events
+      double Nvis; //visible number of events
+      double Nvis_error; //visible number of events
+      mc_t(long n, long n0, double sig, double lum) {
+        N = n;
+        N0 = n0;
+        sigma = sig;
+        L = lum;
+        eps = double(N)/N0;
+        eps_error = sqrt(double(N))/N0;
+        Nexp = fabs(sigma*L);
+        Nvis =  eps * Nexp;
+        Nvis_error = eps_error * Nexp;
+      }
+    };
+
+    mc_t sig(Nsig,N0,0.1*1e3, SIG.L);
+    mc_t    bg(Nbg,N0,24*1e3, SIG.L);
+
+    double ntot = sig.Nvis + bg.Nvis;
+    double x = ntot <=0 ? 0 : sig.Nvis/sqrt(ntot);
+
+    error = std::hypot( sig.Nvis_error*(1./sqrt(ntot) - sig.Nvis*0.5*pow(ntot,-1.5)), bg.Nvis_error*sig.Nvis*0.25*pow(ntot,-1.5));
+    return x;
+  };
+  using clock = std::chrono::system_clock;
+  auto t1 = clock::now();
+  double xm=std::numeric_limits<double>::lowest();
+  double fmax=std::numeric_limits<double>::lowest();
+  for(double ptem = 0; ptem < 1.0; ptem+=0.05) {
+    double f = fun(ptem);
+    if(f>fmax) { xm = ptem; fmax = f;}
+    g->SetPoint(idx, ptem, f);
+    g->SetPointError(idx++, 0, error);
+  }
+  std::cout << "time1: " << std::chrono::duration_cast<std::chrono::seconds>(clock::now()-t1).count() << " s" << std::endl;
+  g->Draw("ac*");
+  t1 = clock::now();
+  auto [xmax, edm] = find_maximum(fun, param_min, param_max);
+  std::cout << "time2: " << std::chrono::duration_cast<std::chrono::seconds>(clock::now()-t1).count() << " s" << std::endl;
+}
+
+*/
