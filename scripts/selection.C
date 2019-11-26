@@ -106,16 +106,28 @@ struct ParticleID_t
   std::vector<Restriction_t> restrictions;
 };
 
-
-struct Luminosity_t 
+struct DataSample_t 
 {
+  std::string title;
+  std::shared_ptr<TTree> tree;
+  ibn::valer<double> cross_section;
+  ibn::valer<double> energy;     //beam c.m. energy
+  ibn::valer<double> efficiency; //registration efficiency
+  ibn::valer<double> luminosity;
   long N; //number of selected events in data
   long Nmc; //number of selected events in MC
   long N0mc; //initial number of MC events
-  ibn::valer<double> cross_section;
-  ibn::valer<double> efficiency;
-  ibn::valer<double> luminosity;
 };
+
+//struct Luminosity_t 
+//{
+//  long N; //number of selected events in data
+//  long Nmc; //number of selected events in MC
+//  long N0mc; //initial number of MC events
+//  ibn::valer<double> cross_section;
+//  ibn::valer<double> efficiency;
+//  ibn::valer<double> luminosity;
+//};
 
 struct PointSelectionResult_t
 {
@@ -128,7 +140,8 @@ struct PointSelectionResult_t
   ibn::valer<double> L;
   ibn::valer<double> eps = {1.0,0};
   ibn::valer<double> effcor = {1.0,0};
-  Luminosity_t Lbb, Lgg;
+  //Luminosity_t Lbb, Lgg;
+  DataSample_t bb, gg;
 };
 
 
@@ -138,14 +151,6 @@ typedef std::vector<ScanPoint_t>  Scan_t;
 
 std::map<std::string, std::string > SelMap;
 
-struct DataSample_t 
-{
-  std::string title;
-  std::shared_ptr<TTree> tree;
-  ibn::valer<double> cross_section;
-  ibn::valer<double> energy;     //beam c.m. energy
-  ibn::valer<double> efficiency; //registration efficiency
-};
 
 
 
@@ -157,22 +162,25 @@ struct ScanPoint_t
   std::list<int> run_list; //list of runs
 
   TTree * tt;
-  TTree * gg; 
-  TTree * bb;
+  //TTree * gg; 
+  //TTree * bb;
+
+  DataSample_t bb, gg; //luminosity
 
   std::list<std::pair<int,double> > runs; //for drawing luminosity per runs
 
   long Ntt;
   double tau_tau_cross_section;
 
-  Luminosity_t Lbb,Lgg;
+  //Luminosity_t Lbb,Lgg;
+
 
 
   std::string selection;
   std::map<std::string, int> NttMap;
-  double ppi;
-  double ppi_max;
-  double ppi_min;
+  //double ppi;
+  //double ppi_max;
+  //double ppi_min;
   double eps=1.0; //registration efficiency
   double eps_error=1.0; //registration efficiency error
   double effcor=1.0; //registration efficiency correction
@@ -663,8 +671,8 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     bb->SetName(("bb"+std::to_string(index)).c_str());
     set_alias(tt,sp.W,sp.L);
     sp.tt = tt;
-    sp.gg = gg;
-    sp.bb = bb;
+    sp.gg.tree.reset(gg);
+    sp.bb.tree.reset(bb);
     sp.type = data_dir;
   }
   print(scan);
@@ -770,8 +778,8 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             p.W = W;
             p.L = -p.L;
             p.tt = get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str());
-            p.gg = get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str());
-            p.bb = get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str());
+            p.gg.tree.reset(get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
+            p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
             set_alias(p.tt, p.W,p.L);
           }
         }
@@ -882,7 +890,7 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   for(int i=0; i<Points.size();++i)
   {
     double Ntt = Points[i].tt->GetEntries(selection);
-    double Ngg = Points[i].gg->GetEntries(selection);
+    double Ngg = Points[i].gg.tree->GetEntries(selection);
     double xs  = 0;
     double dxs = 0;
     totalNtt += Ntt;
@@ -1042,8 +1050,8 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
   for(int i=0; i<Points.size();++i)
   {
     double Ntt = Points[i].tt->GetEntries(selection);
-    double Ngg = Points[i].gg->GetEntries();
-    double Nbb = Points[i].bb->GetEntries(BB_SEL.c_str());
+    double Ngg = Points[i].gg.tree->GetEntries();
+    double Nbb = Points[i].bb.tree->GetEntries(BB_SEL.c_str());
     double xs  = 0;
     double dxs = 0;
     totalNtt += Ntt;
@@ -1106,8 +1114,8 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     for(auto & p : Points)
     {
       Ntt+=p.Ntt;
-      Ngg+=p.Lgg.N;
-      Nbb+=p.Lbb.N;
+      Ngg+=p.gg.N;
+      Nbb+=p.bb.N;
       cut = p.cut;
     } 
 
@@ -1121,8 +1129,8 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     for(auto & p : Points)
     {
       Ntt+=p.Ntt;
-      Ngg+=p.Lgg.N;
-      Nbb+=p.Lbb.N;
+      Ngg+=p.gg.N;
+      Nbb+=p.bb.N;
       cut = p.cut;
       L += p.L;
     } 
@@ -1278,8 +1286,8 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     r.Ntt          = p.tt->GetEntries(sel.c_str());
     //if(p.gg) r.Ngg = p.gg->GetEntries();
     //if(p.bb) r.Nbb = p.bb->GetEntries(BB_SEL.c_str());
-    r.Lbb          = p.Lbb;
-    r.Lgg          = p.Lgg;
+    r.bb          = p.bb;
+    r.gg          = p.gg;
     r.name         = p.title;
     r.root_name    = p.title;
     r.tex_name     = p.title;
@@ -1732,8 +1740,8 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
       rp.eps     += p.eps;
       eps_error2 += p.eps.error*p.eps.error;
       rp.Ntt     += p.Ntt;
-      rp.Lgg      = p.Lgg;
-      rp.Lbb      = p.Lbb;
+      rp.gg      = p.gg;
+      rp.bb      = p.bb;
       rp.L        = p.L;
       //rp.dL       = p.dL;
       rp.W        = p.W;
@@ -1886,10 +1894,10 @@ void print_Ngg(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg,
 {
   print_smth(pts, cfg, 
       [&title](){ return title; }, 
-      [](auto & p) { return p.Lgg.N; }, 
+      [](auto & p) { return p.gg.N; }, 
       [](auto & s) { 
         long N=0; 
-        for(auto & x: s)  N+=x.Lgg.N;  
+        for(auto & x: s)  N+=x.gg.N;  
         return N; 
         } 
       );
@@ -1899,10 +1907,10 @@ void print_Nbb(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg,
 {
   print_smth(pts, cfg, 
       [&title](){ return title; }, 
-      [](auto & p) { return p.Lbb.N; }, 
+      [](auto & p) { return p.bb.N; }, 
       [](auto & s) { 
         long N=0; 
-        for(auto & x: s)  N+=x.Lbb.N;  
+        for(auto & x: s)  N+=x.bb.N;  
         return N; 
         } 
       );
@@ -1949,11 +1957,11 @@ void print_Ngg(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
 {
   print_smth(SR,cfg, 
       [](auto & p) { 
-        return p.Lgg.N; 
+        return p.gg.N; 
       },
       [](auto & s) { 
         double sum=0;
-        for(auto & x: s)  sum+=x.Lgg.N;  
+        for(auto & x: s)  sum+=x.gg.N;  
         return sum; 
       } 
   );
@@ -1963,11 +1971,11 @@ void print_Nbb(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
 {
   print_smth(SR,cfg, 
       [](auto & p) { 
-        return p.Lbb.N; 
+        return p.bb.N; 
       },
       [](auto & s) { 
         double sum=0;
-        for(auto & x: s)  sum+=x.Lbb.N;  
+        for(auto & x: s)  sum+=x.bb.N;  
         return sum; 
       } 
   );
@@ -2848,13 +2856,13 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
     double lum_error = 10;
     if(default_lum == "bb") {
       std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
-      lum = p.Lbb.luminosity.value;
-      lum_error = p.Lbb.luminosity.error;
+      lum = p.bb.luminosity.value;
+      lum_error = p.bb.luminosity.error;
     }
     if(default_lum == "gg") {
       std::cout << "Use gamma gamma + Monte Carlo as default luminosity " << std::endl;
-      lum = p.Lgg.luminosity.value;
-      lum_error = p.Lgg.luminosity.error;
+      lum = p.gg.luminosity.value;
+      lum_error = p.gg.luminosity.error;
     }
     sprintf(buf,"%5s %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10ld %10ld %10ld %10.3f",
         point_name.c_str(),
@@ -2862,7 +2870,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
         p.W.value/MeV,        p.W.error/MeV,
         1.258,             0.017,
         p.Ntt,
-        p.Lbb.N,        p.Lgg.N,
+        p.bb.N,        p.gg.N,
         p.effcor.value);
     os << buf <<'\n';
   }
@@ -3171,11 +3179,11 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
 
 void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   std::cout << "Cross section for bhabha process: " << std::endl;
-  read_cross_section(filename, P, [](ScanPoint_t & sp) -> Luminosity_t & { return sp.Lbb; } );
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.bb; } );
 }
 void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   std::cout << "Cross section for bhabha process: " << std::endl;
-  read_cross_section(filename, P, [](ScanPoint_t & sp) -> Luminosity_t & { return sp.Lgg; } );
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.gg; } );
 }
 
 
@@ -3206,11 +3214,11 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
 }
 
 void measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
-  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> Luminosity_t & { return sp.Lbb; }, [](ScanPoint_t &sp) -> TTree * { return sp.bb; } );
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.bb; }, [](ScanPoint_t &sp) -> TTree * { return sp.bb.tree.get(); } );
 }
 
 void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
-  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> Luminosity_t & { return sp.Lgg; }, [](ScanPoint_t &sp) -> TTree * { return sp.gg; } );
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; }, [](ScanPoint_t &sp) -> TTree * { return sp.gg.tree.get(); } );
 }
 
 
@@ -3228,9 +3236,9 @@ void print_luminosity(Scan_t & data) {
   for(auto & sp : data) {
     printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
         sp.title.c_str(), sp.W.value, sp.L.value, 
-        sp.Lgg.luminosity.value*1e-3, sp.Lgg.luminosity.error*1e-3, sp.Lgg.N,
-        sp.Lbb.luminosity.value*1e-3, sp.Lbb.luminosity.error*1e-3, sp.Lbb.N,
-        sp.Lbb.luminosity.value/sp.Lgg.luminosity.value
+        sp.gg.luminosity.value*1e-3, sp.gg.luminosity.error*1e-3, sp.gg.N,
+        sp.bb.luminosity.value*1e-3, sp.bb.luminosity.error*1e-3, sp.bb.N,
+        sp.bb.luminosity.value/sp.gg.luminosity.value
         );
   }
 }
@@ -3246,14 +3254,14 @@ void data_vs_mc_bhabha(const ScanPoint_t & D, const ScanPoint_t & B) {
     h->Draw();
     auto l = new TLegend(0.8,0.8,1.0,1.0);
     h->GetXaxis()->SetTitle(var);
-    D.bb->SetLineColor(kBlue); 
-    D.bb->SetLineWidth(3);
-    D.bb->Draw(var,BB_SEL.c_str(),"SAME NORM HIS");
-    l->AddEntry(D.bb->GetHistogram(),"DATA", "lp");
-    B.bb->SetLineWidth(2);
-    B.bb->SetLineColor(kRed); 
-    B.bb->Draw(var,BB_SEL.c_str(),"SAME NORM HIS");
-    l->AddEntry(B.bb->GetHistogram(),"MC", "lp");
+    D.bb.tree->SetLineColor(kBlue); 
+    D.bb.tree->SetLineWidth(3);
+    D.bb.tree->Draw(var,BB_SEL.c_str(),"SAME NORM HIS");
+    l->AddEntry(D.bb.tree->GetHistogram(),"DATA", "lp");
+    B.bb.tree->SetLineWidth(2);
+    B.bb.tree->SetLineColor(kRed); 
+    B.bb.tree->Draw(var,BB_SEL.c_str(),"SAME NORM HIS");
+    l->AddEntry(B.bb.tree->GetHistogram(),"MC", "lp");
     l->Draw();
     c->SaveAs(("data_vs_mc_bhabha"+std::to_string(++idx)+".svg").c_str());
   };
@@ -3268,11 +3276,11 @@ void data_vs_mc_bhabha(const ScanPoint_t & D, const ScanPoint_t & B) {
   gStyle->Reset("Default");
   auto c1 = new TCanvas;
   c1->SetTitle("Bhabha mc");
-  B.bb->Draw("dtheta:dphi", BB_SEL.c_str(),"col");
+  B.bb.tree->Draw("dtheta:dphi", BB_SEL.c_str(),"col");
 
   auto c2 = new TCanvas;
   c2->SetTitle("Bhabha data");
-  D.bb->Draw("dtheta:dphi", BB_SEL.c_str(),"col");
+  D.bb.tree->Draw("dtheta:dphi", BB_SEL.c_str(),"col");
 }
 
 
