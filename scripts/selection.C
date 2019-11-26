@@ -46,6 +46,8 @@
 #include <TLatex.h>
 #include <TLine.h>
 
+#include "valer.h"
+
 const double GeV=1.0;
 const double MeV=1e-3*GeV;
 const double bn = 1.0;
@@ -104,18 +106,15 @@ struct ParticleID_t
   std::vector<Restriction_t> restrictions;
 };
 
+
 struct Luminosity_t 
 {
   long N; //number of selected events in data
   long Nmc; //number of selected events in MC
   long N0mc; //initial number of MC events
-  double cross_section;
-  double cross_section_error;
-  double efficiency;
-  double efficiency_error;
-  double luminosity;      
-  double luminosity_error; 
-
+  ibn::valer<double> cross_section;
+  ibn::valer<double> efficiency;
+  ibn::valer<double> luminosity;
 };
 
 struct PointSelectionResult_t
@@ -125,16 +124,10 @@ struct PointSelectionResult_t
   std::string tex_name;
   std::string cut;
   long Ntt=0; //number of tau tau events;
-  //long Ngg=0; //number of gamma gamma events for luminocity
-  //long Nbb=0; //number of Bhabha events for luminocity
-  double W=0;   //point energy
-  double dW=0.01;  
-  double L=0;
-  double dL=0.01;
-  double eps=1.0; //registration efficiencey
-  double eps_error=0; //registration efficiencey error
-  double effcor = 1.0; // efficiency correction
-  double effcor_error = 0; //error of the efficiency correction
+  ibn::valer<double> W;
+  ibn::valer<double> L;
+  ibn::valer<double> eps = {1.0,0};
+  ibn::valer<double> effcor = {1.0,0};
   Luminosity_t Lbb, Lgg;
 };
 
@@ -144,9 +137,6 @@ struct ScanPoint_t;
 typedef std::vector<ScanPoint_t>  Scan_t;
 
 std::map<std::string, std::string > SelMap;
-
-
-#include "valer.h"
 
 struct DataSample_t 
 {
@@ -158,12 +148,13 @@ struct DataSample_t
 };
 
 
+
 struct ScanPoint_t
 {
   std::string title;
   ibn::valer<double> W; //c.m. energy
   ibn::valer<double> L; //luminosity
-  std::list<int> run_list;
+  std::list<int> run_list; //list of runs
 
   TTree * tt;
   TTree * gg; 
@@ -1293,7 +1284,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     r.root_name    = p.title;
     r.tex_name     = p.title;
     r.W            = p.W;
-    r.dW           = p.W.error;
+    //r.dW           = p.W.error;
     r.L            = p.L;
     r.cut          = sel.c_str();
   }
@@ -1366,7 +1357,7 @@ std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::ve
       r.root_name    = p.title;
       r.tex_name     = p.title;
       r.W            = p.W;
-      r.dW           = p.W.error;
+      //r.dW           = p.W.error;
       r.L            = p.L;
     }
   };
@@ -1405,7 +1396,7 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
     r.root_name    = p.title;
     r.tex_name     = p.title;
     r.W            = p.W;
-    r.dW           = p.W.error;
+    //r.dW           = p.W.error;
     r.L            = p.L;
   }
   return R;
@@ -1739,26 +1730,26 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
       auto & p    = r.Points[i];
       result.Ntt += p.Ntt;
       rp.eps     += p.eps;
-      eps_error2 += p.eps_error*p.eps_error;
+      eps_error2 += p.eps.error*p.eps.error;
       rp.Ntt     += p.Ntt;
       rp.Lgg      = p.Lgg;
       rp.Lbb      = p.Lbb;
       rp.L        = p.L;
-      rp.dL       = p.dL;
+      //rp.dL       = p.dL;
       rp.W        = p.W;
-      rp.dW       = p.dW;
+      //rp.dW       = p.dW;
     }
-    rp.eps_error = sqrt(eps_error2);
+    //rp.eps_error = sqrt(eps_error2);
   }
   auto & reference_point = * find_best(result.Points, [](const auto & p) { return  std::abs(p.W*0.5-MTAU); } );
   //normalize efficiency correction to threshold efficiency
   for(int i=0;i<result.Points.size();++i)
   {
     auto & rp   = result.Points[i];
-    rp.effcor = rp.eps / reference_point.eps;
-    rp.effcor_error = rp.eps_error / reference_point.eps;
+    rp.effcor.value = rp.eps / reference_point.eps;
+    //rp.effcor.error = rp.eps.error / reference_point.eps;
   }
-  reference_point.effcor_error = 0;
+  reference_point.effcor.error = 0;
   return result;
 };
 
@@ -1997,7 +1988,7 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
           [&title](){ return title; }, 
           [&format_str](auto & p) { 
             char buf[1024];
-            sprintf(buf,format_str.c_str(), p.eps*100,p.eps_error*100);
+            sprintf(buf,format_str.c_str(), p.eps.value*100,p.eps.error*100);
             return std::string(buf); 
           },
           [&format_str](auto & P) { 
@@ -2006,7 +1997,7 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
             for(auto & p: P)  
             {
               sum+=p.eps;  
-              error2_sum+=p.eps_error*p.eps_error;
+              error2_sum+=p.eps.error*p.eps.error;
             }
             double average = sum/P.size(); 
             double error = sqrt(error2_sum)/P.size();
@@ -2038,8 +2029,8 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
           [&title](){ return title; }, 
           [&format_str](auto & p) { 
             char buf[1024];
-            sprintf(buf,format_str.c_str(), p.effcor,p.effcor_error);
-            if(p.effcor_error == 0 && p.effcor==1) 
+            sprintf(buf,format_str.c_str(), p.effcor.value,p.effcor.error);
+            if(p.effcor.error == 0 && p.effcor==1) 
             {
               return std::string("     1     ");
             }
@@ -2051,7 +2042,7 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
             for(auto & p: P)  
             {
               sum+=p.effcor;  
-              error2_sum+=p.effcor_error*p.effcor_error;
+              error2_sum+=p.effcor.error*p.effcor.error;
             }
             double average = sum/P.size(); 
             double error = sqrt(error2_sum)/P.size();
@@ -2140,7 +2131,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : SR[0].Points) {
     os << " & ";
     char buf[1024];
-    sprintf(buf,"%5.1f", p.L);
+    sprintf(buf,"%5.1f", p.L.value);
     os << std::setw(col_width) << buf;
   }
   os << " & ";
@@ -2216,7 +2207,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     for(auto & p : sr.Points) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps*100, p.eps_error*100);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps.value*100, p.eps.error*100);
       os << std::setw(col_width) << buf;
     }
     //os << std::setw(col_width) << sr.Ntt;
@@ -2227,7 +2218,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : total.Points ) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps*100, p.eps_error*100);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps.value*100, p.eps.error*100);
       os << std::setw(col_width) << buf;
   }
   //os << std::setw(col_width) << total.Ntt;
@@ -2267,7 +2258,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     for(auto & p : sr.Points) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor, p.effcor_error);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor.value, p.effcor.error);
       os << std::setw(col_width) << buf;
     }
     //char buf[1024];
@@ -2280,7 +2271,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : total.Points ) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor, p.effcor_error);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor.value, p.effcor.error);
       os << std::setw(col_width) << buf;
   }
   //os << std::setw(col_width) << total.Ntt;
@@ -2363,7 +2354,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print luminosity
     make_row(os, total, 
         R"($\int L, pb^{-1}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.L); },
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.L.value); },
         [&total]() { return myfmt(R"(%4.1f)", total.L); }
         );
 
@@ -2398,12 +2389,12 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print epsilon
     make_row(os, total, 
         R"($\varepsilon$, \%)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.eps*100, p.eps_error*100); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.eps.value*100, p.eps.error*100); });
 
     //print epsilon correction
     make_row(os, total, 
         R"($\epsilon^{cor}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.effcor, p.effcor_error); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.effcor.value, p.effcor.error); });
 
     os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
     os << R"(\end{tabular})" << "\n";
@@ -2526,24 +2517,23 @@ std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionR
       }
     }
     assert ( chi2 == UNSET);
-    double eps = double(eff[jc].Ntt)/N0;
-    double eps_error =  sqrt( eps/N0 * ( 1.0 - eps));
+    ibn::valer<double> eps;
+    eps.value = (double(eff[jc].Ntt)/N0);
+    eps.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
     //std::cout << i << " " << r.name << " " << "  W=" << r.W << "  eps = " << eps << " +- " << eps_error << std::endl;
     if( std::abs(r.W*0.5 - MTAU) <  chi2_thr )  {
       chi2_thr = std::abs(r.W*0.5 - MTAU);
       i0 = i;
     }
     r.eps = eps;
-    r.eps_error = eps_error;
-
   }
   auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.W*0.5-MTAU); } );
   //normalize efficiency correction to threshold efficiency
   for(auto & rp : psr) {
     rp.effcor = rp.eps / reference_point.eps;
-    rp.effcor_error = rp.eps_error / reference_point.eps;
+    //rp.effcor_error = rp.eps_error / reference_point.eps;
   }
-  reference_point.effcor_error = 0;
+  reference_point.effcor.error = 0;
   return psr;
 }
 
@@ -2858,22 +2848,22 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
     double lum_error = 10;
     if(default_lum == "bb") {
       std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
-      lum = p.Lbb.luminosity;
-      lum_error = p.Lbb.luminosity_error;
+      lum = p.Lbb.luminosity.value;
+      lum_error = p.Lbb.luminosity.error;
     }
     if(default_lum == "gg") {
       std::cout << "Use gamma gamma + Monte Carlo as default luminosity " << std::endl;
-      lum = p.Lgg.luminosity;
-      lum_error = p.Lgg.luminosity_error;
+      lum = p.Lgg.luminosity.value;
+      lum_error = p.Lgg.luminosity.error;
     }
     sprintf(buf,"%5s %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10ld %10ld %10ld %10.3f",
         point_name.c_str(),
         lum,           lum_error,
-        p.W/MeV,        p.dW/MeV,
+        p.W.value/MeV,        p.W.error/MeV,
         1.258,             0.017,
         p.Ntt,
         p.Lbb.N,        p.Lgg.N,
-        p.effcor);
+        p.effcor.value);
     os << buf <<'\n';
   }
   std::cout << os.str();
@@ -3165,17 +3155,17 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
   while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
     ScanPoint_t sp;
     sp.W = W;
-    fcx(sp).cross_section = sigma;
-    fcx(sp).cross_section_error = sigma_error;
+    fcx(sp).cross_section.value = sigma;
+    fcx(sp).cross_section.error = sigma_error;
     tmpSP.push_back(sp);
   }
 
   for(auto & sp : P) {
     auto & p  = *std::min_element(tmpSP.begin(), tmpSP.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
-    fcx(sp).cross_section = fcx(p).cross_section;
-    fcx(sp).cross_section_error = fcx(p).cross_section_error;
+    fcx(sp).cross_section.value = fcx(p).cross_section;
+    fcx(sp).cross_section.error = fcx(p).cross_section.error;
     if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
-    std::cout << setw(10) << sp.W << setw(15) << p.W << setw(10) << fcx(sp).cross_section << setw(10) << fcx(sp).cross_section_error << std::endl;
+    std::cout << setw(10) << sp.W << setw(15) << p.W << setw(10) << fcx(sp).cross_section.value << setw(10) << fcx(sp).cross_section.error << std::endl;
   }
 }
 
@@ -3196,8 +3186,8 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     auto & l = fl(sp);
     l.N0mc = N0_MC;
     l.Nmc = ft(sp)->GetEntries(sel.c_str());
-    l.efficiency = double(l.Nmc)/l.N0mc;
-    l.efficiency_error = sqrt( l.efficiency * ( 1.0 - l.efficiency )/l.N0mc );
+    l.efficiency.value = double(l.Nmc)/l.N0mc;
+    l.efficiency.error = sqrt( l.efficiency.value * ( 1.0 - l.efficiency.value )/l.N0mc );
     //std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << std::endl;
   }
   //find close point and select
@@ -3208,9 +3198,9 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     l = fl(p); //copy monte carlo
     l.N = ft(sp)->GetEntries(sel.c_str());
     double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
-    double vis_cx_error = sqrt(  pow(l.cross_section_error*l.efficiency,2.0) +  pow(l.cross_section*l.efficiency_error,2.0) );
-    l.luminosity  = l.N / vis_cx;
-    l.luminosity_error = l.luminosity*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
+    double vis_cx_error = sqrt(  pow(l.cross_section.error*l.efficiency,2.0) +  pow(l.cross_section*l.efficiency.error,2.0) );
+    l.luminosity.value  = l.N / vis_cx;
+    l.luminosity.error = l.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
 //    std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << "  " << l.luminosity << " " << l.luminosity_error <<  std::endl;
   }
 }
@@ -3238,9 +3228,9 @@ void print_luminosity(Scan_t & data) {
   for(auto & sp : data) {
     printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
         sp.title.c_str(), sp.W.value, sp.L.value, 
-        sp.Lgg.luminosity*1e-3, sp.Lgg.luminosity_error*1e-3, sp.Lgg.N,
-        sp.Lbb.luminosity*1e-3, sp.Lbb.luminosity_error*1e-3, sp.Lbb.N,
-        sp.Lbb.luminosity/sp.Lgg.luminosity
+        sp.Lgg.luminosity.value*1e-3, sp.Lgg.luminosity.error*1e-3, sp.Lgg.N,
+        sp.Lbb.luminosity.value*1e-3, sp.Lbb.luminosity.error*1e-3, sp.Lbb.N,
+        sp.Lbb.luminosity.value/sp.Lgg.luminosity.value
         );
   }
 }
