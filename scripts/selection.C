@@ -151,6 +151,7 @@ struct ScanPoint_t
   std::string title;
   ibn::valer<double> W; //c.m. energy
   ibn::valer<double> L; //luminosity
+  ibn::valer<double> Sw; //beam energy spread
   std::list<int> run_list; //list of runs
 
   DataSample_t tt; //tau tau events. This is the signal
@@ -161,7 +162,6 @@ struct ScanPoint_t
 
   std::string selection;
   std::map<std::string, int> NttMap;
-  double Sw, dSw; //energy spread
   std::list<std::string> file_list;
   std::list<std::string> regexprs; //regular expessions to match files
   std::string scan_title;
@@ -301,8 +301,8 @@ void print(const std::vector<ScanPoint_t> & SPL)
       % p.title.c_str() 
       % p.W.value % p.W.error 
       % ((0.5*p.W.value-MTAU)/MeV) 
-      % p.Sw 
-      % p.dSw 
+      % p.Sw.value
+      % p.Sw.error
       % p.L.value 
       % get_run_formula(p.run_list).c_str() << std::endl;
 }
@@ -473,8 +473,8 @@ Scan_t read_my_runtable(std::string filename)
     else for(auto & r : sp.run_list) sp.regexprs.push_back(std::to_string(r));
     sp.title = point_name;
     sp.W = point_energy;
-    sp.Sw = point_spread;
-    sp.dSw = point_spread_error;
+    sp.Sw.value = point_spread;
+    sp.Sw.error = point_spread_error;
     sp.L = point_lum;
     theScan.emplace_back(std::move(sp));
   };
@@ -516,8 +516,8 @@ Scan_t read_simple_runtable(std::string filename)
     sp.title = point_name;
     sp.W = point_energy;
     //sp.dW = point_energy_error;
-    sp.Sw = point_spread;
-    sp.dSw = point_spread_error;
+    sp.Sw.value = point_spread;
+    sp.Sw.error = point_spread_error;
     sp.L = point_lum;
     theScan.emplace_back(std::move(sp));
   };
