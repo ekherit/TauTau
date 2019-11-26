@@ -126,19 +126,6 @@ typedef std::vector<ScanPoint_t>  Scan_t;
 
 std::map<std::string, std::string > SelMap;
 
-struct PointSelectionResult_t
-{
-  std::string name;
-  std::string root_name;
-  std::string tex_name;
-  std::string cut;
-  long Ntt=0; //number of tau tau events;
-  ibn::valer<double> W;
-  ibn::valer<double> L;
-  ibn::valer<double> eps = {1.0,0};
-  ibn::valer<double> effcor = {1.0,0};
-  DataSample_t bb, gg;
-};
 
 
 
@@ -165,6 +152,11 @@ struct ScanPoint_t
   std::list<std::string> regexprs; //regular expessions to match files
   std::string scan_title;
 
+
+  std::string cut;
+  std::string name;
+  std::string root_name;
+  std::string tex_name;
 
   struct by_regexp
   {
@@ -198,6 +190,22 @@ struct ScanPoint_t
   };
   std::string type;
 };
+
+using PointSelectionResult_t = ScanPoint_t;
+
+//struct PointSelectionResult_t
+//{
+//  std::string name;
+//  std::string root_name;
+//  std::string tex_name;
+//  std::string cut;
+//  long Ntt=0; //number of tau tau events;
+//  ibn::valer<double> W;
+//  ibn::valer<double> L;
+//  ibn::valer<double> eps = {1.0,0};
+//  ibn::valer<double> effcor = {1.0,0};
+//  DataSample_t bb, gg;
+//};
 
 
 class printer
@@ -1089,7 +1097,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     Points = p;
     for(auto & p : Points)
     {
-      Ntt+=p.Ntt;
+      Ntt+=p.tt.N;
       Ngg+=p.gg.N;
       Nbb+=p.bb.N;
       cut = p.cut;
@@ -1104,7 +1112,7 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
     Points = P;
     for(auto & p : Points)
     {
-      Ntt+=p.Ntt;
+      Ntt+=p.tt.N;
       Ngg+=p.gg.N;
       Nbb+=p.bb.N;
       cut = p.cut;
@@ -1259,16 +1267,13 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   {
     auto & r       = R[i];
     auto & p       = P[i];
-    r.Ntt          = p.tt.tree->GetEntries(sel.c_str());
-    //if(p.gg) r.Ngg = p.gg->GetEntries();
-    //if(p.bb) r.Nbb = p.bb->GetEntries(BB_SEL.c_str());
-    r.bb          = p.bb;
-    r.gg          = p.gg;
+    r.tt.N         = p.tt.tree->GetEntries(sel.c_str());
+    r.bb           = p.bb;
+    r.gg           = p.gg;
     r.name         = p.title;
     r.root_name    = p.title;
     r.tex_name     = p.title;
     r.W            = p.W;
-    //r.dW           = p.W.error;
     r.L            = p.L;
     r.cut          = sel.c_str();
   }
@@ -1331,9 +1336,9 @@ std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::ve
       auto & p       = scan[i];      //current point
       p.tt.tree->SetLineColor(s);
       p.tt.tree->SetMarkerColor(s);
-      if ( i == nS ) r.Ntt = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
-      else r.Ntt = p.tt.tree->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
-      std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
+      if ( i == nS ) r.tt.N = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+      else r.tt.N = p.tt.tree->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
+      std::string result_title = p.title  + ": " + std::to_string(r.tt.N) + " events";
       p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
       //if(p.gg) r.Ngg = p.gg->GetEntries();
       //if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
@@ -1371,8 +1376,8 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
     c->cd(i+1);
     auto & r       = R[i];
     auto & p       = P[i];
-    r.Ntt          = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
-    std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
+    r.tt.N         = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+    std::string result_title = p.title  + ": " + std::to_string(r.tt.N) + " events";
     p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
     //if(p.gg) r.Ngg = p.gg->GetEntries();
     //if(p.bb) r.Nbb = p.gg->GetEntries();
@@ -1707,21 +1712,21 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
   for(int i=0;i<result.Points.size();++i) 
   {
     auto & rp   = result.Points[i];
-    rp.eps = 0;
+    rp.tt.efficiency.value = 0;
+    rp.tt.efficiency.error = 0;
     double eps_error2=0;
     for(const auto & r : SR )  
     {
       auto & p    = r.Points[i];
-      result.Ntt += p.Ntt;
-      rp.eps     += p.eps;
-      eps_error2 += p.eps.error*p.eps.error;
-      rp.Ntt     += p.Ntt;
+      result.Ntt += p.tt.N;
+      rp.tt.efficiency += p.tt.efficiency;
+      //rp.eps     += p.eps;
+      //eps_error2 += p.eps.error*p.eps.error;
+      rp.tt.N      += p.tt.N;
       rp.gg      = p.gg;
       rp.bb      = p.bb;
       rp.L        = p.L;
-      //rp.dL       = p.dL;
       rp.W        = p.W;
-      //rp.dW       = p.dW;
     }
     //rp.eps_error = sqrt(eps_error2);
   }
@@ -1730,10 +1735,10 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
   for(int i=0;i<result.Points.size();++i)
   {
     auto & rp   = result.Points[i];
-    rp.effcor.value = rp.eps / reference_point.eps;
+    rp.tt.effcor = rp.tt.efficiency / reference_point.tt.efficiency.value;
     //rp.effcor.error = rp.eps.error / reference_point.eps;
   }
-  reference_point.effcor.error = 0;
+  reference_point.tt.effcor.error = 0;
   return result;
 };
 
@@ -1784,7 +1789,7 @@ void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_wid
       hline();
     default:
       std::cout << std::setw(first_column_width+count_utf8_extra_byte(sr.title)) << sr.title;
-      for(int i=0; i < N; i++) std::cout << std::setw(column_width) <<  sr.Points[i].Ntt;
+      for(int i=0; i < N; i++) std::cout << std::setw(column_width) <<  sr.Points[i].tt.N;
       std::cout << std::setw(vline_width) << " │ " << std::setw(last_column_width) <<  sr.Ntt;
       std::cout << std::endl;
   }
@@ -1850,17 +1855,17 @@ void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg
 
 void print_eps(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg=PrintConfig_t())
 {
-  print_smth(pts, cfg, [](){ return "ε"; }, [](auto & p) { return p.eps; }, [](auto & s) { return ""; } );
+  print_smth(pts, cfg, [](){ return "ε"; }, [](auto & p) { return p.tt.efficiency.value; }, [](auto & s) { return ""; } );
 };
 
 void print_Ntt(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg, std::string title="Ntt")
 {
   print_smth(pts, cfg, 
       [&title](){ return title; }, 
-      [](auto & p) { return p.Ntt; }, 
+      [](auto & p) { return p.tt.N; }, 
       [](auto & s) { 
         long N=0; 
-        for(auto & x: s)  N+=x.Ntt;  
+        for(auto & x: s)  N+=x.tt.N;  
         return N; 
         } 
       );
@@ -1919,11 +1924,11 @@ void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
 {
   print_smth(SR,cfg, 
       [](auto & p) { 
-        return p.Ntt; 
+        return p.tt.N; 
       },
       [](auto & s) { 
         double sum=0;
-        for(auto & x: s)  sum+=x.Ntt;  
+        for(auto & x: s)  sum+=x.tt.N;  
         return sum; 
       } 
   );
@@ -1972,7 +1977,7 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
           [&title](){ return title; }, 
           [&format_str](auto & p) { 
             char buf[1024];
-            sprintf(buf,format_str.c_str(), p.eps.value*100,p.eps.error*100);
+            sprintf(buf,format_str.c_str(), p.tt.efficiency.value*100,p.tt.efficiency.error*100);
             return std::string(buf); 
           },
           [&format_str](auto & P) { 
@@ -1980,8 +1985,8 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
             double error2_sum=0;
             for(auto & p: P)  
             {
-              sum+=p.eps;  
-              error2_sum+=p.eps.error*p.eps.error;
+              sum+=p.tt.efficiency.value;  
+              error2_sum+=p.tt.efficiency.error*p.tt.efficiency.error;
             }
             double average = sum/P.size(); 
             double error = sqrt(error2_sum)/P.size();
@@ -2013,8 +2018,8 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
           [&title](){ return title; }, 
           [&format_str](auto & p) { 
             char buf[1024];
-            sprintf(buf,format_str.c_str(), p.effcor.value,p.effcor.error);
-            if(p.effcor.error == 0 && p.effcor==1) 
+            sprintf(buf,format_str.c_str(), p.tt.effcor.value,p.tt.effcor.error);
+            if(p.tt.effcor.error == 0 && p.tt.effcor==1) 
             {
               return std::string("     1     ");
             }
@@ -2025,8 +2030,8 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
             double error2_sum=0;
             for(auto & p: P)  
             {
-              sum+=p.effcor;  
-              error2_sum+=p.effcor.error*p.effcor.error;
+              sum+=p.tt.effcor.value;  
+              error2_sum+=p.tt.effcor.error*p.tt.effcor.error;
             }
             double average = sum/P.size(); 
             double error = sqrt(error2_sum)/P.size();
@@ -2146,7 +2151,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     title = "$ " + title + " $";
     os << std::setw(20) << title << " & ";
     for(auto & p : sr.Points) {
-      os << std::setw(col_width) << p.Ntt << " & ";
+      os << std::setw(col_width) << p.tt.N << " & ";
     }
     os << std::setw(col_width) << sr.Ntt << R"(\\)" << "\n";
   }
@@ -2154,7 +2159,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   auto total = fold(SR);
   os << std::setw(20) << "all" << " & "; 
   for( auto & p : total.Points ) {
-    os << std::setw(col_width) << p.Ntt << " & ";
+    os << std::setw(col_width) << p.tt.N << " & ";
   }
   os << std::setw(col_width) << total.Ntt << R"(\\)" << "\n";
   os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
@@ -2191,7 +2196,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     for(auto & p : sr.Points) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps.value*100, p.eps.error*100);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.tt.efficiency.value*100, p.tt.efficiency.error*100);
       os << std::setw(col_width) << buf;
     }
     //os << std::setw(col_width) << sr.Ntt;
@@ -2202,7 +2207,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : total.Points ) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.eps.value*100, p.eps.error*100);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.tt.efficiency.value*100, p.tt.efficiency.error*100);
       os << std::setw(col_width) << buf;
   }
   //os << std::setw(col_width) << total.Ntt;
@@ -2242,7 +2247,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     for(auto & p : sr.Points) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor.value, p.effcor.error);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.tt.effcor.value, p.tt.effcor.error);
       os << std::setw(col_width) << buf;
     }
     //char buf[1024];
@@ -2255,7 +2260,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : total.Points ) {
       os << " & ";
       char buf[1024];
-      sprintf(buf, "$%4.3f \\pm %4.3f$", p.effcor.value, p.effcor.error);
+      sprintf(buf, "$%4.3f \\pm %4.3f$", p.tt.effcor.value, p.tt.effcor.error);
       os << std::setw(col_width) << buf;
   }
   //os << std::setw(col_width) << total.Ntt;
@@ -2357,7 +2362,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
       title = sub(title,"ρ",R"(\rho)");
       title = "$ " + title + " $";
       make_row(os, sr, title,  
-        [](const PointSelectionResult_t & p) { return myfmt(R"(%d)", p.Ntt); },
+        [](const PointSelectionResult_t & p) { return myfmt(R"(%d)", p.tt.N); },
         [&sr]() { return R"(\textit{)"+std::to_string(sr.Ntt)+"}"; });
     }
     os << R"(\hline)" << "\n";
@@ -2365,7 +2370,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print total event number
     make_row(os, total, 
         "all", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\textbf{%d})", p.Ntt); },
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\textbf{%d})", p.tt.N); },
         [&total]() { return R"(\textbf{)"+std::to_string(total.Ntt)+"}"; }
         );
     os<< R"(\hline)" <<  "\n";
@@ -2373,12 +2378,12 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print epsilon
     make_row(os, total, 
         R"($\varepsilon$, \%)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.eps.value*100, p.eps.error*100); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.tt.efficiency.value*100, p.tt.efficiency.error*100); });
 
     //print epsilon correction
     make_row(os, total, 
         R"($\epsilon^{cor}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.effcor.value, p.effcor.error); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.tt.effcor.value, p.tt.effcor.error); });
 
     os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
     os << R"(\end{tabular})" << "\n";
@@ -2502,22 +2507,22 @@ std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionR
     }
     assert ( chi2 == UNSET);
     ibn::valer<double> eps;
-    eps.value = (double(eff[jc].Ntt)/N0);
+    eps.value = (double(eff[jc].tt.N)/N0);
     eps.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
     //std::cout << i << " " << r.name << " " << "  W=" << r.W << "  eps = " << eps << " +- " << eps_error << std::endl;
     if( std::abs(r.W*0.5 - MTAU) <  chi2_thr )  {
       chi2_thr = std::abs(r.W*0.5 - MTAU);
       i0 = i;
     }
-    r.eps = eps;
+    r.tt.efficiency = eps;
   }
   auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.W*0.5-MTAU); } );
   //normalize efficiency correction to threshold efficiency
   for(auto & rp : psr) {
-    rp.effcor = rp.eps / reference_point.eps;
+    rp.tt.effcor = rp.tt.efficiency / reference_point.tt.efficiency.value;
     //rp.effcor_error = rp.eps_error / reference_point.eps;
   }
-  reference_point.effcor.error = 0;
+  reference_point.tt.effcor.error = 0;
   return psr;
 }
 
@@ -2845,9 +2850,9 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
         lum,           lum_error,
         p.W.value/MeV,        p.W.error/MeV,
         1.258,             0.017,
-        p.Ntt,
+        p.tt.N,
         p.bb.N,        p.gg.N,
-        p.effcor.value);
+        p.tt.effcor.value);
     os << buf <<'\n';
   }
   std::cout << os.str();
