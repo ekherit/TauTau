@@ -151,8 +151,8 @@ StatusCode TauTau::initialize(void)
     fTT.make_tuple(this,    "FILE1/tt","Signal tau tau events");
     fGG.make_tuple(this,    "FILE1/gg","Two gamma (luminosity) events");
     fBB.make_tuple(this,    "FILE1/bb","Bhabha (luminosity) events");
-    fInfo.make_tuple(this,  "FILE1/info","Job information");
-    fInfo.begin_time = time(nullptr);
+    fJobInfo.make_tuple(this,  "FILE1/info","Job information");
+    fJobInfo.begin_time = time(nullptr);
   }
   catch(std::runtime_error & error)
   {
@@ -170,7 +170,7 @@ StatusCode TauTau::execute()
 
   SmartDataPtr<Event::EventHeader> eventHeader(eventSvc(),"/Event/EventHeader");
   int runNo=eventHeader->runNumber();
-  if(runNo<0) fInfo.type = 1; //monte carlo
+  if(runNo<0) fJobInfo.type = 1; //monte carlo
   int event=eventHeader->eventNumber();
   time_t t=eventHeader->time();
   bool isprint=false;
@@ -254,10 +254,10 @@ StatusCode TauTau::finalize()
   std::cout << "γγ candidates: "        << ngg_events                             << std::endl;
   std::cout << "Total written: "        << nwritten_events                        << std::endl;
   std::cout << "Selection efficiency: " << ntautau_events/double(nproceed_events) << std::endl;
-  fInfo.end_time = time(nullptr);
+  fJobInfo.end_time = time(nullptr);
   fInfo.N = nproceed_events;
-  fInfo.n = nwritten_events;
-  fInfo.write();
+  fJobInfo.n = nwritten_events;
+  fJobInfo.write();
   return StatusCode::SUCCESS;
 }
 // for particle id look /ihepbatch/bes/alex/workarea/Analysis/Physics/PsiPrime/G2MuMuAlg-00-00-01/PipiJpsiAlg/src

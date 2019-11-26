@@ -24,7 +24,7 @@
 
 #include "SelectionConfig.h"
 
-#include "Info.h"
+#include "JobInfo.h"
 #include "TauTauEvent.h" 
 #include "GammaGammaEvent.h"
 #include "BhabhaEvent.h"
@@ -50,7 +50,7 @@ class TauTau : public Algorithm
     TauTauEvent     fTT;       //tau tau events
     GammaGammaEvent fGG;       //gamma gamma events for luminosity
     BhabhaEvent     fBB;       //Bhabha events for luminosity
-    Info            fInfo;     //job information
+    JobInfo         fJobInfo;     //job information
 };
 
 #endif

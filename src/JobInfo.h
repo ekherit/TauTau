@@ -15,13 +15,14 @@
  *
  * =====================================================================================
  */
+#pragma once
 #include "RootEvent/RootTuple.h" 
 
-class Info : public RootTuple
+class JobInfo : public RootTuple
 {
   public:
-    virtual ~Info(void) {};
-    Info(void) { }
+    virtual ~JobInfo(void) {};
+    JobInfo(void) { }
     NTuple::Item<long> N;             //total number of event proceed
     NTuple::Item<long> n;             //writen number of events
     NTuple::Item<long> begin_time;    //job beging unixtime
