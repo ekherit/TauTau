@@ -113,21 +113,13 @@ struct DataSample_t
   ibn::valer<double> cross_section;
   ibn::valer<double> energy;     //beam c.m. energy
   ibn::valer<double> efficiency; //registration efficiency
+  ibn::valer<double> effcor; //correction to efficiency
   ibn::valer<double> luminosity;
   long N; //number of selected events in data
   long Nmc; //number of selected events in MC
   long N0mc; //initial number of MC events
 };
 
-//struct Luminosity_t 
-//{
-//  long N; //number of selected events in data
-//  long Nmc; //number of selected events in MC
-//  long N0mc; //initial number of MC events
-//  ibn::valer<double> cross_section;
-//  ibn::valer<double> efficiency;
-//  ibn::valer<double> luminosity;
-//};
 
 struct PointSelectionResult_t
 {
@@ -161,29 +153,14 @@ struct ScanPoint_t
   ibn::valer<double> L; //luminosity
   std::list<int> run_list; //list of runs
 
-  TTree * tt;
-  //TTree * gg; 
-  //TTree * bb;
-
-  DataSample_t bb, gg; //luminosity
+  DataSample_t tt; //tau tau events. This is the signal
+  DataSample_t bb; //Bhabha  luminosity
+  DataSample_t gg; //Digamma luminosity
 
   std::list<std::pair<int,double> > runs; //for drawing luminosity per runs
 
-  long Ntt;
-  double tau_tau_cross_section;
-
-  //Luminosity_t Lbb,Lgg;
-
-
-
   std::string selection;
   std::map<std::string, int> NttMap;
-  //double ppi;
-  //double ppi_max;
-  //double ppi_min;
-  double eps=1.0; //registration efficiency
-  double eps_error=1.0; //registration efficiency error
-  double effcor=1.0; //registration efficiency correction
   double Sw, dSw; //energy spread
   std::list<std::string> file_list;
   std::list<std::string> regexprs; //regular expessions to match files
@@ -670,7 +647,7 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     tt->SetName(("tt"+std::to_string(index)).c_str());
     bb->SetName(("bb"+std::to_string(index)).c_str());
     set_alias(tt,sp.W,sp.L);
-    sp.tt = tt;
+    sp.tt.tree.reset(tt);
     sp.gg.tree.reset(gg);
     sp.bb.tree.reset(bb);
     sp.type = data_dir;
@@ -777,10 +754,10 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             p.title = sub(p.title,R"(T)","");
             p.W = W;
             p.L = -p.L;
-            p.tt = get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str());
+            p.tt.tree.reset(get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str()));
             p.gg.tree.reset(get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
             p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
-            set_alias(p.tt, p.W,p.L);
+            set_alias(p.tt.tree.get(), p.W,p.L);
           }
         }
       }
@@ -889,7 +866,7 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   long totalNtt=0;
   for(int i=0; i<Points.size();++i)
   {
-    double Ntt = Points[i].tt->GetEntries(selection);
+    double Ntt = Points[i].tt.tree->GetEntries(selection);
     double Ngg = Points[i].gg.tree->GetEntries(selection);
     double xs  = 0;
     double dxs = 0;
@@ -912,21 +889,21 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   for( int i=0;i<Points.size();++i) 
   { 
     cacop->cd(i+1);
-    Points[i].tt->Draw("acop",selection);
+    Points[i].tt.tree->Draw("acop",selection);
   }
   TCanvas * cptem = new TCanvas("ptem","ptem");
   cptem->Divide(2,3);
   for( int i=0;i<Points.size();++i) 
   { 
     cptem->cd(i+1);
-    Points[i].tt->Draw("ptem",selection);
+    Points[i].tt.tree->Draw("ptem",selection);
   }
   TCanvas * cp = new TCanvas("p","p");
   cp->Divide(2,3);
   for( int i=0;i<Points.size();++i) 
   { 
     cp->cd(i+1);
-    Points[i].tt->Draw("p",selection);
+    Points[i].tt.tree->Draw("p",selection);
   }
   return g;
 }
@@ -937,7 +914,7 @@ void add_last(std::vector<ScanPoint_t> & P)
 {
   for ( auto & p : P)
   {
-    p.NttMap[p.selection]=p.Ntt;
+    p.NttMap[p.selection]=p.tt.N;
   }
 }
 void set_last(std::vector<ScanPoint_t> & P)
@@ -945,7 +922,7 @@ void set_last(std::vector<ScanPoint_t> & P)
   for ( auto & p : P)
   {
     p.NttMap.clear();
-    p.NttMap[p.selection]=p.Ntt;
+    p.NttMap[p.selection]=p.tt.N;
   }
 }
 /*
@@ -1020,20 +997,20 @@ void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const cha
   TCanvas * c = new TCanvas("data_mc_diff", title.c_str());
   TChain * chain = new TChain("data_mc_diff","data_mc_diff");
   set_alias((TTree*)chain, MTAU*2,1);
-  for(int i=1;i<P.size();++i) chain->Add((TChain*)P[i].tt);
+  for(int i=1;i<P.size();++i) chain->Add((TChain*)P[i].tt.tree.get());
   std::string sel(selection);
   sel+=">>h1(";
   sel+=his;
   sel+=")";
   chain->Draw(sel.c_str(),cut,"goff");
   auto hdata  = chain->GetHistogram();
-  P[P.size()-1].tt->SetLineColor(kRed);
+  P[P.size()-1].tt.tree->SetLineColor(kRed);
   sel=selection;
   sel+=">>h2(";
   sel+=his;
   sel+=")";
-  P[P.size()-1].tt->Draw(sel.c_str(), cut, "goff");
-  auto hmc = P[P.size()-1].tt->GetHistogram();
+  P[P.size()-1].tt.tree->Draw(sel.c_str(), cut, "goff");
+  auto hmc = P[P.size()-1].tt.tree->GetHistogram();
   hmc->Draw();
   hmc->GetXaxis()->SetTitle(selection);
   hmc->SetLineWidth(2);
@@ -1049,7 +1026,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
   std::ofstream ofs("scan.txt");
   for(int i=0; i<Points.size();++i)
   {
-    double Ntt = Points[i].tt->GetEntries(selection);
+    double Ntt = Points[i].tt.tree->GetEntries(selection);
     double Ngg = Points[i].gg.tree->GetEntries();
     double Nbb = Points[i].bb.tree->GetEntries(BB_SEL.c_str());
     double xs  = 0;
@@ -1084,7 +1061,7 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
     for(int v=0;v<var.size();v++)
     {
       can->cd(1+i*var.size()+v);
-      Points[i].tt->Draw(var[v],selection);
+      Points[i].tt.tree->Draw(var[v],selection);
     }
   }
   return g;
@@ -1165,11 +1142,11 @@ std::string to_string(time_t t, int TZ)
 
 void print_event_info(ScanPoint_t  & p, const char * selection, const char * title = "")
 {
-  long n = p.tt->Draw("run:event:time",selection,"goff");
+  long n = p.tt.tree->Draw("run:event:time",selection,"goff");
   setenv("TZ", "Asia/Shanghai",1);
-  auto runs   = p.tt->GetV1();
-  auto events = p.tt->GetV2();
-  auto times  = p.tt->GetV3();
+  auto runs   = p.tt.tree->GetV1();
+  auto events = p.tt.tree->GetV2();
+  auto times  = p.tt.tree->GetV3();
   std::ofstream file("tau_events.txt",std::ios_base::app);
   std::cout << '#' << std::setw(7) << "run" << std::setw(20)<< "eventId" << std::setw(10) << "point" << std::setw(10) << "channel" << std::setw(10) << "pnt_evt" << std::setw(30) << " time" << std::endl;;
   file << '#' << std::setw(7) << "run" << std::setw(20)<< "eventId" << std::setw(10) << "point" << std::setw(10) << "channel" << std::setw(10) << "pnt_evt" << std::setw(30) << " time" << std::endl;;
@@ -1255,7 +1232,7 @@ void set_pid(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID_t> & 
             else alias_value += "&&" + cut;
         };
 //        std::cout << " alias: " << name << " = " << alias_value << std::endl;
-        data.tt->SetAlias(name.c_str(), alias_value.c_str());
+        data.tt.tree->SetAlias(name.c_str(), alias_value.c_str());
       }
     }
   };
@@ -1265,7 +1242,7 @@ void set_kptem(std::vector<ScanPoint_t> & DATA, double kptem)
 {
   for( auto & data : DATA)
   {
-    data.tt->SetAlias("k_ptem",(std::to_string(kptem)+"*1").c_str());
+    data.tt.tree->SetAlias("k_ptem",(std::to_string(kptem)+"*1").c_str());
   };
 };
 
@@ -1283,7 +1260,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
   {
     auto & r       = R[i];
     auto & p       = P[i];
-    r.Ntt          = p.tt->GetEntries(sel.c_str());
+    r.Ntt          = p.tt.tree->GetEntries(sel.c_str());
     //if(p.gg) r.Ngg = p.gg->GetEntries();
     //if(p.bb) r.Nbb = p.bb->GetEntries(BB_SEL.c_str());
     r.bb          = p.bb;
@@ -1353,12 +1330,12 @@ std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::ve
       c->cd(nc);
       auto & r       = Result[s][i]; //point result
       auto & p       = scan[i];      //current point
-      p.tt->SetLineColor(s);
-      p.tt->SetMarkerColor(s);
-      if ( i == nS ) r.Ntt = p.tt->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
-      else r.Ntt = p.tt->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
+      p.tt.tree->SetLineColor(s);
+      p.tt.tree->SetMarkerColor(s);
+      if ( i == nS ) r.Ntt = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+      else r.Ntt = p.tt.tree->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
       std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
-      p.tt->GetHistogram()->SetTitle(result_title.c_str());
+      p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
       //if(p.gg) r.Ngg = p.gg->GetEntries();
       //if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
       r.name         = p.title;
@@ -1395,9 +1372,9 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
     c->cd(i+1);
     auto & r       = R[i];
     auto & p       = P[i];
-    r.Ntt          = p.tt->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+    r.Ntt          = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
     std::string result_title = p.title  + ": " + std::to_string(r.Ntt) + " events";
-    p.tt->GetHistogram()->SetTitle(result_title.c_str());
+    p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
     //if(p.gg) r.Ngg = p.gg->GetEntries();
     //if(p.bb) r.Nbb = p.gg->GetEntries();
     r.name         = p.title;
@@ -1465,7 +1442,7 @@ TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  S
     }
     else sel= Sel;
     //std::cout << p.title << " " << sel<< std::endl;
-    return p.tt->Draw(title.c_str(),sel.c_str(),"goff");  
+    return p.tt.tree->Draw(title.c_str(),sel.c_str(),"goff");  
   };
   if(Min==Max) { //determine minumum and maximum
     std::vector<double> vmin(P.size()), vmax(P.size());
@@ -1476,7 +1453,7 @@ TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  S
       std::string htitle = "H2341dodk"+std::to_string(i)+"("+std::to_string(Nbin);
       htitle+=")";
       long N = draw(p, var+">>"+htitle, -vweight[i]);  
-      auto h  = (TH1*) p.tt->GetHistogram();
+      auto h  = (TH1*) p.tt.tree->GetHistogram();
       int Nbins = h->GetNbinsX();
       vNbins[i]  = Nbins;
       double min = h->GetBinCenter(0)-h->GetBinWidth(0)*0.5;
@@ -1499,7 +1476,7 @@ TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  S
     std::string hconfig = "("+std::to_string(Nbin)+"," + std::to_string(Min)+"," + std::to_string(Max) + ")";
     //p.tt->Draw((var+">>"+htitle + hconfig).c_str(),sel.c_str());  
     draw(p,(var+">>"+htitle+hconfig).c_str(), -vweight[i]);
-    vH[i].reset((TH1*) p.tt->GetHistogram());
+    vH[i].reset((TH1*) p.tt.tree->GetHistogram());
   }
 
   TH1 * H = new TH1F(("his_"+var+std::to_string(HISTO_INDEX)).c_str(), var.c_str(), Nbin, Min,Max);
@@ -2569,12 +2546,12 @@ void draw_hist_vs_energies(Scan_t & scan, const char * var, int Nbin, double xmi
     int c = i % color.size();
     int l = i / color.size();
     std::cout << i << " " << l << " " << c << std::endl;
-    scan[i].tt->SetLineColor(color[c]);
-    scan[i].tt->SetLineStyle(line[l]);
-    scan[i].tt->SetLineWidth(3);
+    scan[i].tt.tree->SetLineColor(color[c]);
+    scan[i].tt.tree->SetLineStyle(line[l]);
+    scan[i].tt.tree->SetLineWidth(3);
     s+=" >> h"+std::to_string(i)+"("+std::to_string(Nbin)+","+std::to_string(xmin)+","+std::to_string(xmax)+")";
-    if(i==0) scan[i].tt->Draw(s.c_str(), selection);
-    else scan[i].tt->Draw(s.c_str(),selection,"same");
+    if(i==0) scan[i].tt.tree->Draw(s.c_str(), selection);
+    else scan[i].tt.tree->Draw(s.c_str(),selection,"same");
   }
 }
 
@@ -2589,9 +2566,9 @@ void compare(const ScanPoint_t & p1, const ScanPoint_t &p2, const char * varexp,
   c->SetWindowSize(1200, 1800);
   c->Divide(1,2);
   c->cd(1);
-  p1.tt->Draw(varexp,selection,gopt);
+  p1.tt.tree->Draw(varexp,selection,gopt);
   c->cd(2);
-  p2.tt->Draw(varexp,selection,gopt);
+  p2.tt.tree->Draw(varexp,selection,gopt);
 }
 
 
@@ -2606,8 +2583,8 @@ void correct_efficiency(Scan_t & D /*  data  */, Scan_t & MC /*  MC signal */)
     {
       if ( fabs(P.W-mc.W) < energy_distance )
       {
-        std::cout << "mc.effcor = " << mc.effcor << " " << P.W << " " << mc.W << std::endl;
-        P.effcor = mc.effcor;
+        std::cout << "mc.effcor = " << mc.tt.effcor << " " << P.W << " " << mc.W << std::endl;
+        P.tt.effcor = mc.tt.effcor;
         energy_distance = fabs(P.W-mc.W);
       }
     }
@@ -2617,7 +2594,7 @@ void correct_efficiency(Scan_t & D /*  data  */, Scan_t & MC /*  MC signal */)
   std::cout << "#" << std::setw(4) << " " << std::setw(10) << "W,MeV" << std::setw(10) << "E, MeV" << std::setw(15) << "E-Mtau, MeV" << std::setw(10) << "Ntt" << std::setw(10) << "effcor" << std::endl;
   for( int i = 0;i<D.size(); i++)
   {
-    std::cout << std::setw(5) << i+1 << std::setw(10) << D[i].W/MeV << std::setw(10) << D[i].W*0.5/MeV << std::setw(15) << (D[i].W*0.5-MTAU)/MeV <<  std::setw(10) << D[i].Ntt << std::setw(10) << D[i].effcor << std::endl;
+    std::cout << std::setw(5) << i+1 << std::setw(10) << D[i].W/MeV << std::setw(10) << D[i].W*0.5/MeV << std::setw(15) << (D[i].W*0.5-MTAU)/MeV <<  std::setw(10) << D[i].tt.N << std::setw(10) << D[i].tt.effcor << std::endl;
   }
 }
 
@@ -2646,16 +2623,16 @@ void compare(std::vector<ScanPoint_t*> SP, std::vector<std::string> varexp, std:
     for(auto sp :  SP)
     {
       std::string  gopt_tmp = gopt;
-      sp->tt->SetLineWidth(1);
-      set_color_and_line(sp->tt, draw_index);
+      sp->tt.tree->SetLineWidth(1);
+      set_color_and_line(sp->tt.tree.get(), draw_index);
       c->cd(index+1);
-      sp->tt->Draw(ve.c_str(),selection.c_str(), gopt.c_str());
-      auto h = sp->tt->GetHistogram();
+      sp->tt.tree->Draw(ve.c_str(),selection.c_str(), gopt.c_str());
+      auto h = sp->tt.tree->GetHistogram();
       h->SetName(("h"+sp->title+std::to_string(index)).c_str());
       h->SetTitle((sp->title).c_str());
       hs->Add(h);
       index++;
-      l->AddEntry(sp->tt,sp->title.c_str());
+      l->AddEntry(sp->tt.tree.get(),sp->title.c_str());
       draw_index++;
     }
     c->cd(index+1);
@@ -2711,7 +2688,7 @@ TCanvas*  compare2(TTree * t1, TTree * t2, std::string var, std::string sel, std
 
 TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xtitle="")
 {
-  return compare2(P1.tt, P2.tt, var, sel,gopt, H, bin,title, xtitle);
+  return compare2(P1.tt.tree.get(), P2.tt.tree.get(), var, sel,gopt, H, bin,title, xtitle);
 }
 
 TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
@@ -2766,12 +2743,12 @@ TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection & 
     tree->ResetBranchAddresses(); //reset brunch address
     return tree;
   };
-  TTree * tree1 = make_tree(S1[0].tt);
-  TTree * tree2 = make_tree(S2[0].tt);
+  TTree * tree1 = make_tree(S1[0].tt.tree.get());
+  TTree * tree2 = make_tree(S2[0].tt.tree.get());
   auto fill_tree = [](TTree* tree, Scan_t & S, std::string cut)
   {
     for(auto & s : S) {
-      auto t = s.tt->CopyTree(cut.c_str());
+      auto t = s.tt.tree->CopyTree(cut.c_str());
       t->CopyAddresses(tree);
       for(Long64_t i = 0; i < t->GetEntriesFast(); ++i) {
         if(t->GetEntry(i) < 0) break;
@@ -2913,8 +2890,8 @@ void find_optimal_depth(ScanPoint_t & sp, double kmin = 0, double kmax=100, doub
   {
     char buf[1024];
     sprintf(buf,"depth[0]-p[0]*%f >> h", k);
-    sp.tt->Draw(buf,"depth[0]>0 && depth[0]<100 && abs(pid[0])==13 && p[0]<1.1 && depth[0]-56.76*p[0] >-40 && depth[0]-56.76*p[0]<-10");
-    TH1 * h = sp.tt->GetHistogram();
+    sp.tt.tree->Draw(buf,"depth[0]>0 && depth[0]<100 && abs(pid[0])==13 && p[0]<1.1 && depth[0]-56.76*p[0] >-40 && depth[0]-56.76*p[0]<-10");
+    TH1 * h = sp.tt.tree->GetHistogram();
     double rms = h->GetRMS();
     double sigma = h->GetStdDev();
     //std::cout << k << " " << rms << "  " << sigma << std::endl;
@@ -2932,7 +2909,7 @@ void show_depth(ScanPoint_t & sp, double k=58.6, double k0=-40)
 {
   auto c = new TCanvas;
   c->Divide(1,2);
-  TTree * t = sp.tt;
+  auto t = sp.tt.tree;
   c->cd(1);
   t->SetMarkerSize(1);
   TLegend * leg = new TLegend(0.8,0.8,1.0,1.0);
@@ -2972,7 +2949,7 @@ void show_depth(ScanPoint_t & sp, double k=58.6, double k0=-40)
 
 void show_ep(ScanPoint_t & sp, std::string var = "Ep[0]", std::string cut = "", std::string opt= "")
 {
-  TTree * t = sp.tt;
+  auto t = sp.tt.tree;
   auto draw = [&t](std::string var, std::string sel, std::string opt, int color, int style, int size)
   {
     t->SetLineColor(color); 
@@ -3001,8 +2978,8 @@ void find_Ep(ScanPoint_t &sp, int Nbin=0, double parmin=0, double parmax=0)
   if(Nbin>0) varexpr += " >> h("+std::to_string(Nbin)+")";
   if(parmin!=0) cut += " && " + var + " > " + std::to_string(parmin);
   if(parmax!=0) cut += " && " + var + " < " + std::to_string(parmax);
-  sp.tt->Draw(var.c_str(),cut.c_str());
-  TH1 * h = sp.tt->GetHistogram();
+  sp.tt.tree->Draw(var.c_str(),cut.c_str());
+  TH1 * h = sp.tt.tree->GetHistogram();
   double ymax = h->GetMaximum();
   int nmax1 = h->FindFirstBinAbove(ymax-1);
   int nmax2 = h->FindLastBinAbove(ymax-1);
@@ -3046,69 +3023,69 @@ void find_Ep(ScanPoint_t &sp, int Nbin=0, double parmin=0, double parmax=0)
 
 void draw_momentum(Scan_t & mc) {
   gStyle->Reset("Pub");
-  mc[0].tt->SetLineColor(kGreen+3);
-  mc[0].tt->SetLineWidth(3);
-  mc[0].tt->Draw("p[0]","pid[0]==-211 & Nn==0","NORM HIS");
+  mc[0].tt.tree->SetLineColor(kGreen+3);
+  mc[0].tt.tree->SetLineWidth(3);
+  mc[0].tt.tree->Draw("p[0]","pid[0]==-211 & Nn==0","NORM HIS");
   auto l = new TLegend(0.9,0.9,1.0,1.0);
   //l->AddEntry((TObject*)nullptr,"E=M_{#tau}",""); 
 
-  mc[0].tt->GetHistogram()->GetXaxis()->SetTitle("p, GeV");
-  l->AddEntry(mc[0].tt->GetHistogram(),"#pi");
+  mc[0].tt.tree->GetHistogram()->GetXaxis()->SetTitle("p, GeV");
+  l->AddEntry(mc[0].tt.tree->GetHistogram(),"#pi");
 
-  mc[0].tt->SetLineColor(kBlue);
-  mc[0].tt->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
-  l->AddEntry(mc[0].tt->GetHistogram(),"e");
-  mc[0].tt->SetLineColor(kRed);
-  mc[0].tt->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
-  l->AddEntry(mc[0].tt->GetHistogram(),"#mu");
+  mc[0].tt.tree->SetLineColor(kBlue);
+  mc[0].tt.tree->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
+  l->AddEntry(mc[0].tt.tree->GetHistogram(),"e");
+  mc[0].tt.tree->SetLineColor(kRed);
+  mc[0].tt.tree->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
+  l->AddEntry(mc[0].tt.tree->GetHistogram(),"#mu");
 
   auto l2 = new TLegend(0.9,0.9,1.0,1.0);
   //l2->AddEntry((TObject*)nullptr,"E=M_{#tau}+23 MeV",""); 
-  mc[4].tt->SetLineWidth(3);
-  mc[4].tt->SetLineStyle(7);
-  mc[4].tt->SetLineColor(kGreen+3);
-  mc[4].tt->Draw("p[0]","pid[0]==-211 & Nn==0","NORM SAME HIS");
-  l2->AddEntry(mc[4].tt->GetHistogram(),"#pi");
-  mc[4].tt->SetLineColor(kBlue);
-  mc[4].tt->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
-  l2->AddEntry(mc[4].tt->GetHistogram(),"e");
-  mc[4].tt->SetLineColor(kRed);
-  mc[4].tt->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
-  l2->AddEntry(mc[4].tt->GetHistogram(),"#mu");
+  mc[4].tt.tree->SetLineWidth(3);
+  mc[4].tt.tree->SetLineStyle(7);
+  mc[4].tt.tree->SetLineColor(kGreen+3);
+  mc[4].tt.tree->Draw("p[0]","pid[0]==-211 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt.tree->GetHistogram(),"#pi");
+  mc[4].tt.tree->SetLineColor(kBlue);
+  mc[4].tt.tree->Draw("p[0]","pid[0]==11 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt.tree->GetHistogram(),"e");
+  mc[4].tt.tree->SetLineColor(kRed);
+  mc[4].tt.tree->Draw("p[0]","pid[0]==13 & Nn==0","NORM SAME HIS");
+  l2->AddEntry(mc[4].tt.tree->GetHistogram(),"#mu");
   l->Draw();
   l2->Draw();
 }
 
 void draw_Mpi0(Scan_t & mc, Scan_t & data) {
   gStyle->Reset("Pub");
-  mc[0].tt->SetLineColor(kRed);
-  mc[0].tt->SetLineWidth(3);
-  mc[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2 && (PI0 || PI1)", "NORM HIST");
+  mc[0].tt.tree->SetLineColor(kRed);
+  mc[0].tt.tree->SetLineWidth(3);
+  mc[0].tt.tree->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2 && (PI0 || PI1)", "NORM HIST");
   auto l = new TLegend(0.9,0.9,1.0,1.0);
-  l->AddEntry(mc[0].tt->GetHistogram(),"MC");
-  data[0].tt->SetLineColor(kBlue);
-  data[0].tt->SetLineWidth(3);
+  l->AddEntry(mc[0].tt.tree->GetHistogram(),"MC");
+  data[0].tt.tree->SetLineColor(kBlue);
+  data[0].tt.tree->SetLineWidth(3);
   //data[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2 && (PI0 || PI1)", "SAME NORM HIST");
-  data[0].tt->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2", "SAME NORM HIST");
-  l->AddEntry(data[0].tt->GetHistogram(),"DATA");
+  data[0].tt.tree->Draw("Mpi0[0]","Npi0==1 && 0.1 < Mpi0[0] && Mpi0[0]<0.2", "SAME NORM HIST");
+  l->AddEntry(data[0].tt.tree->GetHistogram(),"DATA");
   l->Draw();
 }
 
 void draw_Mrho(Scan_t & mc, Scan_t & data) {
   gStyle->Reset("Pub");
-  mc[0].tt->SetLineColor(kRed);
-  mc[0].tt->SetLineWidth(3);
+  mc[0].tt.tree->SetLineColor(kRed);
+  mc[0].tt.tree->SetLineWidth(3);
   const char * var = "abs(Mrho[0]-0.775) < abs(Mrho[1]-0.775) ? Mrho[0] : Mrho[1]";
   const char * sel = "Npi0==1 && 0.12 < Mpi0[0] && Mpi0[0]<0.14 && Nc==2";
-  mc[0].tt->Draw(var,sel, "NORM HIST");
-  mc[0].tt->GetHistogram()->GetXaxis()->SetTitle("M_{#pi#gamma#gamma}, GeV");
+  mc[0].tt.tree->Draw(var,sel, "NORM HIST");
+  mc[0].tt.tree->GetHistogram()->GetXaxis()->SetTitle("M_{#pi#gamma#gamma}, GeV");
   auto l = new TLegend(0.9,0.9,1.0,1.0);
-  l->AddEntry(mc[0].tt->GetHistogram(),"MC");
+  l->AddEntry(mc[0].tt.tree->GetHistogram(),"MC");
 
-  data[0].tt->SetLineColor(kBlue);
-  data[0].tt->SetLineWidth(3);
-  data[0].tt->Draw(var,sel, "SAME NORM HIST");
-  l->AddEntry(data[0].tt->GetHistogram(),"DATA");
+  data[0].tt.tree->SetLineColor(kBlue);
+  data[0].tt.tree->SetLineWidth(3);
+  data[0].tt.tree->Draw(var,sel, "SAME NORM HIST");
+  l->AddEntry(data[0].tt.tree->GetHistogram(),"DATA");
   l->Draw();
 }
 
@@ -3314,8 +3291,8 @@ void find_optimal_cut(ScanPoint_t & SIG, ScanPoint_t & BG, std::string sel, long
   auto fun = [&](double par) {
     char cut[1024];
     sprintf(cut,"%s && (%s%f)",sel.c_str(),  param.c_str(), par);
-    long Nsig = SIG.tt->GetEntries(cut);
-    long Nbg  = BG.tt ->GetEntries(cut);
+    long Nsig = SIG.tt.tree->GetEntries(cut);
+    long Nbg  = BG.tt.tree ->GetEntries(cut);
 
     struct mc_t {
       long  N; //number of selected events
