@@ -255,7 +255,7 @@ StatusCode TauTau::finalize()
   std::cout << "Total written: "        << nwritten_events                        << std::endl;
   std::cout << "Selection efficiency: " << ntautau_events/double(nproceed_events) << std::endl;
   fJobInfo.end_time = time(nullptr);
-  fInfo.N = nproceed_events;
+  fJobInfo.N = nproceed_events;
   fJobInfo.n = nwritten_events;
   fJobInfo.write();
   return StatusCode::SUCCESS;
