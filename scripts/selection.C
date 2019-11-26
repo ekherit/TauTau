@@ -120,6 +120,11 @@ struct DataSample_t
   long N0mc; //initial number of MC events
 };
 
+struct ScanPoint_t; 
+
+typedef std::vector<ScanPoint_t>  Scan_t;
+
+std::map<std::string, std::string > SelMap;
 
 struct PointSelectionResult_t
 {
@@ -132,16 +137,10 @@ struct PointSelectionResult_t
   ibn::valer<double> L;
   ibn::valer<double> eps = {1.0,0};
   ibn::valer<double> effcor = {1.0,0};
-  //Luminosity_t Lbb, Lgg;
   DataSample_t bb, gg;
 };
 
 
-struct ScanPoint_t; 
-
-typedef std::vector<ScanPoint_t>  Scan_t;
-
-std::map<std::string, std::string > SelMap;
 
 
 
