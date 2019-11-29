@@ -22,9 +22,9 @@
 
 std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity";
 
-//const char * runtable_name = "scan_points_ems3_privalov_lum.txt";
+//const char * runtable_name = "../TauTau/share/scan_points_ems3_privalov_lum.txt";
 //const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
-const char * runtable_name = "scan_points_ems3_online_lum.txt";
+const char * runtable_name = "../TauTau/share/scan_points_ems3_online_lum.txt";
 
 auto RUNTABLE  = read_my_runtable(runtable_name);
 

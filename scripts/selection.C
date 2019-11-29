@@ -81,7 +81,7 @@ void clean_taufit(void) {
   system("killall -9 taufit");
 }
 
-static std::string BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
+static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
 
 #include "utils.h"
 
@@ -657,6 +657,9 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     sp.tt.tree.reset(tt);
     sp.gg.tree.reset(gg);
     sp.bb.tree.reset(bb);
+    sp.tt.energy = sp.W;
+    sp.gg.energy = sp.W;
+    sp.bb.energy = sp.W;
     sp.type = data_dir;
   }
   print(scan);
@@ -764,6 +767,9 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             p.tt.tree.reset(get_chain("tt",("tt"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str()));
             p.gg.tree.reset(get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
             p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
+            p.tt.energy = W;
+            p.gg.energy = W;
+            p.bb.energy = W;
             set_alias(p.tt.tree.get(), p.W,p.L);
           }
         }
@@ -3167,39 +3173,49 @@ void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.gg; } );
 }
 
-
-template<typename FL, typename FT>
-void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, FL fl, FT ft) {
-  //determine selection efficiency for Monte Carlo
-  for(auto & sp : mc) {
-    auto & l = fl(sp);
-    l.N0mc = N0_MC;
-    l.Nmc = ft(sp)->GetEntries(sel.c_str());
-    l.efficiency.value = double(l.Nmc)/l.N0mc;
-    l.efficiency.error = sqrt( l.efficiency.value * ( 1.0 - l.efficiency.value )/l.N0mc );
-    //std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << std::endl;
+template<typename Projector>
+void me(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="") {
+  for(auto & sp : scan) {
+    auto & ds = proj(sp);
+    ds.N0mc = N0_MC;
+    ds.Nmc = ds.tree->GetEntries(sel.c_str());
+    ds.efficiency.value = double(ds.Nmc)/ds.N0mc;
+    ds.efficiency.error = sqrt( ds.efficiency.value * ( 1.0 - ds.efficiency.value )/ds.N0mc );
+    //std::cout <<  sp.W << "  " << ds.Nmc << " " << ds.N0mc << " " << ds.efficiency.value << "  " << ds.efficiency.error  <<   "   "  << ds.cross_section.value  <<  std::endl;
   }
+}
+
+template<typename Projector>
+void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, Projector proj) {
+  me(mc, N0_MC, proj, sel);
   //find close point and select
   for(auto & sp :data) {
     auto & p  = *std::min_element(mc.begin(), mc.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
     if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
-    auto & l = fl(sp);
-    l = fl(p); //copy monte carlo
-    l.N = ft(sp)->GetEntries(sel.c_str());
+    auto & l = proj(sp);
+    auto & m = proj(p);
+    l.cross_section.value  = m.cross_section.value*pow(m.energy.value/l.energy.value, 2.0);
+    l.cross_section.error  = l.cross_section.value*std::hypot( m.cross_section.error/m.cross_section.value, 2.0*l.energy.error/l.energy.value);
+    l.efficiency = m.efficiency;
+    l.Nmc = m.Nmc;
+    l.N0mc = m.N0mc;
+    l.effcor = m.effcor;
+    l.N = l.tree->GetEntries(sel.c_str());
     double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
-    double vis_cx_error = sqrt(  pow(l.cross_section.error*l.efficiency,2.0) +  pow(l.cross_section*l.efficiency.error,2.0) );
+    double vis_cx_error = std::hypot(l.cross_section.error*l.efficiency, l.cross_section*l.efficiency.error);
+    //std::cout << vis_cx << "  " << vis_cx_error << std::endl;
     l.luminosity.value  = l.N / vis_cx;
     l.luminosity.error = l.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
-//    std::cout << l.Nmc << " " << l.N0mc << " " << l.efficiency << "  " << l.efficiency_error << "  " << l.luminosity << " " << l.luminosity_error <<  std::endl;
+    //std::cout << sp.W << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  std::endl;
   }
 }
 
 void measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
-  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.bb; }, [](ScanPoint_t &sp) -> TTree * { return sp.bb.tree.get(); } );
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.bb; } );
 }
 
 void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
-  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; }, [](ScanPoint_t &sp) -> TTree * { return sp.gg.tree.get(); } );
+  measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; } );
 }
 
 
@@ -3224,6 +3240,50 @@ void print_luminosity(Scan_t & data) {
   }
 }
 
+void draw_luminosity(Scan_t & data) {
+  auto make_graph = [&data] ( int color, int marker, int line, auto F ) {
+    auto g = new TGraphErrors;
+    for(auto & sp : data) {
+      int n = g->GetN();
+      ibn::valer<double> x = F(sp);
+      g->SetPoint(n, sp.W.value, (x.value-1)*100);
+      g->SetPointError(n, sp.W.error, x.error*100);
+    }
+    return g;
+  };
+  auto g = make_graph(kBlack,1,1, [](auto & sp) { return sp.gg.luminosity/sp.bb.luminosity ; } );
+  g->Draw("ap");
+  /*
+  auto g = new TGraphErrors;
+  for(auto & sp : data) {
+    int n = g->GetN();
+    ibn::valer<double> x = sp.gg.luminosity/sp.bb.luminosity;
+    g->SetPoint(n, sp.W.value, (x.value-1)*100);
+    g->SetPointError(n, sp.W.error, x.error*100);
+  }
+  g->Draw("al*");
+  auto gog = new TGraphErrors;
+  for(auto & sp : data) {
+    int n = gog->GetN();
+    ibn::valer<double> x = sp.gg.luminosity/(sp.L*1e3);
+    gog->SetPoint(n, sp.W.value, (x.value-1)*100);
+    gog->SetPointError(n, sp.W.error, x.error*100);
+  }
+  gog->SetLineColor(kRed);
+  gog->SetMarkerColor(kRed);
+  gog->Draw("l*");
+  auto gob = new TGraphErrors;
+  for(auto & sp : data) {
+    int n = gob->GetN();
+    ibn::valer<double> x = sp.bb.luminosity/(sp.L*1e3);
+    gob->SetPoint(n, sp.W.value, (x.value-1)*100);
+    gob->SetPointError(n, sp.W.error, x.error*100);
+  }
+  gob->SetLineColor(kBlue);
+  gob->SetMarkerColor(kBlue);
+  gob->Draw("l*");
+  */
+}
 
 void data_vs_mc_bhabha(const ScanPoint_t & D, const ScanPoint_t & B) {
   gStyle->Reset("Pub");
