@@ -46,7 +46,9 @@
 #include <TLatex.h>
 #include <TLine.h>
 
-#include "valer.h"
+//#include "valer.h"
+#include "../ibn/valer.h"
+#include "../ibn/indexer.h"
 
 const double GeV=1.0;
 const double MeV=1e-3*GeV;
@@ -118,11 +120,17 @@ struct DataSample_t
   long N; //number of selected events in data
   long Nmc; //number of selected events in MC
   long N0mc; //initial number of MC events
+  long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
+    return tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
+  }
 };
 
 struct ScanPoint_t; 
+typedef std::reference_wrapper<ScanPoint_t> ScanPointRef_t;
 
 typedef std::vector<ScanPoint_t>  Scan_t;
+typedef std::reference_wrapper<Scan_t> ScanRef_t;
+typedef std::shared_ptr<Scan_t> ScanPtr_t;
 
 std::map<std::string, std::string > SelMap;
 
@@ -734,7 +742,7 @@ std::vector<ScanPoint_t> read_data3(std::string data_dir, std::string cfg_file)
 }
 */
 
-std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::string regexpr=R"(.+\.root)")
+std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
@@ -770,6 +778,9 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, std::s
             p.tt.energy = W;
             p.gg.energy = W;
             p.bb.energy = W;
+            p.tt.N0mc = N0mc;
+            p.gg.N0mc = N0mc;
+            p.bb.N0mc = N0mc;
             set_alias(p.tt.tree.get(), p.W,p.L);
           }
         }
@@ -902,14 +913,14 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   for( int i=0;i<Points.size();++i) 
   { 
     cacop->cd(i+1);
-    Points[i].tt.tree->Draw("acop",selection);
+    Points[i].tt.Draw("acop",selection);
   }
   TCanvas * cptem = new TCanvas("ptem","ptem");
   cptem->Divide(2,3);
   for( int i=0;i<Points.size();++i) 
   { 
     cptem->cd(i+1);
-    Points[i].tt.tree->Draw("ptem",selection);
+    Points[i].tt.Draw("ptem",selection);
   }
   TCanvas * cp = new TCanvas("p","p");
   cp->Divide(2,3);
@@ -3101,44 +3112,13 @@ void draw_Mrho(Scan_t & mc, Scan_t & data) {
 
 
 
-/*
-void set_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::ifstream ifs(filename);
-  if(!ifs) { 
-    std::cerr << "Unable to open file for Bhabha cross section" << std::endl;
-    return;
-  }
-  std::vector<ScanPoint_t>  tmpSP;
-  double W; //in GeV
-  double sigma; //in nanobarn
-  double sigma_error; // in nanobarn
-  std::string tmp; //this is for skip +-
-  std::cout << "Cross section for bhabha process: ";
-  std::cout << setw(10) << "Wmc, GeV" << setw(15) << "W in file, GeV" << setw(10) << "sigma, nb" << setw(10) << "error, nb" << std::endl;
-  while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
-    ScanPoint_t sp;
-    sp.W = W;
-    sp.bhabha_cross_section = sigma;
-    sp.bhabha_cross_section_error = sigma_error;
-    tmpSP.push_back(sp);
-  }
-
-  for(auto & sp : P) {
-    auto & p  = *std::min_element(tmpSP.begin(), tmpSP.end(), [&sp](auto a, auto b){ return fabs(a.W-sp.W)<fabs(b.W-sp.W); } );
-    sp.bhabha_cross_section = p.bhabha_cross_section;
-    sp.bhabha_cross_section_error = p.bhabha_cross_section_error;
-    if(fabs(sp.W-p.W)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
-    std::cout << setw(10) << sp.W << setw(15) << p.W << setw(10) << sp.bhabha_cross_section << setw(10) << sp.bhabha_cross_section_error << std::endl;
-  }
-}
-*/
 
 
 template<typename FCX>
 void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX  fcx) {
   std::ifstream ifs(filename);
   if(!ifs) { 
-    std::cerr << "Unable to open file for Bhabha cross section" << std::endl;
+    std::cerr << "Unable to open file with cross section" << std::endl;
     return;
   }
   std::vector<ScanPoint_t>  tmpSP;
@@ -3169,8 +3149,67 @@ void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & 
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.bb; } );
 }
 void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for bhabha process: " << std::endl;
+  std::cout << "Cross section for gamma gamma process: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.gg; } );
+}
+
+void read_mumu_or_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for mumu or pipi: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
+}
+
+void read_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for mumu or pipi: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
+  for(auto & p : P) {
+    //there is no cross section for pi+pi- channel in Babayaga generator
+    //so I got it from mu+mu- cross section just multiply it by factor of quarks color
+    p.tt.cross_section*=3.0; 
+  }
+}
+
+void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for hadrons: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
+  for(auto & p : P) {
+    //there is no cross section for pi+pi- channel in Babayaga generator
+    //so I got it from mu+mu- cross section just multiply it by factor of quarks color
+    p.tt.cross_section*=1.0; 
+  }
+}
+
+void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_t> & G) {
+  std::ifstream ifs(filename);
+  if(!ifs) { 
+    std::cerr << "Unable to open file with cross section\n";
+    return;
+  }
+  std::clog << "Reading cross section for GALUGA background.\n";
+  auto set_cross_section = [](Scan_t & d, auto W, auto cx ) {
+    auto & p  = *std::min_element(d.begin(), d.end(), [&d,W](auto a, auto b){ return fabs(a.W-W)<fabs(b.W-W); } );
+    p.tt.cross_section = cx;
+  };
+// W, GeV    EEee                            EEuu                        EEpipi                                    EEkk                                  
+  ibn::valer<double> E;
+  ibn::valer<double> ee;
+  ibn::valer<double> uu;
+  ibn::valer<double> pipi;
+  ibn::valer<double> KK;
+  ifs.ignore(4096,'\n');
+  char buf[65353];
+  sprintf(buf, "%10s %15s %15s  %15s %15s   %15s %15s   %15s %15s\n", "W,GeV", "eeee, nb", "error", "eeuu, nb", "error", "eepipi, nb", "error", "eeKK, nb", "error");
+  std::cout << buf;
+  while( ifs >> E.value  >> ee.value >> ee.error >> uu.value >> uu.error >> pipi.value >> pipi.error >> KK.value >> KK.error ) {
+    E.error=0;
+    sprintf(buf, "%10.6f %15.6f %15.6f  %15.6f %15.6f   %15.6f %15.6f   %15.6f %15.6f\n", E.value, ee.value, ee.error, uu.value, uu.error, pipi.value, pipi.error, KK.value, KK.error);
+    std::cout << buf;
+    for( auto & [ channel, data ] : G ) {
+      set_cross_section(G["ee"], E, ee);
+      set_cross_section(G["uu"], E, uu);
+      set_cross_section(G["pipi"], E, pipi);
+      set_cross_section(G["KK"], E, KK);
+    }
+  }
 }
 
 template<typename Projector>
@@ -3218,12 +3257,25 @@ void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string s
   measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; } );
 }
 
-
 void measure_luminosity(Scan_t & data, Scan_t & bb, Scan_t & gg, long N0_MC) {
   measure_gg_luminosity(data,gg,N0_MC, "");
   measure_bhabha_luminosity(data,bb,N0_MC, BB_SEL);
 }
 
+
+void set_luminosity(Scan_t & DATA, Scan_t & MC ) {
+  for(auto & mc : MC ) {
+    auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.W-mc.W)<fabs(b.W-mc.W); } );
+    mc.bb = p.bb;
+    mc.gg = p.gg;
+  }
+}
+
+void set_luminosity(Scan_t & DATA, std::map<std::string, Scan_t>  & G ) {
+  for(auto & [name, s] : G ) {
+    set_luminosity(DATA,s);
+  }
+}
 
 void print_luminosity(Scan_t & data) {
   //char buf[1024*16];
@@ -3252,7 +3304,11 @@ void draw_luminosity(Scan_t & data) {
     return g;
   };
   auto g = make_graph(kBlack,1,1, [](auto & sp) { return sp.gg.luminosity/sp.bb.luminosity ; } );
+  g->SetMarkerSize(1);
+  g->SetMarkerStyle(21);
   g->Draw("ap");
+  g->GetXaxis()->SetTitle("W_{cm}, GeV");
+  g->GetYaxis()->SetTitle("(L_{#gamma#gamma}/L_{ee} - 1)*100 %");
   /*
   auto g = new TGraphErrors;
   for(auto & sp : data) {
@@ -3480,3 +3536,72 @@ void find_optimal_cut(ScanPoint_t & SIG, ScanPoint_t & BG, std::string sel, long
 }
 
 */
+
+
+void draw(ScanPoint_t & D, ScanPoint_t & M, std::string var, std::string cut, int Nbin, double xmin, double xmax) {
+  auto c = new TCanvas;
+  auto hs = new THStack("hs","");
+
+  c->Divide(2,2);
+
+  c->cd(1);
+  D.tt.Draw(var, cut, "");
+  auto h1 = D.tt.tree->GetHistogram();
+  h1->SetFillColor(kRed);
+  hs->Add(h1);
+
+  c->cd(2);
+  M.tt.Draw(var, cut,"");
+  auto h2 = M.tt.tree->GetHistogram();
+  h2->SetFillColor(kBlue);
+  hs->Add(h2);
+
+  c->cd(3);
+  hs->Draw();
+}
+
+
+
+TH1F *  fold_histogram(std::vector<ScanPointRef_t> DATA, std::string var, std::string cut, std::string opt, int Nbin, double xmin, double xmax) {
+  auto c = new TCanvas;
+  c->Divide(2,2);
+  auto hf = new TH1F("fold","fold", Nbin, xmin,xmax);
+  char buf[4096];
+  for(auto [idx, ref] : ibn::indexer(DATA) ) {
+    c->cd(idx+1);
+    auto & s= ref.get();
+    sprintf(buf,"%s>>hstack_%ld(%d,%f,%f)", var.c_str(), idx,Nbin,xmin,xmax);
+    s.tt.Draw(buf, cut, "");
+    auto h = s.tt.tree->GetHistogram();
+    int color = idx+1;
+    h->SetFillColor(color);
+    h->SetLineColor(color);
+    std::cout <<  s.tt.cross_section.value  << " " << s.gg.luminosity.value  << " " << s.tt.N0mc << std::endl;
+    hf->Add(h,s.tt.cross_section.value * s.gg.luminosity.value / s.tt.N0mc);
+  }
+  return hf;
+};
+
+void draw_stack(std::vector<ScanPointRef_t> DATA, std::string var, std::string cut, int Nbin, double xmin, double xmax) {
+  auto c = new TCanvas;
+  c->Divide(2,2);
+  auto hs = new THStack("hs","");
+
+  char buf[4096];
+
+  int idx=0;
+  for(auto  ref : DATA) {
+    c->cd(idx+1);
+    auto & s= ref.get();
+    sprintf(buf,"%s>>hstack_%d(%d,%f,%f)", var.c_str(), idx,Nbin,xmin,xmax);
+    s.tt.Draw(buf, cut, "");
+    auto h = s.tt.tree->GetHistogram();
+    int color = idx+1;
+    h->SetFillColor(color);
+    h->SetLineColor(color);
+    hs->Add(h);
+    idx++;
+  }
+  c->cd(idx+1);
+  hs->Draw();
+}

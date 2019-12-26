@@ -1,0 +1,3 @@
+[submodule "ibn"]
+	path = ibn
+	url = git@github.com:ekherit/ibn.git

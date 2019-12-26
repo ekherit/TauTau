@@ -25,33 +25,37 @@ std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correctio
 //const char * runtable_name = "../TauTau/share/scan_points_ems3_privalov_lum.txt";
 //const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
 const char * runtable_name = "../TauTau/share/scan_points_ems3_online_lum.txt";
+//const char * runtable_name = "../TauTau/share/all_scan_points_ems3.txt";
 
 auto RUNTABLE  = read_my_runtable(runtable_name);
+
+
+constexpr long N0MC  = 1e6;
 
 //read data from directory "data". Runs are combined into points according to runtable 
 auto DATA        = read_data("data", RUNTABLE);
 
 //Monte Carlo simulation of the signal
-auto MC          = read_mc("mc/signal", RUNTABLE);
+auto MC          = read_mc("mc/signal", RUNTABLE, N0MC);
 
 //background GALUGA
 std::map<std::string, Scan_t> GALUGA =
 {
-  {"ee"   , read_mc("mc/galuga/ee"   , RUNTABLE)} ,
-  {"uu"   , read_mc("mc/galuga/uu"   , RUNTABLE)} ,
-  {"pipi" , read_mc("mc/galuga/pipi" , RUNTABLE)} ,
-  {"KK"   , read_mc("mc/galuga/KK"   , RUNTABLE)}
+  {"ee"   , read_mc("mc/galuga/ee"   , RUNTABLE, N0MC)} ,
+  {"uu"   , read_mc("mc/galuga/uu"   , RUNTABLE, N0MC)} ,
+  {"pipi" , read_mc("mc/galuga/pipi" , RUNTABLE, N0MC)} ,
+  {"KK"   , read_mc("mc/galuga/KK"   , RUNTABLE, N0MC)}
 };
 
 //hadronic background
-auto HADR       = read_mc("mc/hadrons", RUNTABLE);
+auto HADR       = read_mc("mc/hadrons", RUNTABLE, N0MC);
 //bhabha background
-auto BB         = read_mc("mc/bb", RUNTABLE);
-auto UU         = read_mc("mc/uu", RUNTABLE);
-auto PIPI         = read_mc("mc/pipi", RUNTABLE);
+auto BB         = read_mc("mc/bb", RUNTABLE, N0MC);
+auto UU         = read_mc("mc/uu", RUNTABLE, N0MC);
+auto PIPI         = read_mc("mc/pipi", RUNTABLE, N0MC);
 
 // for luminocity measurement
-auto GG         = read_mc("mc/gg", RUNTABLE);
+auto GG         = read_mc("mc/gg", RUNTABLE, N0MC);
 
 
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
@@ -285,18 +289,36 @@ void select()
   BB_SEL = LOCAL_BB_SEL;
   TAUFIT_STR = TAUFIT;
   double Kptem = 1.0;
+
+  std::vector<ScanRef_t> LUM_MCs = {BB,GG};
+  std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
+  std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
+  for( auto & p: GALUGA) BGall_MCs.push_back(p.second);
+
+  read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
+  read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
+  read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", GALUGA);
+  read_mumu_or_pipi_cross_section("../TauTau/share/mumu_cross_section.txt", UU);
+  read_pipi_cross_section("../TauTau/share/pipi_cross_section.txt", PIPI);
+  read_hadron_cross_section("../TauTau/share/hadron_cross_section.txt", HADR);
+
   set_pid_kptem(DATA       , PID , Kptem);
   set_pid_kptem(MC         , PID , Kptem);
+  for(auto d : BGall_MCs) set_pid_kptem(d,PID,Kptem);
+  for(auto d : LUM_MCs)   set_pid_kptem(d,PID,Kptem);
+
+  measure_luminosity(DATA,BB,GG,1e6);
+  set_luminosity(DATA,MC);
+  for(auto d : BGall_MCs) set_luminosity(DATA,d);
+
+  /*
   set_pid_kptem(HADR       , PID , Kptem);
   set_pid_kptem(BB         , PID , Kptem);
   set_pid_kptem(GG         , PID , Kptem);
   set_pid_kptem(UU         , PID , Kptem);
   set_pid_kptem(PIPI         , PID , Kptem);
-  read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
-  read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
-  for( auto & p: GALUGA) {
-    set_pid_kptem(p.second , PID , Kptem);
-  }
+  */
+
 }
 
 void parameter_example(Selection & S=SEL)
