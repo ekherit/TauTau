@@ -57,6 +57,7 @@ auto PIPI         = read_mc("mc/pipi", RUNTABLE, N0MC);
 // for luminocity measurement
 auto GG         = read_mc("mc/gg", RUNTABLE, N0MC);
 
+std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
 
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
 std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.7 && Ep[1]>0.7";
@@ -295,6 +296,7 @@ void select()
   std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
   for( auto & p: GALUGA) BGall_MCs.push_back(p.second);
 
+  read_tau_cross_section("../TauTau/share/tau_cross_section.txt", MC);
   read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
   read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
   read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", GALUGA);

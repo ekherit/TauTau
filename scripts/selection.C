@@ -1155,6 +1155,8 @@ struct Selection
   //std::vector<int> skip_list; //channel to skip list
   ChannelSelection_t       & operator[](int i)         { return sel[i]; }
   const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
+  std::vector<ChannelSelection_t>::iterator begin() { return sel.begin(); }
+  std::vector<ChannelSelection_t>::iterator end() { return sel.end(); }
 };
 
 std::string to_string(time_t t, int TZ)
@@ -3177,6 +3179,15 @@ void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & 
     p.tt.cross_section*=1.0; 
   }
 }
+void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Cross section for hadrons: " << std::endl;
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
+  for(auto & p : P) {
+    //there is no cross section for pi+pi- channel in Babayaga generator
+    //so I got it from mu+mu- cross section just multiply it by factor of quarks color
+    p.tt.cross_section*=1.0; 
+  }
+}
 
 void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_t> & G) {
   std::ifstream ifs(filename);
@@ -3577,7 +3588,8 @@ TH1F *  fold_histogram(std::vector<ScanPointRef_t> DATA, std::string var, std::s
     h->SetFillColor(color);
     h->SetLineColor(color);
     std::cout <<  s.tt.cross_section.value  << " " << s.gg.luminosity.value  << " " << s.tt.N0mc << std::endl;
-    hf->Add(h,s.tt.cross_section.value * s.gg.luminosity.value / s.tt.N0mc);
+    //hf->Add(h,s.tt.cross_section.value * s.gg.luminosity.value / s.tt.N0mc);
+    hf->Add(h);
   }
   return hf;
 };
@@ -3605,3 +3617,140 @@ void draw_stack(std::vector<ScanPointRef_t> DATA, std::string var, std::string c
   c->cd(idx+1);
   hs->Draw();
 }
+
+
+void draw(ScanPoint_t & DATA, ScanPoint_t & MC, std::vector<ScanPointRef_t> BGs, Selection & SEL, int i, std::string var, int Nbin, double xmin, double xmax) {
+  std::string cut = SEL.common_cut + " && " +  SEL[i].cut;
+  //std::string cut = "";
+  auto hs = new THStack("hs","");
+  auto h = fold_histogram(BGs, var, cut, "HIS", Nbin,xmin,xmax);
+  h->SetFillColor(kRed);
+  hs->Add(h);
+  auto c = new TCanvas;
+  c->Divide(2,2);
+  c->cd(1);
+  h->Draw();
+  h->SetTitle("Background");
+  char buf[4096];
+  int idx=0;
+
+  c->cd(2);
+  sprintf(buf,"%s>>hsig_%d(%d,%f,%f)", var.c_str(), idx,Nbin,xmin,xmax);
+  MC.tt.tree->Draw(buf, cut.c_str(),"HIS");
+  auto hmc = MC.tt.tree->GetHistogram();
+  hmc->Scale(MC.tt.cross_section.value*MC.gg.luminosity.value/MC.tt.N0mc);
+  hmc->SetFillColor(kBlue);
+
+  c->cd(3);
+  hs->Add(hmc);
+
+  sprintf(buf,"%s>>data_%d(%d,%f,%f)", var.c_str(), idx,Nbin,xmin,xmax);
+  DATA.tt.tree->SetLineColor(kBlack);
+  DATA.tt.tree->SetMarkerColor(kBlack);
+  DATA.tt.tree->SetLineWidth(3);
+  DATA.tt.tree->Draw(buf, cut.c_str(), "E");
+  auto dh=DATA.tt.tree->GetHistogram();
+  //dh->Draw("same");
+
+  hs->Draw("same");
+}
+
+TH1 * fold(std::vector<TH1*> Hs, int Nbin,double xmin, double xmax) {
+  //if(Hs.empty()) return nullptr;
+  //int Nbin = Hs[0]->GetNbinsX();
+  //double xmin,xmax;
+  //Hs[0]->GetMinimumAndMaximum(xmin,xmax);
+  char buf[1024];
+  sprintf(buf,"hfold%d", ++HISTO_INDEX);
+  auto his = new TH1F(buf,"his fold", Nbin,xmin,xmax);
+  for(auto h : Hs) his->Add(h); 
+  return his;
+}
+
+TH1 * select_histogram(ScanPoint_t & sp, std::string var, std::string cut, int Nbin, double xmin, double xmax, bool is_scale=false) {
+  char buf[4096];
+  sprintf(buf,"%s>>h%d(%d,%f,%f)", var.c_str(), ++HISTO_INDEX, Nbin,xmin,xmax);
+  //std::cout << buf << std::endl;
+  sp.tt.tree->Draw(buf, cut.c_str(),"goff");
+  auto h = sp.tt.tree->GetHistogram(); if(is_scale) h->Scale(sp.tt.cross_section.value*sp.gg.luminosity.value/sp.tt.N0mc);
+  return h;
+}
+
+TH1 * select_histogram(Scan_t & SCAN, std::string var, std::string cut, int Nbin, double xmin, double xmax, bool is_scale=false) {
+  std::vector<TH1*> Hs;
+  for(auto & sp : SCAN) {
+    Hs.push_back( select_histogram(sp,var,cut,Nbin,xmin,xmax, is_scale));
+  }
+  return fold(Hs, Nbin,xmin,xmax);
+};
+
+TH1 * select_histogram(std::vector<ScanRef_t> Ss, std::string var, std::string cut, int Nbin, double xmin, double xmax, bool is_scale=false) {
+  std::vector<TH1*> Hs;
+  for(auto & scan : Ss) {
+    Hs.push_back( select_histogram(scan,var,cut,Nbin,xmin,xmax, is_scale));
+  }
+  return fold(Hs,Nbin,xmin,xmax);
+};
+
+TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
+  auto  c = new TCanvas;
+  auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
+  std::vector<TH1*> Hmc;
+  std::vector<TH1*> Hbg;
+  std::vector<TH1*> Hdata;
+  for(auto & sel : SEL ) { //loop over selection channels
+    std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+    auto hmc = select_histogram(MC,var,cut, Nbin,xmin,xmax, true);
+    auto hbg = select_histogram(BGs, var, cut, Nbin, xmin, xmax, true);
+    auto hdata = select_histogram(DATA,var,cut,Nbin,xmin,xmax,false);
+    Hmc.push_back(hmc);
+    Hbg.push_back(hbg);
+    Hdata.push_back(hdata);
+  }
+  TH1 * hmc = fold(Hmc,Nbin,xmin,xmax);
+  TH1 * hbg = fold(Hbg,Nbin,xmin,xmax);
+  TH1 * hdata = fold(Hdata,Nbin,xmin,xmax);
+  auto set_color = [](auto & o , int color) {
+    o->SetFillColor(color);
+    o->SetLineColor(color);
+    o->SetMarkerColor(color);
+  };
+  set_color(hmc,kBlue);
+  set_color(hdata,kBlack);
+  set_color(hbg, kRed);
+
+  hs->Add(hbg,"HIST");
+  hs->Add(hmc,"HIST");
+
+  hdata->Draw("E");
+  hdata->SetTitle(var.c_str());
+  hdata->GetXaxis()->SetTitle(var.c_str());
+  hs->Draw("same");
+  hdata->SetLineWidth(3);
+  hdata->Draw("same E");
+  return c;
+}
+
+void draw_all(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=40) {
+  gStyle->Reset("Pub");
+  auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
+    std::cout << "Draw " << var << std::endl;
+    auto c = draw(SEL,DATA,MC,BGs,var, Nbin, xmin, xmax, extracut);
+    gSystem->ProcessEvents();
+    c->SetTitle(var.c_str());
+  };
+  compare("ptem"           , Nbin , 0.1   , 1.1);
+  //compare("p"              , Nbin , 0.1   , 1.1);
+  //compare("pt"             , Nbin , 0     , 1.1);
+  //compare("tof"            , Nbin , 0     , 6);
+  //compare("cos(theta)"     , Nbin , -1    , 1);
+  //compare("cos_theta_mis2" , Nbin , -1    , 1);
+  //compare("Mpi0"           , Nbin , 0.12 , 0.141       , "Npi0==1");
+  //compare("Mrho[0]"        , Nbin , 0.5   , 1.1         , "PI0 && Npi0==1");
+  compare("acop"           , Nbin , 0     , TMath::Pi() , "");
+  compare("acol"           , Nbin , 0     , TMath::Pi() , "");
+};
+
+
+
+
