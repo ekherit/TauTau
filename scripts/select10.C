@@ -36,7 +36,7 @@ constexpr long N0MC  = 1e6;
 auto DATA        = read_data("data", RUNTABLE);
 
 //Monte Carlo simulation of the signal
-auto MC          = read_mc("mc/signal", RUNTABLE, N0MC);
+auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
 
 //background GALUGA
 std::map<std::string, Scan_t> GALUGA =
@@ -259,7 +259,7 @@ Selection SELRHO =
 
 auto & SEL = SEL8;
 
-void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = MC/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
+void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
 {
   set_kptem(D,kptem); 
   measure_luminosity(D, BB, GG,1e6);
@@ -273,15 +273,15 @@ void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Sc
 };
 
 void cmpall(Selection &S=SEL) {
-  //cmp({MC , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
-  //cmp({MC , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
-  //cmp({MC , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());
-  //cmp({MC , DATA} , S , "acol"           , "" , "NORM" , 40 , 0   , 1);
-  //cmp({MC , DATA} , S , "p"              , "" , "NORM" , 40 , 0   , 1.1);
-  //cmp({MC , DATA} , S , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
-  //cmp({MC , DATA} , S , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
-  cmp({MC , DATA} , S , "Mpi0"     , "" , "NORM" , 40 , 0.11  , 0.15);
-  cmp({MC , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
+  //cmp({SIGNAL , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({SIGNAL , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
+  //cmp({SIGNAL , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());
+  //cmp({SIGNAL , DATA} , S , "acol"           , "" , "NORM" , 40 , 0   , 1);
+  //cmp({SIGNAL , DATA} , S , "p"              , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({SIGNAL , DATA} , S , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
+  //cmp({SIGNAL , DATA} , S , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
+  cmp({SIGNAL , DATA} , S , "Mpi0"     , "" , "NORM" , 40 , 0.11  , 0.15);
+  cmp({SIGNAL , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
 }
 
 
@@ -296,7 +296,7 @@ void select()
   std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
   for( auto & p: GALUGA) BGall_MCs.push_back(p.second);
 
-  read_tau_cross_section("../TauTau/share/tau_cross_section.txt", MC);
+  read_tau_cross_section("../TauTau/share/tau_cross_section.txt", SIGNAL);
   read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
   read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
   read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", GALUGA);
@@ -305,12 +305,12 @@ void select()
   read_hadron_cross_section("../TauTau/share/hadron_cross_section.txt", HADR);
 
   set_pid_kptem(DATA       , PID , Kptem);
-  set_pid_kptem(MC         , PID , Kptem);
+  set_pid_kptem(SIGNAL         , PID , Kptem);
   for(auto d : BGall_MCs) set_pid_kptem(d,PID,Kptem);
   for(auto d : LUM_MCs)   set_pid_kptem(d,PID,Kptem);
 
   measure_luminosity(DATA,BB,GG,1e6);
-  set_luminosity(DATA,MC);
+  set_luminosity(DATA,SIGNAL);
   for(auto d : BGall_MCs) set_luminosity(DATA,d);
 
   /*
@@ -326,6 +326,6 @@ void select()
 void parameter_example(Selection & S=SEL)
 {
   fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM");
-  fold_and_draw(MC,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM SAME");
+  fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM SAME");
 }
 

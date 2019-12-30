@@ -3176,7 +3176,7 @@ void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & 
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
     //so I got it from mu+mu- cross section just multiply it by factor of quarks color
-    p.tt.cross_section*=1.0; 
+    p.tt.cross_section; 
   }
 }
 void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
@@ -3692,7 +3692,7 @@ TH1 * select_histogram(std::vector<ScanRef_t> Ss, std::string var, std::string c
   return fold(Hs,Nbin,xmin,xmax);
 };
 
-TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
+TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
   auto  c = new TCanvas;
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
   std::vector<TH1*> Hmc;
@@ -3700,14 +3700,14 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_
   std::vector<TH1*> Hdata;
   for(auto & sel : SEL ) { //loop over selection channels
     std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    auto hmc = select_histogram(MC,var,cut, Nbin,xmin,xmax, true);
+    auto hsig = select_histogram(SIGNAL,var,cut, Nbin,xmin,xmax, true);
     auto hbg = select_histogram(BGs, var, cut, Nbin, xmin, xmax, true);
     auto hdata = select_histogram(DATA,var,cut,Nbin,xmin,xmax,false);
-    Hmc.push_back(hmc);
+    Hmc.push_back(hsig);
     Hbg.push_back(hbg);
     Hdata.push_back(hdata);
   }
-  TH1 * hmc = fold(Hmc,Nbin,xmin,xmax);
+  TH1 * hsig = fold(Hmc,Nbin,xmin,xmax);
   TH1 * hbg = fold(Hbg,Nbin,xmin,xmax);
   TH1 * hdata = fold(Hdata,Nbin,xmin,xmax);
   auto set_color = [](auto & o , int color) {
@@ -3715,12 +3715,13 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_
     o->SetLineColor(color);
     o->SetMarkerColor(color);
   };
-  set_color(hmc,kBlue);
-  set_color(hdata,kBlack);
-  set_color(hbg, kRed);
+  set_color(hsig,kRed);
+  set_color(hdata,kBlue);
+  set_color(hbg, kBlack);
 
+  hsig->SetFillColor(kWhite);
   hs->Add(hbg,"HIST");
-  hs->Add(hmc,"HIST");
+  hs->Add(hsig,"HIST");
 
   hdata->Draw("E");
   hdata->SetTitle(var.c_str());
@@ -3728,6 +3729,40 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_
   hs->Draw("same");
   hdata->SetLineWidth(3);
   hdata->Draw("same E");
+  //auto Ndata = hdata->GetEntries();
+  auto get_integral = [Nbin](TH1 * h) -> ibn::valer<double> {
+    ibn::valer<double> N;
+    N.value = h->IntegralAndError(0,Nbin,N.error);
+    return N;
+  };
+  ibn::valer<double> Ndata  = get_integral(hdata);
+  ibn::valer<double> Nsig   = get_integral(hsig);
+  ibn::valer<double> Nbg    = get_integral(hbg);
+  ibn::valer<double> Nsum   = Nsig + Nbg;
+
+  //std::cout << "bg: " << Nbg << std::endl;
+  auto hsig_bg = fold({hsig, hbg},Nbin,xmin,xmax);
+  double prob_kolm_sig_bg = hdata->KolmogorovTest(hsig_bg);
+  //std::cout << "Kolmogorov test (sig+bg): " << prob_kolm_sig_bg << std::endl;
+  double prob_kolm_sig = hdata->KolmogorovTest(hsig);
+  //std::cout << "Kolmogorov test (sig): " << prob_kolm_sig << std::endl;
+  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"NORM");
+  //std::cout << "Chi2 test (sig+bg): " << prob_chi2_sig_bg << std::endl;
+  double prob_chi2_sig = hdata->Chi2Test(hsig,"NORM");
+  //std::cout << "Chi2 test (sig): " << prob_chi2_sig << std::endl;
+  std::cout << "====================  Number of events ===================  " << std::endl;
+  std::cout << std::setw(20) <<  "sample"  << std::setw(15) << "N" << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
+  std::cout << std::setw(20) <<  "signal"      << std::setw(15) << Nsig     <<  " ± " << Nsig.error  << std::endl;
+  std::cout << std::setw(20) <<  "background"  << std::setw(15) << Nbg      <<  " ± " << Nbg.error   << std::endl;
+  std::cout << std::setw(20) <<  "sig + bg"    << std::setw(15) << Nsum     <<  " ± " << Nsum.error  << std::endl;
+  std::cout << std::setw(20) <<  "data"        << std::setw(15) << Ndata    <<  " ± " << Ndata.error << std::endl;
+  std::cout << "====================  Probability Test ===================  " << std::endl;
+  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
+  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   << std::endl;
+  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
   return c;
 }
 
@@ -3747,8 +3782,8 @@ void draw_all(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t
   //compare("cos_theta_mis2" , Nbin , -1    , 1);
   //compare("Mpi0"           , Nbin , 0.12 , 0.141       , "Npi0==1");
   //compare("Mrho[0]"        , Nbin , 0.5   , 1.1         , "PI0 && Npi0==1");
-  compare("acop"           , Nbin , 0     , TMath::Pi() , "");
-  compare("acol"           , Nbin , 0     , TMath::Pi() , "");
+  //compare("acop"           , Nbin , 0     , 3.1415 , "");
+  //compare("acol"           , Nbin , 0     , 3.1415 , "");
 };
 
 
