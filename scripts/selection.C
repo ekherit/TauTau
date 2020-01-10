@@ -45,34 +45,37 @@
 #include <TLegend.h>
 #include <TLatex.h>
 #include <TLine.h>
+#include <TPaveStats.h>
+#include <TStyle.h>
 
-//#include "valer.h"
 #include "../ibn/valer.h"
 #include "../ibn/indexer.h"
+#include "utils.h"
 
-const double GeV=1.0;
-const double MeV=1e-3*GeV;
-const double bn = 1.0;
-const double pbn = 1e-12*bn;
+constexpr double GeV=1.0;
+constexpr double MeV=1e-3*GeV;
+constexpr double barn = 1.0;
+constexpr double pb = 1e-12*barn;
+constexpr double nb = 1e-9*barn;
 
-const double MTAU=1776.86*MeV;
-const double MPI=0.13957061*GeV; 
-const double MPI0=0.134977*GeV;
-
-
-static const double ME_PDG2011=0.510998910*MeV; //+-0.000000013 
-static const double ME_PDG2019=0.5109989461*MeV; //+-0.000000013
-static const double ME_PDG=ME_PDG2019;// mass of electron
-static const double ME=ME_PDG;// mass of electron
-
-static const double SIGMA_TOMSON = 0.665245854*bn; 
-const double SIGMA_CONST = SIGMA_TOMSON/pbn* ME*ME/2.;  // GeV^2/pbn
+constexpr double MTAU=1776.86*MeV;
+constexpr double MPI=0.13957061*GeV; 
+constexpr double MPI0=0.134977*GeV;
 
 
-static const double ALPHA_PDG2019=1/137.035999139; 
-static const double ALPHA = ALPHA_PDG2019;
-static const double ALPHAPI=ALPHA/TMath::Pi(); //alpha / pi
-static const double PIALPHA=ALPHA*TMath::Pi(); 
+constexpr double ME_PDG2011=0.510998910*MeV; //+-0.000000013 
+constexpr double ME_PDG2019=0.5109989461*MeV; //+-0.000000013
+constexpr double ME_PDG=ME_PDG2019;// mass of electron
+constexpr double ME=ME_PDG;// mass of electron
+
+constexpr double SIGMA_TOMSON = 0.665245854*barn; 
+constexpr double SIGMA_CONST = SIGMA_TOMSON/pb* ME*ME/2.;  // GeV^2/pb
+
+
+constexpr double ALPHA_PDG2019=1/137.035999139; 
+constexpr double ALPHA = ALPHA_PDG2019;
+constexpr double ALPHAPI=ALPHA/TMath::Pi(); //alpha / pi
+constexpr double PIALPHA=ALPHA*TMath::Pi(); 
 
 
 //std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
@@ -85,7 +88,6 @@ void clean_taufit(void) {
 
 static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
 
-#include "utils.h"
 
 
 
@@ -2154,7 +2156,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
   for( auto & p : SR[0].Points) {
     os << " & ";
     char buf[1024];
-    sprintf(buf,"%3.2f", (p.W*0.5 - MTAU)*1000);
+    sprintf(buf,"%3.2f", (p.W.value*0.5 - MTAU)*1000);
     os << std::setw(col_width) << R"(\myR{)" <<  buf << "}";
   }
   os << " & " << R"(\\ \hline)" <<  "\n";
@@ -2369,7 +2371,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print energy for point
     make_row(os, total, 
         R"($E-M_{\tau}, MeV)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.W*0.5 - MTAU)*1000); }
+        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.W.value*0.5 - MTAU)*1000.0); }
         );
     os<< R"(\hline)" <<  "\n";
 
@@ -2852,7 +2854,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
   {
     idx++;
     std::string point_name = p.name == "" ? std::to_string(idx) : p.name;
-    double lum = p.L*1000;
+    double lum = p.L*1000.0;
     double lum_error = 10;
     if(default_lum == "bb") {
       std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
@@ -3176,7 +3178,7 @@ void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & 
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
     //so I got it from mu+mu- cross section just multiply it by factor of quarks color
-    p.tt.cross_section; 
+    //p.tt.cross_section*=22./31.; 
   }
 }
 void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
@@ -3692,35 +3694,111 @@ TH1 * select_histogram(std::vector<ScanRef_t> Ss, std::string var, std::string c
   return fold(Hs,Nbin,xmin,xmax);
 };
 
+std::tuple<double,double> my_chi2_histogram_test ( TH1 * h1, TH1 *h2) {
+  int Nbin1{h1->GetNbinsX()};
+  int Nbin2{h2->GetNbinsX()};
+  if(Nbin1!=Nbin2)  {
+    std::cerr << "ERROR: Different number of bins: " << Nbin1 << ", " << Nbin2 << " for histogram " << h1->GetName() << " and " << h2->GetName() << std::endl;
+    return {-1,-1};
+  }
+  double chi2{0};
+  int Ndf{0};
+  for(int i=0;i<Nbin1; ++i) {
+    ibn::valer<double> y1{h1->GetBinContent(i), h1->GetBinError(i)};
+    ibn::valer<double> y2{h2->GetBinContent(i), h2->GetBinError(i)};
+    //if(std::max(y1.error,y2.error) < 2*std::numeric_limits<double>::min()) {
+    //  y1.error = 1;
+    //};
+    static constexpr double epsilon = std::numeric_limits<double>::min();
+    if( y1.error< 2*epsilon ) y1.error = 1.0;
+    if( y2.error< 2*epsilon ) y2.error = 1.0;
+    if( y1.value > 2*epsilon && y2.value > 2*epsilon) {
+      double chi2_tmp = pow(y1.value - y2.value,2.0)/(y1.error*y1.error + y2.error*y2.error);
+      chi2 += chi2_tmp;
+      //std::cout << i << std::setw(10) << y1.value << std::setw(10) << y2.value << std::setw(10) << y1.value - y2.value <<std::setw(10)  << y1.error << std::setw(10) << y2.error << std::setw(10)  << std::hypot(y1.error, y2.error) << " chi2_tmp = " << std::setw(10) << chi2_tmp << " chi2 = " << std::setw(10) << chi2 << std::endl;
+      ++Ndf;
+    }
+  }
+  //std::cout << chi2/(2*Ndf) << std::endl;
+  return {chi2, TMath::Prob(chi2,2*Ndf)};
+}
+
 TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
   auto  c = new TCanvas;
+  gStyle->SetPalette(kOcean);
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
-  std::vector<TH1*> Hmc;
-  std::vector<TH1*> Hbg;
+  std::vector<TH1*> Hsig; //signal histogram for different selection channels
   std::vector<TH1*> Hdata;
-  for(auto & sel : SEL ) { //loop over selection channels
+  std::vector< std::vector<TH1*> > Hbgs(BGs.size()); 
+
+  for(const auto & sel : SEL ) { //loop over selection channels
     std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    auto hsig = select_histogram(SIGNAL,var,cut, Nbin,xmin,xmax, true);
-    auto hbg = select_histogram(BGs, var, cut, Nbin, xmin, xmax, true);
-    auto hdata = select_histogram(DATA,var,cut,Nbin,xmin,xmax,false);
-    Hmc.push_back(hsig);
-    Hbg.push_back(hbg);
+    const bool SCALE = true;
+    const bool NOSCALE = false;
+
+    auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
+      return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
+    };
+
+    //select data
+    auto hdata = select(DATA);
     Hdata.push_back(hdata);
+
+    //select signal monte carlo
+    auto hsig = select(SIGNAL,SCALE);
+    Hsig.push_back(hsig);
+
+    //select background monte carlo
+    for(size_t i=0;i!=BGs.size();++i) {
+      auto hbg = select(BGs[i],SCALE);
+      Hbgs[i].push_back(hbg);
+    }
   }
-  TH1 * hsig = fold(Hmc,Nbin,xmin,xmax);
-  TH1 * hbg = fold(Hbg,Nbin,xmin,xmax);
-  TH1 * hdata = fold(Hdata,Nbin,xmin,xmax);
+
+  auto lfold = [Nbin,xmin,xmax] (auto & hs) {
+    return fold(hs,Nbin,xmin,xmax);
+  };
+
+  TH1 * hsig = lfold(Hsig);
+  TH1 * hdata = lfold(Hdata);
+
+  std::vector<TH1*> hbgs(BGs.size());
+  for(size_t i=0;i!=BGs.size();++i) {
+    hbgs[i] = lfold(Hbgs[i]);
+    std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
+  };
+  TH1 * hbg = lfold(hbgs);
+  double Nbg_mc = hbg->Integral();
+  static constexpr double Nbg_exp = 45.9828;
+  double scale_bg = Nbg_exp/Nbg_mc;
+  hbg->Scale(scale_bg);
+  for(auto & h : hbgs) h->Scale(scale_bg);
+
   auto set_color = [](auto & o , int color) {
     o->SetFillColor(color);
     o->SetLineColor(color);
     o->SetMarkerColor(color);
   };
+
   set_color(hsig,kRed);
   set_color(hdata,kBlue);
   set_color(hbg, kBlack);
 
+  //int col=kBlack;
+  int col=0;
+  std::vector palette{1,8,6,11,40,42,46,29};
+  for(auto & h :hbgs) {
+    //while(col==2 || col==4 || col == 3 || col == 10) ++col;
+    std::cout << "h " << h->GetName() << " color = " << palette[col] << " kRed = " << kRed << "  kBlue = " << kBlue << " kBlack= " << kBlack <<  std::endl;
+    set_color(h,palette[col]);
+    ++col;
+  }
+  for(auto & h :hbgs) {
+    hs->Add(h,"HIST");
+  }
+  //hs->Add(hbg,"HIST");
+
   hsig->SetFillColor(kWhite);
-  hs->Add(hbg,"HIST");
   hs->Add(hsig,"HIST");
 
   hdata->Draw("E");
@@ -3729,6 +3807,20 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<Scan
   hs->Draw("same");
   hdata->SetLineWidth(3);
   hdata->Draw("same E");
+
+  auto lbl = new TLegend(0.6,0.8,1.0,1.0);
+  //std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
+  {
+    lbl->AddEntry(hdata,"data","pl");
+    lbl->AddEntry(hsig,"MC signal+bg", "plf");
+    std::vector bg_leg_name = {"hadrons","Bhabha", "#mu#mu","#gamma#gamma","EEee","EE#mu#mu","EE#pi#pi","EEKK"};
+    for(size_t i = 0; i!=hbgs.size(); ++i) {
+      lbl->AddEntry(hbgs[i],bg_leg_name[i],"plf");
+    }
+  }
+
+  lbl->Draw();
+
   //auto Ndata = hdata->GetEntries();
   auto get_integral = [Nbin](TH1 * h) -> ibn::valer<double> {
     ibn::valer<double> N;
@@ -3746,10 +3838,17 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<Scan
   //std::cout << "Kolmogorov test (sig+bg): " << prob_kolm_sig_bg << std::endl;
   double prob_kolm_sig = hdata->KolmogorovTest(hsig);
   //std::cout << "Kolmogorov test (sig): " << prob_kolm_sig << std::endl;
-  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"NORM");
+  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"UW");
   //std::cout << "Chi2 test (sig+bg): " << prob_chi2_sig_bg << std::endl;
-  double prob_chi2_sig = hdata->Chi2Test(hsig,"NORM");
+  double prob_chi2_sig = hdata->Chi2Test(hsig,"UW");
   //std::cout << "Chi2 test (sig): " << prob_chi2_sig << std::endl;
+  //
+  std::cout << "My chi2 test" << std::endl;
+  auto [chi2_my_sig_bg, prob_my_sig_bg] = my_chi2_histogram_test(hsig_bg,hdata);
+  auto [chi2_my_sig, prob_my_sig] = my_chi2_histogram_test(hsig,hdata);
+  std::cout << "chi2_my_sig_bg = " << chi2_my_sig_bg << std::endl;
+  std::cout << "chi2_my_sig = " << chi2_my_sig << std::endl;
+
   std::cout << "====================  Number of events ===================  " << std::endl;
   std::cout << std::setw(20) <<  "sample"  << std::setw(15) << "N" << std::endl;
   std::cout << "----------------------------------------------------------  " << std::endl;
@@ -3758,15 +3857,15 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<Scan
   std::cout << std::setw(20) <<  "sig + bg"    << std::setw(15) << Nsum     <<  " ± " << Nsum.error  << std::endl;
   std::cout << std::setw(20) <<  "data"        << std::setw(15) << Ndata    <<  " ± " << Ndata.error << std::endl;
   std::cout << "====================  Probability Test ===================  " << std::endl;
-  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           << std::endl;
+  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           <<  std::setw(15) << "My chi2" << std::endl;
   std::cout << "----------------------------------------------------------  " << std::endl;
-  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   << std::endl;
-  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      << std::endl;
+  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   <<  std::setw(15) << prob_my_sig_bg << std::endl;
+  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      <<  std::setw(15) << prob_my_sig    << std::endl;
   std::cout << "----------------------------------------------------------  " << std::endl;
   return c;
 }
 
-void draw_all(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=40) {
+void draw_all(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=80) {
   gStyle->Reset("Pub");
   auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
     std::cout << "Draw " << var << std::endl;
@@ -3774,18 +3873,126 @@ void draw_all(Selection & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t
     gSystem->ProcessEvents();
     c->SetTitle(var.c_str());
   };
-  compare("ptem"           , Nbin , 0.1   , 1.1);
-  //compare("p"              , Nbin , 0.1   , 1.1);
-  //compare("pt"             , Nbin , 0     , 1.1);
-  //compare("tof"            , Nbin , 0     , 6);
-  //compare("cos(theta)"     , Nbin , -1    , 1);
-  //compare("cos_theta_mis2" , Nbin , -1    , 1);
-  //compare("Mpi0"           , Nbin , 0.12 , 0.141       , "Npi0==1");
-  //compare("Mrho[0]"        , Nbin , 0.5   , 1.1         , "PI0 && Npi0==1");
-  //compare("acop"           , Nbin , 0     , 3.1415 , "");
-  //compare("acol"           , Nbin , 0     , 3.1415 , "");
+  compare("ptem"           , Nbin , 0  , 1.2);
+  compare("p"              , Nbin , 0.1   , 1.1);
+  compare("pt"             , Nbin , 0.15     , 1.1);
+  compare("tof"            , Nbin , 2.2     , 5.5);
+  compare("cos(theta)"     , Nbin , -0.9    , 0.9);
+  compare("cos_theta_mis2" , Nbin , -1    , 1);
+  compare("Mpi0"           , Nbin , 0.12 , 0.141       , "Npi0==1");
+  compare("Mrho[0]"        , Nbin , 0.5   , 1.1         , "PI0 && Npi0==1");
+  compare("acop"           , Nbin , 0     , 3.1415 , "");
+  compare("acol"           , Nbin , 0     , 3.1415 , "");
+};
+
+struct HistConfig_t {
+  int Nbin = 100;
+  double xmin = 0;
+  double xmax = 1;
+  std::string title;
+  std::string name;
+  void print(void) const {
+    std::cout << Nbin << std::endl;
+    std::cout << xmin << std::endl;
+    std::cout << xmax << std::endl;
+    std::cout << name << std::endl;
+    std::cout << title << std::endl;
+  }
 };
 
 
+TCanvas * draw_background_vs_energy(Selection & SEL, std::vector<ScanRef_t> BGs, std::string extracut="" ) {
+  //hcfg.print();
+  //check number of points in the background
+  if(BGs.empty()) return nullptr;
+  size_t Npnt = BGs[0].get().size();
+  if(! std::all_of(BGs.begin(),BGs.end(), [&Npnt] (const auto & bg) {  return Npnt==bg.get().size(); } )) return nullptr;
+  std::vector<ibn::valer<double> > CS(Npnt); //cross section
+  std::vector<ibn::valer<double> > W(Npnt); //point energy
+
+  std::vector< std::vector< ibn::valer<double> > > CSs;
+
+  for(size_t pnt = 0; pnt!=Npnt; ++pnt) {
+    CS[pnt]=ibn::valer<double>{0,0};
+     W[pnt]=ibn::valer<double>{0,0};
+  }
+
+  for(auto & bg: BGs) {
+    auto SR = fold(new_select(bg, SEL)); 
+    std::vector<ibn::valer<double>> cs(Npnt);
+    for(size_t pnt=0; pnt!=Npnt; ++pnt) {
+      auto & sp = bg.get()[pnt];
+      long N = SR.Points[pnt].tt.N;
+      auto & tt = bg.get()[pnt].tt;
+      ibn::valer<double> eps{double(N)/tt.N0mc, 0};
+      eps.error = sqrt( eps.value * (1.0 - eps.value) /double(tt.N0mc) );
+      cs[pnt] =  tt.cross_section  * eps;
+      W[pnt]=SR.Points[pnt].W;
+    }
+    CSs.push_back(cs);
+    for(size_t pnt=0; pnt!=Npnt; ++pnt) {
+      CS[pnt]+=cs[pnt];
+    }
+    std::cout << std::endl;
+  }
+  //drawing different backgrounds
+  auto make_graph = [&W](const auto & cs , int color, int marker=21)  {
+    TGraphErrors  * g = new TGraphErrors(cs.size());
+    for(size_t pnt = 0; pnt!=cs.size(); ++pnt) {
+      g->SetPoint(pnt,(W[pnt].value*0.5 - MTAU)/MeV, cs[pnt].value*nb/pb); //convert to MeV and pb
+      g->SetPointError(pnt,W[pnt].error*0.5/MeV, cs[pnt].error*nb/pb);
+    }
+    g->SetMarkerStyle(marker);
+    g->SetMarkerColor(color);
+    g->SetLineWidth(3);
+    g->SetMarkerSize(2);
+    g->SetLineColor(color);
+    return g;
+  };
+
+
+  //drawing part
+  auto c = new TCanvas;
+  gStyle->Reset("Pub");
+  gStyle->SetOptFit();
+
+  /*
+  TGraphErrors  * g = new TGraphErrors(CS.size());
+  for(size_t pnt = 0; pnt!=Npnt; ++pnt) {
+    g->SetPoint(pnt,(W[pnt].value*0.5 - MTAU)/MeV, CS[pnt].value*nb/pb); //convert to MeV and pb
+    g->SetPointError(pnt,W[pnt].error*0.5/MeV, CS[pnt].error*nb/pb);
+  }
+  g->SetMarkerStyle(21);
+  g->SetMarkerColor(kBlue);
+  g->SetLineWidth(3);
+  g->SetLineColor(kBlue);
+  */
+  auto g = make_graph(CS,kBlue,21);
+  g->Draw("ap");
+  g->SetTitle("Visible background cross section (MC)");
+  g->GetYaxis()->SetTitle("pb");
+  g->GetXaxis()->SetTitle("E-M_{#tau}^{PDG}, MeV");
+  g->Fit("pol1");
+  g->GetFunction("pol1")->SetLineColor(kRed);
+
+
+  auto c2 = new TCanvas;
+  //c2->SetLogy();
+  TMultiGraph * mg = new TMultiGraph("visible_backgrounds", "Visible backgrounds (MC)");
+  std::vector palette{1,8,6,11,40,42,46,29};
+  auto lbl = new TLegend(0.6,0.8,1.0,1.0);
+    std::vector bg_leg_name = {"hadrons","Bhabha", "#mu#mu","#gamma#gamma","EEee","EE#mu#mu","EE#pi#pi","EEKK"};
+  for(size_t i = 0;i<BGs.size(); ++i) {
+    auto g = make_graph(CSs[i],palette[i],20+i);
+    g->SetMarkerSize(2);
+    g->SetLineWidth(3);
+    mg->Add(g,"lp");
+    lbl->AddEntry(g,bg_leg_name[i],"plf");
+  }
+  mg->Draw("a");
+  lbl->Draw();
+
+  return c;
+};
 
 
