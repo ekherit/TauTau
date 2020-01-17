@@ -546,14 +546,6 @@ const char * make_alias(int channel, const char * templ )
   return templ;
 }
 
-//substitute in string s by substring according to regexpr
-std::string sub(std::string s, std::string regexpr, std::string substr)
-{
-  std::string result;
-  std::regex re(regexpr);
-  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, substr);
-  return result;
-};
 
 
 
@@ -3995,4 +3987,62 @@ TCanvas * draw_background_vs_energy(Selection & SEL, std::vector<ScanRef_t> BGs,
   return c;
 };
 
+std::tuple<ibn::valer<double>, ibn::valer<double> > select(Scan_t & SIG, std::vector<ScanRef_t> BGs, std::string_view sel="") {
 
+  auto get_entries = [](const ScanPoint_t & sp, std::string_view sel="") -> ibn::valer<double> {
+    long N = sp.tt.tree->GetEntries(sel.data());
+    ibn::valer<double> eps{double(N)/sp.tt.N0mc};
+    eps.error = sqrt( eps.value * (1.0 - eps.value) /double(sp.tt.N0mc) );
+    auto cs =  sp.tt.cross_section  * eps;
+    auto Nexp = cs*sp.gg.luminosity; 
+    return Nexp;
+  };
+
+  ibn::valer<double> Nsig(0);
+  for (const auto & sp : SIG)  Nsig+= get_entries(sp, sel);
+
+  ibn::valer<double> Nbg(0);
+  for (const auto & bg : BGs)  
+    for(const auto &sp : bg.get()) Nbg+= get_entries(sp, sel);
+
+  return {Nsig, Nbg};
+}
+
+std::tuple<ibn::valer<double>, ibn::valer<double> > select(Scan_t & SIG, Scan_t & BG, std::string sel) {
+  return select(SIG, {BG} );
+}
+
+
+TGraphErrors * find_optimal_cut_new(Scan_t & SIG, std::vector<ScanRef_t> BGs, std::string_view sel, std::string_view parfmt, double min, double max, double step) {
+  auto g = new TGraphErrors;
+  long idx{0};
+  for( double par = min; par<max; par+=step ) {
+    char par_cut[1024];
+    sprintf(par_cut, parfmt.data(), par);  
+    std::string cut = std::string(sel) + "&&" + par_cut;
+    auto  [Nsig, Nbg]  =  select(SIG,BGs, cut);
+
+    //double Nsum = Nbg+Nsig;
+    ibn::valer<double> x{Nsig.value/sqrt(Nsig.value + Nbg.value)};
+    x.error = x.value*0.5/(Nsig.value+Nbg.value)*std::hypot( Nbg.error,  Nsig.error*(2*Nbg.value/Nsig.value+1) );
+    g -> SetPoint(idx, par, x.value);
+    g -> SetPointError(idx, 0, x.error);
+    ++idx;
+  }
+  //g->Draw("a*");
+  g->SetLineWidth(2);
+  g->SetMarkerSize(2);
+  g->SetMarkerStyle(21);
+  return g;
+}
+
+
+void find_optimal_cuts(Scan_t & SIG, std::vector<ScanRef_t> BGs, Selection & SEL, int i) {
+  gStyle->Reset("Pub");
+  auto cptem = new TCanvas;
+  //auto gptem = find_optimal_cut(SIG,BGs, SEL.common_cut + " && Nn==0 && eu && acop>0.1","ptem>%.3f", 0, 0.3,0.01); 
+  std::string cut = SEL.common_cut + "&&" + SEL[i].cut;
+  auto cuts = split(cut);
+  for(auto & s : cuts) std::cout << '\"' << s << '\"'<< ", ";
+  std::cout << "]" << std::endl;
+}

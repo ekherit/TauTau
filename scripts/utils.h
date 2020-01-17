@@ -169,5 +169,57 @@ TChain * get_chain(const char * name, const char * newname, std::string title, i
   return chain;
 }
 
+//substitute in string s by substring according to regexpr
+std::string sub(std::string s, std::string regexpr, std::string substr)
+{
+  std::string result;
+  std::regex re(regexpr);
+  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, substr);
+  return result;
+};
+
+/*
+std::vector<std::string> split(std::string s) {
+  std::regex re(R"#(((.+)&&)+())#");
+
+
+
+}
+*/
+
+
+std::tuple<std::string_view, std::string_view> head_tail(std::string_view s) {
+  int open_brase = 0; //number of open brases
+  int damprs = 0; //number of && ampersands
+  auto it = s.begin();
+  while(it!=s.end() && !( open_brase == 0 && damprs>0) ) {
+    damprs=0;
+    switch(*it) {
+      case '(' : ++open_brase; break;
+      case ')' : --open_brase; break;
+      case '&' : 
+                 ++it;
+                 if(*it == '&') ++damprs; 
+                 break;
+      default: break;
+    };
+    ++it;
+  }
+  auto n = std::distance(s.begin(),it);
+  if(damprs!=0) n-=2;
+  return {std::string_view(s.begin(),n), std::string_view(it,std::distance(it,s.end()))};
+}
+
+std::vector<std::string_view> split(std::string & str) {
+  std::vector<std::string_view> result;
+  std::string_view tail(str);
+  do {
+    auto  [s,t] = head_tail(tail);
+    result.push_back(s);
+    tail = t;
+  } while(!tail.empty());
+  return result;
+};
+
 
 #endif
