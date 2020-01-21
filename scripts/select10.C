@@ -59,6 +59,8 @@ auto GG         = read_mc("mc/gg", RUNTABLE, N0MC);
 
 std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
 
+Simulation_t MC = { SIGNAL, BGs }; 
+
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
 std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.7 && Ep[1]>0.7";
 
@@ -329,3 +331,32 @@ void parameter_example(Selection & S=SEL)
   fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM SAME");
 }
 
+Selection2 tmp =
+{
+  "SEL8", //selection name
+  //common cuts
+  "Nc==2"
+ // "&& p[0] < 1.1 && p[1] < 1.1"
+  "&& p[0] < 1.05 && p[1] < 1.05"
+  "&& E[0]>0.025 && E[1]>0.025"
+  "&& pt[0]>0.2 && pt[1]>0.2"
+  //"&& abs(cos(theta[0]))<0.93"
+  //"&& abs(cos(theta[1]))<0.93"
+  "&& abs(cos(theta[0]))<0.8"
+  "&& abs(cos(theta[1]))<0.8"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  , 
+  PID,
+  //kinematic selection for different channel
+  { 
+    {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
+    {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
+    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
+    {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
+    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
+    {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
+    {"μμ",  "Nn==0 && uu && ptem>0.25*k_ptem"},
+    {"ππ",  "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
+    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
+  },
+};

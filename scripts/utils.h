@@ -188,38 +188,112 @@ std::vector<std::string> split(std::string s) {
 */
 
 
-std::tuple<std::string_view, std::string_view> head_tail(std::string_view s) {
-  int open_brase = 0; //number of open brases
-  int damprs = 0; //number of && ampersands
-  auto it = s.begin();
-  while(it!=s.end() && !( open_brase == 0 && damprs>0) ) {
-    damprs=0;
+//std::tuple<std::string_view, std::string_view> head_tail(std::string_view s) {
+//  int open_brase = 0; //number of open brases
+//  int damprs = 0; //number of && ampersands
+//  auto it = s.begin();
+//  while(it!=s.end() && !( open_brase == 0 && damprs>0) ) {
+//    damprs=0;
+//    switch(*it) {
+//      case '(' : ++open_brase; break;
+//      case ')' : --open_brase; break;
+//      case '&' : 
+//                 ++it;
+//                 if(*it == '&') ++damprs; 
+//                 break;
+//      default: break;
+//    };
+//    ++it;
+//  }
+//  auto n = std::distance(s.begin(),it);
+//  if(damprs!=0) n-=2;
+//  return {std::string_view(s.begin(),n), std::string_view(it,std::distance(it,s.end()))};
+//}
+//
+//
+//std::vector<std::string_view> split_cut(std::string & str) {
+//  std::vector<std::string_view> result;
+//  std::string_view tail(str);
+//  do {
+//    auto  [s,t] = head_tail(tail);
+//    result.push_back(s);
+//    tail = t;
+//  } while(!tail.empty());
+//  return result;
+//};
+
+
+std::tuple<const std::string_view, const std::string_view> head_tail2(const std::string_view s, const std::string_view delim) {
+  size_t open_brase{0}; 
+  size_t delim_idx{0};
+  const size_t delim_size{delim.size()};
+  auto it = s.cbegin();
+  for (;
+      !( it == s.cend() || (delim_idx == delim_size && open_brase == 0));
+        ++it
+      )
+  {
     switch(*it) {
-      case '(' : ++open_brase; break;
-      case ')' : --open_brase; break;
-      case '&' : 
-                 ++it;
-                 if(*it == '&') ++damprs; 
-                 break;
-      default: break;
+      case '(' : 
+        ++open_brase; 
+        break;
+      case ')' : 
+        --open_brase; 
+        break;
+      default  : 
+        break;
     };
-    ++it;
+    if( delim[delim_idx] == *it ) ++delim_idx;
+    else delim_idx =0;
   }
-  auto n = std::distance(s.begin(),it);
-  if(damprs!=0) n-=2;
-  return {std::string_view(s.begin(),n), std::string_view(it,std::distance(it,s.end()))};
+  return {
+    std::string_view(s.cbegin(), std::distance(s.cbegin(),      it)-delim_idx), 
+    std::string_view(it,         std::distance(it,        s.cend()))
+  };
 }
 
-std::vector<std::string_view> split(std::string & str) {
+std::vector<std::string_view> split(std::string & str,const char * delim = "&&") {
   std::vector<std::string_view> result;
   std::string_view tail(str);
   do {
-    auto  [s,t] = head_tail(tail);
+    auto  [s,t] = head_tail2(tail, delim);
     result.push_back(s);
     tail = t;
   } while(!tail.empty());
   return result;
 };
 
-
+/* Remove cuts connected with specified var */
+std::string  remove_some_cuts(std::string var, std::string cut) {
+  auto cuts = split(cut);
+  //delete cuts which has 
+  //std::string var_re = ;
+  //var_re = var_re + var + ;
+  std::regex re(R"(\b)"+var+R"(\b)");
+  //std::smatch sm;
+  std::match_results<std::string_view::const_iterator> sm;
+  auto ptr = std::remove_if (cuts.begin(), cuts.end(), [&re, &sm](auto s) { 
+        return std::regex_search(s.begin(), s.end(), sm, re);
+        //return s.find(var) != std::string::npos; 
+        }
+        );
+  //std::cout << "ptr distance = " << std::distance(cuts.begin(), ptr) << std::endl;
+  cuts.erase( ptr , cuts.end());
+  std::string result;
+  //int idx=0;
+  if(cuts.size()!=0) 
+  {
+    result = cuts[0];
+    for(size_t i=1; i!=cuts.size(); ++i) {
+      result += "&&" + cuts[i];
+      //result +=cuts[i];
+      //if(cuts[i].find(var) !=  std::string::npos)  continue;
+      //rcuts.push_back(
+      //result += cuts[i];
+      ////if(i < cuts.size()-1 ) result+="&&";
+      //std::cout << i << " / " << cuts.size() << "  " << cuts[i]<< " " << result << std::endl;
+    }
+  }
+  return result;
+}
 #endif

@@ -1140,7 +1140,38 @@ struct ChannelSelectionResult_t : public ChannelSelection_t
   }
 };
 
-struct Selection
+struct CommonSelectionConfig {
+  std::string name;
+  std::string common_cut;
+  std::vector<ParticleID_t> pid;
+};
+
+struct Selection2 :  public CommonSelectionConfig,  public std::vector<ChannelSelection_t>
+{
+  //std::string name;
+  //std::string common_cut;
+  //std::vector<ParticleID_t> pid;
+  //std::vector<int> skip_list; //channel to skip list
+  //ChannelSelection_t       & operator[](int i)         { return sel[i]; }
+  //const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
+  ////auto begin() { return sel.begin(); }
+  ////auto end() { return sel.end(); }
+  ////const auto cbegin() const {return sel.cbegin(); }
+  ////const auto cend() const { return sel.cend(); }
+  //std::vector<ChannelSelection_t>::iterator begin() { return sel.begin(); }
+  //std::vector<ChannelSelection_t>::iterator end() { return sel.end(); }
+  //std::vector<ChannelSelection_t>::const_iterator cbegin() const { return sel.cbegin(); }
+  //std::vector<ChannelSelection_t>::const_iterator cend() const { return sel.cend(); }
+  //size_t size() const { return sel.size(); }
+  //Selection get_single(size_t i) const {
+  //  Selection  newSel = *this;
+  //  newSel.sel = { sel[i] };
+  //  return newSel;
+  //}
+};
+
+
+struct Selection 
 {
   std::string name;
   std::string common_cut;
@@ -1149,8 +1180,20 @@ struct Selection
   //std::vector<int> skip_list; //channel to skip list
   ChannelSelection_t       & operator[](int i)         { return sel[i]; }
   const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
+  //auto begin() { return sel.begin(); }
+  //auto end() { return sel.end(); }
+  //const auto cbegin() const {return sel.cbegin(); }
+  //const auto cend() const { return sel.cend(); }
   std::vector<ChannelSelection_t>::iterator begin() { return sel.begin(); }
   std::vector<ChannelSelection_t>::iterator end() { return sel.end(); }
+  std::vector<ChannelSelection_t>::const_iterator cbegin() const { return sel.cbegin(); }
+  std::vector<ChannelSelection_t>::const_iterator cend() const { return sel.cend(); }
+  size_t size() const { return sel.size(); }
+  Selection get_single(size_t i) const {
+    Selection  newSel = *this;
+    newSel.sel = { sel[i] };
+    return newSel;
+  }
 };
 
 std::string to_string(time_t t, int TZ)
@@ -3402,7 +3445,7 @@ std::tuple<double,double> find_maximum(Func func, double a, double b, double pre
   m.SetLimitedVariable(0,"test",0.5*(a+b),0.2*(b-a),a,b);
   m.Minimize();
   m.PrintResults();
-  return {0,0};
+  return {m.X()[0],m.Edm()};
 }
 
 
@@ -3723,8 +3766,10 @@ TCanvas * draw(Selection & SEL, Scan_t & DATA, Scan_t & SIGNAL, std::vector<Scan
   std::vector<TH1*> Hdata;
   std::vector< std::vector<TH1*> > Hbgs(BGs.size()); 
 
-  for(const auto & sel : SEL ) { //loop over selection channels
-    std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+  for(auto & sel : SEL ) { //loop over selection channels
+    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+    std::string cut = remove_some_cuts(var,SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
+    std::cout << cut << std::endl;
     const bool SCALE = true;
     const bool NOSCALE = false;
 
@@ -4012,19 +4057,26 @@ std::tuple<ibn::valer<double>, ibn::valer<double> > select(Scan_t & SIG, Scan_t 
   return select(SIG, {BG} );
 }
 
+struct Simulation_t {
+  ScanRef_t signal;
+  std::vector<ScanRef_t> bg;
+};
 
-TGraphErrors * find_optimal_cut_new(Scan_t & SIG, std::vector<ScanRef_t> BGs, std::string_view sel, std::string_view parfmt, double min, double max, double step) {
+ibn::valer<double> get_sig_bg_value(Simulation_t & sim, const std::string_view cut){
+    auto  [Nsig, Nbg]  =  select(sim.signal, sim.bg, cut);
+    ibn::valer<double> x{Nsig.value/sqrt(Nsig.value + Nbg.value)};
+    x.error = x.value*0.5/(Nsig.value+Nbg.value)*std::hypot( Nbg.error,  Nsig.error*(2*Nbg.value/Nsig.value+1) );
+    return x;
+};
+
+TGraphErrors * find_optimal_cut_new(Simulation_t & sim, std::string_view sel, std::string_view parfmt, double min, double max, double step) {
   auto g = new TGraphErrors;
   long idx{0};
   for( double par = min; par<max; par+=step ) {
     char par_cut[1024];
     sprintf(par_cut, parfmt.data(), par);  
     std::string cut = std::string(sel) + "&&" + par_cut;
-    auto  [Nsig, Nbg]  =  select(SIG,BGs, cut);
-
-    //double Nsum = Nbg+Nsig;
-    ibn::valer<double> x{Nsig.value/sqrt(Nsig.value + Nbg.value)};
-    x.error = x.value*0.5/(Nsig.value+Nbg.value)*std::hypot( Nbg.error,  Nsig.error*(2*Nbg.value/Nsig.value+1) );
+    auto x = get_sig_bg_value(sim, cut);
     g -> SetPoint(idx, par, x.value);
     g -> SetPointError(idx, 0, x.error);
     ++idx;
@@ -4037,12 +4089,37 @@ TGraphErrors * find_optimal_cut_new(Scan_t & SIG, std::vector<ScanRef_t> BGs, st
 }
 
 
-void find_optimal_cuts(Scan_t & SIG, std::vector<ScanRef_t> BGs, Selection & SEL, int i) {
+
+void find_optimal_cuts(Simulation_t & sim, Selection & SEL, int i, std::string par, std::string_view parfmt, int Nbin, double min, double max) {
   gStyle->Reset("Pub");
-  auto cptem = new TCanvas;
+  auto c = new TCanvas(SEL[i].root_title.c_str(), SEL[i].root_title.c_str());
+  std::string initial_cut =  SEL.common_cut;
+  if(SEL[i].cut!="") initial_cut + "&&" + SEL[i].cut;
+  std::string cut =  remove_some_cuts(par, initial_cut);
+  //}
+}
+
+void find_optimal_cuts(Simulation_t & sim, Selection & SEL, int i, std::string par, std::string_view parfmt, double min, double max, double step) {
+  gStyle->Reset("Pub");
+  //auto cptem = new TCanvas;
   //auto gptem = find_optimal_cut(SIG,BGs, SEL.common_cut + " && Nn==0 && eu && acop>0.1","ptem>%.3f", 0, 0.3,0.01); 
-  std::string cut = SEL.common_cut + "&&" + SEL[i].cut;
-  auto cuts = split(cut);
-  for(auto & s : cuts) std::cout << '\"' << s << '\"'<< ", ";
-  std::cout << "]" << std::endl;
+  //for(size_t channel = 0; channel<SEL.size(); ++i) {
+  auto c = new TCanvas(SEL[i].root_title.c_str(), SEL[i].root_title.c_str());
+  std::string initial_cut =  SEL.common_cut;
+  if(SEL[i].cut!="") initial_cut + "&&" + SEL[i].cut;
+  std::string cut =  remove_some_cuts(par, initial_cut);
+  std::cout << SEL[i].title << "  : " << par <<  "  cut = " <<  cut << std::endl;
+  auto gptem = find_optimal_cut_new(sim, cut, parfmt, min, max, step);
+  gptem->Draw("ap");
+  //}
+}
+
+void find_optimal_cuts(Simulation_t & sim, Selection & SEL, std::string par, std::string_view parfmt, double min, double max, double step) {
+  for(size_t ch = 0; ch!=SEL.size(); ++ch) {
+    find_optimal_cuts(sim, SEL, ch, par, parfmt, min,max,step);
+  }
+}
+
+void find_optimal_cuts(Simulation_t & sim, Selection & SEL) {
+  find_optimal_cuts(sim, SEL, "ptem", "ptem>%.3f", 0, 1.0, 0.05);
 }
