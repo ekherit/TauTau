@@ -113,7 +113,7 @@ std::vector<ParticleID_t> PID =
 };
 
 //selection configuration
-Selection SELCFG =
+Selection_t SELCFG =
 {
   "SEL8", //selection name
   //common cuts
@@ -204,7 +204,7 @@ Selection SELCFG =
   },
 };
 
-Selection SEL8 =
+Selection_t SEL8 =
 {
   "SEL8", //selection name
   //common cuts
@@ -220,8 +220,7 @@ Selection SEL8 =
   "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   , 
   PID,
-  //kinematic selection for different channel
-  { 
+  { //kinematic selection for different channel
     {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
     {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
     {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
@@ -234,7 +233,7 @@ Selection SEL8 =
   },
 };
 
-Selection SELRHO =
+Selection_t SELRHO =
 {
   "SEL8", //selection name
   //common cuts
@@ -261,7 +260,7 @@ Selection SELRHO =
 
 auto & SEL = SEL8;
 
-void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
+void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
 {
   set_kptem(D,kptem); 
   measure_luminosity(D, BB, GG,1e6);
@@ -274,7 +273,7 @@ void doall(Selection & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Sc
   make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
 };
 
-void cmpall(Selection &S=SEL) {
+void cmpall(Selection_t &S=SEL) {
   //cmp({SIGNAL , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
   //cmp({SIGNAL , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
   //cmp({SIGNAL , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());
@@ -325,38 +324,9 @@ void select()
 
 }
 
-void parameter_example(Selection & S=SEL)
+void parameter_example(Selection_t & S=SEL)
 {
   fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM");
   fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM SAME");
 }
 
-Selection2 tmp =
-{
-  "SEL8", //selection name
-  //common cuts
-  "Nc==2"
- // "&& p[0] < 1.1 && p[1] < 1.1"
-  "&& p[0] < 1.05 && p[1] < 1.05"
-  "&& E[0]>0.025 && E[1]>0.025"
-  "&& pt[0]>0.2 && pt[1]>0.2"
-  //"&& abs(cos(theta[0]))<0.93"
-  //"&& abs(cos(theta[1]))<0.93"
-  "&& abs(cos(theta[0]))<0.8"
-  "&& abs(cos(theta[1]))<0.8"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
-  , 
-  PID,
-  //kinematic selection for different channel
-  { 
-    {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
-    {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
-    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
-    {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
-    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
-    {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
-    {"μμ",  "Nn==0 && uu && ptem>0.25*k_ptem"},
-    {"ππ",  "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
-    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
-  },
-};

@@ -296,4 +296,14 @@ std::string  remove_some_cuts(std::string var, std::string cut) {
   }
   return result;
 }
+
+#include <TGraph.h>
+//find point with maximum y. Return corresponding <x,y>
+std::pair<double, double> get_maximum(const TGraph & g) {
+  //double max = std::numeric_limits<double>::lowest();
+  auto ptr = std::max_element(g.GetY(), g.GetY()+g.GetN());
+  size_t n = std::distance(g.GetY(), ptr);
+  return { g.GetX()[n], *ptr };
+}
+
 #endif
