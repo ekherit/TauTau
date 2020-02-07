@@ -221,15 +221,15 @@ Selection_t SEL8 =
   , 
   PID,
   { //kinematic selection for different channel
-    {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
-    {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
-    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
-    {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
-    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
-    {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
-    {"μμ",  "Nn==0 && uu && ptem>0.25*k_ptem"},
-    {"ππ",  "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
-    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
+/*  0 */ {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
+/*  1 */ {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
+/*  2 */ {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
+/*  3 */ {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
+/*  4 */ {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
+/*  5 */ {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
+/*  6 */ {"μμ",  "Nn==0 && uu && ptem>0.25*k_ptem"},
+/*  7 */ {"ππ",  "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
+/*  8 */ {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
   },
 };
 
@@ -260,11 +260,11 @@ Selection_t SELRHO =
 
 auto & SEL = SEL8;
 
-void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="", std::vector<int> skip_list = {})
+void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="")
 {
   set_kptem(D,kptem); 
   measure_luminosity(D, BB, GG,1e6);
-  auto result = new_select(D,S); 
+  auto result = select(D,S); 
   print_luminosity(D);
   set_kptem(M,kptem);
   set_efficiency(result,M,1000000);
@@ -286,11 +286,13 @@ void cmpall(Selection_t &S=SEL) {
 }
 
 
+
 void select() 
 {
   BB_SEL = LOCAL_BB_SEL;
   TAUFIT_STR = TAUFIT;
   double Kptem = 1.0;
+  SEL.apply_common_cut();
 
   std::vector<ScanRef_t> LUM_MCs = {BB,GG};
   std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
@@ -322,6 +324,20 @@ void select()
   set_pid_kptem(PIPI         , PID , Kptem);
   */
 
+}
+
+void clear_canvas(std::string regex="") {
+  //auto lst = ;
+  std::vector<TCanvas*> to_delete;
+  std::regex re(regex);
+  std::smatch sm;
+  for(auto l : *(gROOT->GetListOfCanvases())) {
+    std::string name = l->GetName();
+    if(std::regex_search(name, sm, re)) {
+      to_delete.push_back((TCanvas*)l);
+    }
+  }
+  for(auto l : to_delete) delete l;
 }
 
 void parameter_example(Selection_t & S=SEL)

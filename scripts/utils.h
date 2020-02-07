@@ -264,11 +264,13 @@ std::vector<std::string_view> split(std::string & str,const char * delim = "&&")
 };
 
 /* Remove cuts connected with specified var */
-std::string  remove_some_cuts(std::string var, std::string cut) {
+std::string  remove_single_cuts(std::string var, std::string cut) {
   auto cuts = split(cut);
   //delete cuts which has 
   //std::string var_re = ;
   //var_re = var_re + var + ;
+  var.erase(std::remove(std::begin(var), std::end(var), ' '), var.end());
+  var.erase(std::remove(std::begin(var), std::end(var), '\t'), var.end());
   std::regex re(R"(\b)"+var+R"(\b)");
   //std::smatch sm;
   std::match_results<std::string_view::const_iterator> sm;
@@ -293,6 +295,16 @@ std::string  remove_some_cuts(std::string var, std::string cut) {
       ////if(i < cuts.size()-1 ) result+="&&";
       //std::cout << i << " / " << cuts.size() << "  " << cuts[i]<< " " << result << std::endl;
     }
+  }
+  return result;
+}
+/* Remove cuts connected with specified var */
+
+std::string  remove_some_cuts(std::string vars, std::string cut) {
+  auto v = split(vars,"&&"); //split what cuts to remove
+  std::string result = cut;
+  for( auto & var : v ) {
+    result = remove_single_cuts(std::string(var),result);
   }
   return result;
 }
