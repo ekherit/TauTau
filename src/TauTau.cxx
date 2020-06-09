@@ -208,7 +208,8 @@ StatusCode TauTau::execute()
   std::sort(Tc.begin(),Tc.end(), ChargeOrder);
 
   /* ****************** TAU PAIR SELECTION **********************************/
-  if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
+  //if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
+  if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
   {
     fTT.nciptrack = central_tracks.size(); //fill the total number of central tracks
     fTT.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
