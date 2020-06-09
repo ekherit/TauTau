@@ -109,7 +109,10 @@ void TauTauEvent::fill(int i,  EvtRecTrack * track)
 bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;
-  result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS;
+  //result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS;
+  result = result && 0 <= Tc.size()  &&  Tc.size() <= 6;
+  result = result && 0 <= Tn.size()  &&  Tn.size() <= 8;
+  if(!result) return false; //ONLY 6 charged tracks and 8 
   int event_charge = GetTotalCharge(Tc);
   //result = result && GetTotalCharge(Tc) == 0; //opposite charged tracks
   //result = result && fabs(GetTotalCharge(Tc)) < 2 ; //opposite charged tracks
@@ -130,7 +133,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   //if(!result) return false; // DANGEROUSE SKIP SELECTION - test for systematics FOR MC ONLY
   bool select=true;
   ngood_charged_track = Tc.size();
-  ngood_neutral_track = Tn.size();
+  ngood_neutral_track = Tn.size(); 
 
   Pid.init();
 
