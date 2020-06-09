@@ -110,7 +110,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
 {
   bool result = true;
   //result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS;
-  result = result && 0 <= Tc.size()  &&  Tc.size() <= 6;
+  result = result && 2 <= Tc.size()  &&  Tc.size() <= 6;
   result = result && 0 <= Tn.size()  &&  Tn.size() <= 8;
   if(!result) return false; //ONLY 6 charged tracks and 8 
   int event_charge = GetTotalCharge(Tc);
