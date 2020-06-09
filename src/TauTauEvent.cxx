@@ -109,23 +109,25 @@ void TauTauEvent::fill(int i,  EvtRecTrack * track)
 bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;
-  result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS; //two charged tracks
-  result = result && GetTotalCharge(Tc) == 0; //opposite charged tracks
+  result = result && cfg.MIN_CHARGED_TRACKS <= Tc.size()  &&  Tc.size() <= cfg.MAX_CHARGED_TRACKS;
+  int event_charge = GetTotalCharge(Tc);
+  //result = result && GetTotalCharge(Tc) == 0; //opposite charged tracks
+  //result = result && fabs(GetTotalCharge(Tc)) < 2 ; //opposite charged tracks
   //result = result && Tn.size() == Tgn.size(); 
-  result = result && 
-    (
-     Tc.size() == 2  
+  result = result && (
+     Tc.size() == 2   && event_charge == 0
+     || Tc.size() == 3 && fabs(event_charge) == 1
      || Tc.size() == 4 
      || Tc.size() == 6
     ); //till 3 charged particle decay for each tau
   result = result && 
     ( 
      Tn.size() == 0 
-     //|| Tn.size() == 1 //this is for eta_c2  -> J/psi gamma
-     || (Tgn.size() == 2  && Tn.size() == 2)
+     || Tn.size() == 1 //this is for eta_c2  -> J/psi gamma
+     || (Tgn.size() == 2  && Tn.size() == 2) 
      || (Tgn.size() == 4  && Tn.size() == 2)
     );
-  if(!result) return false;
+  //if(!result) return false; // DANGEROUSE SKIP SELECTION - test for systematics FOR MC ONLY
   bool select=true;
   ngood_charged_track = Tc.size();
   ngood_neutral_track = Tn.size();
@@ -178,36 +180,30 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     //loop over all combinations
     comb_list_t::iterator best_comb=pi0_cmb_list.begin();
     double chi2_mass=1e100;
-    for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it)
-    {
+    for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it) {
       double chi2=0;
-      for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair)
-      {
+      for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair) {
         //calculate invariant mass
         double m = (*(it_pair->first) +  *(it_pair->second)).mag();
         //add to chi square
         chi2+=pow(m-PI0_MASS,2.0);
       }
-      if( chi2 < chi2_mass ) 
-      {
+      if( chi2 < chi2_mass ) {
         chi2_mass = chi2;
         best_comb = it;
       }
     }
     npi0 = Pn.size()/2;
     Nrho = npi0*Tc.size();
-    if(pi0_cmb_list.size()!=0)
-    {
+    if(pi0_cmb_list.size()!=0) {
       bool has_good_pi0 = false;
       int idx=0;
-      for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair)
-      {
+      for(comb_t::iterator it_pair = best_comb->begin(); it_pair!=best_comb->end(); ++it_pair) {
         double m = (*(it_pair->first) +  *(it_pair->second)).mag(); //again calculate the pi0 mass
         Mpi0[idx] = m;
         has_good_pi0 = has_good_pi0 || ( fabs(m - PI0_MASS) <  0.03); //selection of the pi0
         //now create all combination to tie pi0 with charged tracks
-        for(int i = 0; i<Tc.size(); ++i)
-        {
+        for(int i = 0; i<Tc.size(); ++i) {
           //RecMdcKalTrack * mdcTrk = track->mdcKalTrack();
           HepLorentzVector p = Tc[i]->mdcKalTrack()->p4(PION_MASS);
           Mrho[idx*Tc.size()+i] = (p + *(it_pair->first) + *(it_pair->second)).mag();
@@ -216,9 +212,8 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
       }
       select &= has_good_pi0; //supress some events completely without pi0
     }
-    select =  select && ( cfg.MIN_PTEM < ptem  && ptem   < cfg.MAX_PTEM);
-    for(int i=0;i<Tc.size();++i)
-    {
+    select =  select && ( cfg.MIN_PTEM < ptem  && ptem   < cfg.MAX_PTEM); //ptem in (-1.5, 1.5)
+    for(int i=0;i<Tc.size();++i) {
       select = select && ( cfg.MIN_MOMENTUM             < T.p[i]      && T.p[i]      < cfg.MAX_MOMENTUM);
       select = select && ( cfg.MIN_TRANSVERSE_MOMENTUM  < T.pt[i]     && T.pt[i]     < cfg.MAX_TRANSVERSE_MOMENTUM);
       select = select && ( cfg.MIN_EP_RATIO             < T.Ep[i]     && T.Ep[i]     < cfg.MAX_EP_RATIO);
@@ -237,5 +232,6 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   event = eventHeader->eventNumber();
   time  = eventHeader->time();
   channel = 0;
+  return true; //DANGEROUSE totaly skip selection - TESTO FOR SISTEMATICS (for MC only)
   return result;
 }

@@ -84,21 +84,21 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 
   declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL = 0.025); //GeV
 
-  declareProperty("MIN_MOMENTUM"               , cfg.MIN_MOMENTUM               = 0.1); //GeV
-  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.1); //GeV
+  declareProperty("MIN_MOMENTUM"               , cfg.MIN_MOMENTUM               = 0); //GeV
+  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.5); //GeV
 
-  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0.1); //GeV
-  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.2); //GeV
+  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0); //GeV
+  declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.5); //GeV
 
 
-  declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO               = 0.05);
-  declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO               = 1.1);
+  declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO               = 0.0);
+  declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO               = 1.5);
 
-  declareProperty("MIN_PTEM"                   , cfg.MIN_PTEM                   = 0.0);
-  declareProperty("MAX_PTEM"                   , cfg.MAX_PTEM                   = 1.5);
+  declareProperty("MIN_PTEM"                   , cfg.MIN_PTEM                   = -2);
+  declareProperty("MAX_PTEM"                   , cfg.MAX_PTEM                   = 2);
 
-  declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 2.5);
-  declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 5.5);
+  declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 0);
+  declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 10);
 
   declareProperty("DELTA_MJPSI"                , cfg.DELTA_MJPSI                   = 0.2);
   declareProperty("TEST_COMBINATIONS", cfg.TEST_COMBINATIONS=0);
