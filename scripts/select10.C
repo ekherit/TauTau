@@ -18,6 +18,7 @@
 
 
 #include "selection.C"
+#include "sys.C"
 #include <map>
 
 std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity";
@@ -112,112 +113,110 @@ std::vector<ParticleID_t> PID =
   }
 };
 
-//selection configuration
-Selection_t SELCFG =
-{
-  "SEL8", //selection name
-  //common cuts
-  "Nc==2"
-  "&& p[0] < 1.1 && p[1] < 1.1"
-  "&& E[0]>0.1 && E[1]>0.1"
-  "&& pt[0]>0.2 && pt[1]>0.2"
-  "&& abs(cos(theta[0]))<0.93"
-  "&& abs(cos(theta[1]))<0.93"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
-//  "&&  abs(cos_theta_mis2) < 0.6"
-//  "&& Emis > 0.5 && Emis < 3.0"
-//  "&& M2<3.5"
-  , 
-  PID,
-  //kinematic selection for different channel
-  { 
-   //     {"eμ",   "Nn==0 && eu  && ptem>0.15*k_ptem"},
-      {"eμ1",   "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
-  //     {"eπ",   "Nn==0 && epi && ptem>0.2*k_ptem"},
-      {"eπ1",   "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
-  //      ,{"eπ2",   "Nn==0 && epi && ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2) && Emis>1.5 && Emis<2.6"}
-  //      ,{"eπ3",   "Nn==0 && epi"}
-  //     ,{"eπ4",   "Nn==0 && epi && ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2)"}
-  //      ,{"eπ5",   "Nn==0 && epi && ptem>0.2 && acop>0.1"}
-  //      {"eρ",   "Nn==2 && Npi0 == 1 && erho"},
-  //      {"eρ1",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2)"},
-  //      {"eρ2",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15"},
-  //      {"eρ3",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 && acop>0.1"},
-  //      {"eρ4",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.17"},
-          {"eρ5",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
-  //        {"μπ0",   "Nn==0 && upi"},
-  //        {"μπ1",   "Nn==0 && upi && ptem>0.3*k_ptem"},
-  //        {"μπ2",   "Nn==0 && upi && ptem>0.15*k_ptem"},
-  //        {"μπ3",   "Nn==0 && upi && ptem>0.15*k_ptem &&  abs(cos_theta_mis2)<0.8 && abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8"},
-  //        {"μπ4",   "Nn==0 && upi && ptem>0.15*k_ptem*(1+cos_theta_mis2*cos_theta_mis2)"},
-  //        {"μπ5",   "Nn==0 && upi && ptem>0.21*k_ptem*(1+0.5*cos_theta_mis2*cos_theta_mis2)"},
-          {"μπ6",   "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
-  //  {"μρ",   "Nn==2 && Npi0 == 1 && urho"},
-  //  {"μρ1",   "Nn==2 && Npi0 == 1 && urho && ptem>0.1*k_ptem"},
-  //  {"μρ2",   "Nn==2 && Npi0 == 1 && urho && ptem>0.15*k_ptem"},
-  //  {"μρ3",   "Nn==2 && Npi0 == 1 && urho && ptem>0.20*k_ptem"},
-  //  {"μρ4",   "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem"},
-    {"μρ5",   "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
- //    {"ee",   "Nn==0 && ee && ptem > 0.3*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"},
-//     {"ee",   "Nn==0 && ee"},
-   //  {"ee0",   "Nn==0 && ee && ptem > 0.1"},
- //    {"ee1",   "Nn==0 && ee && ptem > 0.15"},
-  //   {"ee2",   "Nn==0 && ee && ptem > 0.2"},
-   //  {"ee3",   "Nn==0 && ee && ptem > 0.25"},
-//     {"ee4",   "Nn==0 && ee && ptem > 0.3 +1.1*cos_theta_mis2^2"},
-    // {"ee5",   "Nn==0 && ee && ptem > 0.25*(1.0 + 0.5*cos_theta_mis2*cos_theta_mis2)"},
-     //{"ee6",   "Nn==0 && ee && ptem > 0.3 +0.3*cos_theta_mis2^2 && acop>0.1"},
-     //{"ee7",   "Nn==0 && ee && ptem > 0.3 +0.44*cos_theta_mis2^2 && acop>0.1"},
-     //{"ee8",   "Nn==0 && ee && Emis>1.8 && ptem > 0.32 +0.3*cos_theta_mis2^2 && acop>0.1"},
-     {"ee9",   "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
- //   {"μμ0",   "Nn==0 && uu"},
- //   {"μμ1",   "Nn==0 && uu && ptem > 0.1*k_ptem"},
- //   {"μμ2",   "Nn==0 && uu && ptem > 0.15*k_ptem"},
- //   {"μμ3",   "Nn==0 && uu && ptem > 0.2*k_ptem && acop>0.1"},
-  //  {"μμ4",   "Nn==0 && uu && ptem > 0.25*k_ptem"},
-  //  {"μμ5",   "Nn==0 && uu && ptem > 0.15*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"},
-  //  {"μμ6",   "Nn==0 && uu && ptem > 0.15*k_ptem*(1+cos_theta_mis2^2)"},
-  //  {"μμ7",   "Nn==0 && uu && ptem > 0.18*k_ptem*(1+cos_theta_mis2^2)"},
-  //  {"μμ8",   "Nn==0 && uu && ptem > 0.18*k_ptem*(1+cos_theta_mis2^2)"},
-//    {"μμ9",   "Nn==0 && uu && ptem > k_ptem*(0.18 + 0.1*cos_theta_mis2^2) && acop>0.1 "},
-//     {"μμ",   "Nn==0 && uu && ptem > 0.2*k_ptem && Emis>1.1 && abs(cos_theta_mis2)<0.8"},
-//    {"μμ10",   "Nn==0 && uu && ptem>0.1 && acop>0.1"},
-//    {"μμ11",   "Nn==0 && uu && E[0]>0.15 && E[0]<0.25 && E[1]>0.15 && E[1]<0.25 && ptem>0.2"},
-      {"μμ12",   "Nn==0 && uu && ptem>0.25*k_ptem"},
- //   // ,{"ππo",   "Nn==0 && pipi&& ptem > 0.25*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
- //    {"ππ",   "Nn==0 && pipi "},
-     {"ππ",   "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
-     //{"πρo",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"},
-     //{"πρ",   "Nn==2 && Npi0 == 1 && pirho"},
-     //{"πρ2",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && Emis >1.4 && Emis<2.0"},
-     {"πρ",   "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8"},
-
-//    {"ρρ",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0)  || (0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0))  && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 && Emis>1.35"}
-  //  {"ρρ",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0)  || (0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0))"},
-  //  {"ρρ0",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14"},
-  //  {"ρρ1",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0))"},
-  //  {"ρρ2",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0)) && 0.12 < Mpi0[1] && Mpi0[1] < 0.14"},
-    //{"ρρ3",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[0]-0.767)/0.15)<1 && abs((Mrho[3]-0.767)/0.15)<1 && ptem>k_ptem*0.5*(1.0+cos_theta_mis2^2)"},
-    //{"ρρ4",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[1]-0.767)/0.15)<1 && abs((Mrho[2]-0.767)/0.15)<1 && ptem>k_ptem*0.5*(1.0+cos_theta_mis2^2)"},
-    //{"ρρ5",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[0]-0.767)/0.15)<1 && abs((Mrho[3]-0.767)/0.15)<1"},
-    //{"ρρ6",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[1]-0.767)/0.15)<1 && abs((Mrho[2]-0.767)/0.15)<1"},
-  },
-};
+////selection configuration
+//Selection_t SELCFG =
+//{
+//  "SEL8", //selection name
+//  //common cuts
+//  "Nc==2"
+//  "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& E[0]>0.1 && E[1]>0.1"
+//  "&& pt[0]>0.2 && pt[1]>0.2"
+//  "&& abs(cos(theta[0]))<0.93"
+//  "&& abs(cos(theta[1]))<0.93"
+//  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+////  "&&  abs(cos_theta_mis2) < 0.6"
+////  "&& Emis > 0.5 && Emis < 3.0"
+////  "&& M2<3.5"
+//  , 
+//  PID,
+//  //kinematic selection for different channel
+//  { 
+//   //     {"eμ",   "Nn==0 && eu  && ptem>0.15*k_ptem"},
+//      {"eμ1",   "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
+//  //     {"eπ",   "Nn==0 && epi && ptem>0.2*k_ptem"},
+//      {"eπ1",   "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
+//  //      ,{"eπ2",   "Nn==0 && epi && ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2) && Emis>1.5 && Emis<2.6"}
+//  //      ,{"eπ3",   "Nn==0 && epi"}
+//  //     ,{"eπ4",   "Nn==0 && epi && ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2)"}
+//  //      ,{"eπ5",   "Nn==0 && epi && ptem>0.2 && acop>0.1"}
+//  //      {"eρ",   "Nn==2 && Npi0 == 1 && erho"},
+//  //      {"eρ1",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*(0.15 +0.05*cos_theta_mis2^2)"},
+//  //      {"eρ2",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15"},
+//  //      {"eρ3",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 && acop>0.1"},
+//  //      {"eρ4",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.17"},
+//          {"eρ5",   "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
+//  //        {"μπ0",   "Nn==0 && upi"},
+//  //        {"μπ1",   "Nn==0 && upi && ptem>0.3*k_ptem"},
+//  //        {"μπ2",   "Nn==0 && upi && ptem>0.15*k_ptem"},
+//  //        {"μπ3",   "Nn==0 && upi && ptem>0.15*k_ptem &&  abs(cos_theta_mis2)<0.8 && abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8"},
+//  //        {"μπ4",   "Nn==0 && upi && ptem>0.15*k_ptem*(1+cos_theta_mis2*cos_theta_mis2)"},
+//  //        {"μπ5",   "Nn==0 && upi && ptem>0.21*k_ptem*(1+0.5*cos_theta_mis2*cos_theta_mis2)"},
+//          {"μπ6",   "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
+//  //  {"μρ",   "Nn==2 && Npi0 == 1 && urho"},
+//  //  {"μρ1",   "Nn==2 && Npi0 == 1 && urho && ptem>0.1*k_ptem"},
+//  //  {"μρ2",   "Nn==2 && Npi0 == 1 && urho && ptem>0.15*k_ptem"},
+//  //  {"μρ3",   "Nn==2 && Npi0 == 1 && urho && ptem>0.20*k_ptem"},
+//  //  {"μρ4",   "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem"},
+//    {"μρ5",   "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
+// //    {"ee",   "Nn==0 && ee && ptem > 0.3*k_ptem && M2>1.0 && barrel && abs(cos_theta_mis2)<0.8"},
+////     {"ee",   "Nn==0 && ee"},
+//   //  {"ee0",   "Nn==0 && ee && ptem > 0.1"},
+// //    {"ee1",   "Nn==0 && ee && ptem > 0.15"},
+//  //   {"ee2",   "Nn==0 && ee && ptem > 0.2"},
+//   //  {"ee3",   "Nn==0 && ee && ptem > 0.25"},
+////     {"ee4",   "Nn==0 && ee && ptem > 0.3 +1.1*cos_theta_mis2^2"},
+//    // {"ee5",   "Nn==0 && ee && ptem > 0.25*(1.0 + 0.5*cos_theta_mis2*cos_theta_mis2)"},
+//     //{"ee6",   "Nn==0 && ee && ptem > 0.3 +0.3*cos_theta_mis2^2 && acop>0.1"},
+//     //{"ee7",   "Nn==0 && ee && ptem > 0.3 +0.44*cos_theta_mis2^2 && acop>0.1"},
+//     //{"ee8",   "Nn==0 && ee && Emis>1.8 && ptem > 0.32 +0.3*cos_theta_mis2^2 && acop>0.1"},
+//     {"ee9",   "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
+// //   {"μμ0",   "Nn==0 && uu"},
+// //   {"μμ1",   "Nn==0 && uu && ptem > 0.1*k_ptem"},
+// //   {"μμ2",   "Nn==0 && uu && ptem > 0.15*k_ptem"},
+// //   {"μμ3",   "Nn==0 && uu && ptem > 0.2*k_ptem && acop>0.1"},
+//  //  {"μμ4",   "Nn==0 && uu && ptem > 0.25*k_ptem"},
+//  //  {"μμ5",   "Nn==0 && uu && ptem > 0.15*k_ptem &&  barrel && abs(cos_theta_mis2)<0.8"},
+//  //  {"μμ6",   "Nn==0 && uu && ptem > 0.15*k_ptem*(1+cos_theta_mis2^2)"},
+//  //  {"μμ7",   "Nn==0 && uu && ptem > 0.18*k_ptem*(1+cos_theta_mis2^2)"},
+//  //  {"μμ8",   "Nn==0 && uu && ptem > 0.18*k_ptem*(1+cos_theta_mis2^2)"},
+////    {"μμ9",   "Nn==0 && uu && ptem > k_ptem*(0.18 + 0.1*cos_theta_mis2^2) && acop>0.1 "},
+////     {"μμ",   "Nn==0 && uu && ptem > 0.2*k_ptem && Emis>1.1 && abs(cos_theta_mis2)<0.8"},
+////    {"μμ10",   "Nn==0 && uu && ptem>0.1 && acop>0.1"},
+////    {"μμ11",   "Nn==0 && uu && E[0]>0.15 && E[0]<0.25 && E[1]>0.15 && E[1]<0.25 && ptem>0.2"},
+//      {"μμ12",   "Nn==0 && uu && ptem>0.25*k_ptem"},
+// //   // ,{"ππo",   "Nn==0 && pipi&& ptem > 0.25*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"}
+// //    {"ππ",   "Nn==0 && pipi "},
+//     {"ππ",   "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
+//     //{"πρo",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8"},
+//     //{"πρ",   "Nn==2 && Npi0 == 1 && pirho"},
+//     //{"πρ2",   "Nn==2 && Npi0 == 1 && pirho && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && Emis >1.4 && Emis<2.0"},
+//     {"πρ",   "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8"},
+//
+////    {"ρρ",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0)  || (0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0))  && ptem>0.4*k_ptem && M2pi>1.0 && barrel && abs(cos_theta_mis2)<0.8 && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 && Emis>1.35"}
+//  //  {"ρρ",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0)  || (0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0))"},
+//  //  {"ρρ0",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14"},
+//  //  {"ρρ1",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[0] && Mrho[0]<1.0 && 0.6<Mrho[3] && Mrho[3]<1.0))"},
+//  //  {"ρρ2",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14  && ((0.6 <Mrho[1] && Mrho[1]<1.0 && 0.6<Mrho[2] && Mrho[2]<1.0)) && 0.12 < Mpi0[1] && Mpi0[1] < 0.14"},
+//    //{"ρρ3",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[0]-0.767)/0.15)<1 && abs((Mrho[3]-0.767)/0.15)<1 && ptem>k_ptem*0.5*(1.0+cos_theta_mis2^2)"},
+//    //{"ρρ4",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[1]-0.767)/0.15)<1 && abs((Mrho[2]-0.767)/0.15)<1 && ptem>k_ptem*0.5*(1.0+cos_theta_mis2^2)"},
+//    //{"ρρ5",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[0]-0.767)/0.15)<1 && abs((Mrho[3]-0.767)/0.15)<1"},
+//    //{"ρρ6",   "Nn==4 && Npi0==2 && PI0 && PI1 && 0.12 < Mpi0[0] && Mpi0[0] < 0.14  && 0.12 < Mpi0[1] && Mpi0[1] < 0.14 &&  abs((Mrho[1]-0.767)/0.15)<1 && abs((Mrho[2]-0.767)/0.15)<1"},
+//  },
+//};
 
 Selection_t SEL8 =
 {
   "SEL8", //selection name
   //common cuts
   "Nc==2"
- // "&& p[0] < 1.1 && p[1] < 1.1"
   "&& p[0] < 1.05 && p[1] < 1.05"
   "&& E[0]>0.025 && E[1]>0.025"
   "&& pt[0]>0.2 && pt[1]>0.2"
-  //"&& abs(cos(theta[0]))<0.93"
-  //"&& abs(cos(theta[1]))<0.93"
   "&& abs(cos(theta[0]))<0.8"
   "&& abs(cos(theta[1]))<0.8"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  //"&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.90 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   , 
   PID,
   { //kinematic selection for different channel
@@ -233,34 +232,53 @@ Selection_t SEL8 =
   },
 };
 
-Selection_t SELRHO =
+Selection_t SEL_BASE =
 {
   "SEL8", //selection name
   //common cuts
   "Nc==2"
- // "&& p[0] < 1.1 && p[1] < 1.1"
   "&& p[0] < 1.05 && p[1] < 1.05"
   "&& E[0]>0.025 && E[1]>0.025"
   "&& pt[0]>0.2 && pt[1]>0.2"
-  //"&& abs(cos(theta[0]))<0.93"
-  //"&& abs(cos(theta[1]))<0.93"
   "&& abs(cos(theta[0]))<0.8"
   "&& abs(cos(theta[1]))<0.8"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  //"&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.90 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   , 
   PID,
-  //kinematic selection for different channel
-  { 
-    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
-    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
-    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
+  { //kinematic selection for different channel
+    /*  0 */ {"",  "Nn==0"},
   },
 };
+
+//Selection_t SELRHO =
+//{
+//  "SEL8", //selection name
+//  //common cuts
+//  "Nc==2"
+// // "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& p[0] < 1.05 && p[1] < 1.05"
+//  "&& E[0]>0.025 && E[1]>0.025"
+//  "&& pt[0]>0.2 && pt[1]>0.2"
+//  //"&& abs(cos(theta[0]))<0.93"
+//  //"&& abs(cos(theta[1]))<0.93"
+//  "&& abs(cos(theta[0]))<0.8"
+//  "&& abs(cos(theta[1]))<0.8"
+//  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+//  , 
+//  PID,
+//  //kinematic selection for different channel
+//  { 
+//    {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
+//    {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
+//    {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
+//  },
+//};
 
 
 auto & SEL = SEL8;
 
-void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="")
+void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="gg")
 {
   set_kptem(D,kptem); 
   measure_luminosity(D, BB, GG,1e6);
@@ -268,9 +286,9 @@ void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , 
   print_luminosity(D);
   set_kptem(M,kptem);
   set_efficiency(result,M,1000000);
-  fit(result, name + ".txt",  S.name, default_lum);
+  fit(result, name + ".txt",  S.title, default_lum);
   sleep(10);
-  make_tex(print_tex(result,S.name, name + "_fit.pdf"),name + ".tex");
+  make_tex(print_tex(result,S.title, name + "_fit.pdf"),name + ".tex");
 };
 
 void cmpall(Selection_t &S=SEL) {
@@ -323,7 +341,8 @@ void select()
   set_pid_kptem(UU         , PID , Kptem);
   set_pid_kptem(PIPI         , PID , Kptem);
   */
-
+ //doall(SEL,1,DATA,SIGNAL,"sel","gg"); 
+ //sys("cos_theta_mis3.sys","cos_theta_mis2, GeV");
 }
 
 void clear_canvas(std::string regex="") {
@@ -342,7 +361,7 @@ void clear_canvas(std::string regex="") {
 
 void parameter_example(Selection_t & S=SEL)
 {
-  fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM");
-  fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut,"NORM SAME");
+  fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + S.common_cut(),"NORM");
+  fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut(),"NORM SAME");
 }
 

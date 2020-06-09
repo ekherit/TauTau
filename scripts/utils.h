@@ -252,7 +252,7 @@ std::tuple<const std::string_view, const std::string_view> head_tail2(const std:
   };
 }
 
-std::vector<std::string_view> split(std::string & str,const char * delim = "&&") {
+std::vector<std::string_view> split(const std::string & str,const char * delim = "&&") {
   std::vector<std::string_view> result;
   std::string_view tail(str);
   do {
@@ -272,6 +272,7 @@ std::string  remove_single_cuts(std::string var, std::string cut) {
   var.erase(std::remove(std::begin(var), std::end(var), ' '), var.end());
   var.erase(std::remove(std::begin(var), std::end(var), '\t'), var.end());
   std::regex re(R"(\b)"+var+R"(\b)");
+  //std::regex re("var");
   //std::smatch sm;
   std::match_results<std::string_view::const_iterator> sm;
   auto ptr = std::remove_if (cuts.begin(), cuts.end(), [&re, &sm](auto s) { 
@@ -304,6 +305,7 @@ std::string  remove_some_cuts(std::string vars, std::string cut) {
   auto v = split(vars,"&&"); //split what cuts to remove
   std::string result = cut;
   for( auto & var : v ) {
+    std::cout << var <<std::endl;
     result = remove_single_cuts(std::string(var),result);
   }
   return result;

@@ -48,6 +48,7 @@
 #include <TPaveStats.h>
 #include <TStyle.h>
 
+#include "Selection.h"
 #include "draw_helper.h"
 #include "fold.h"
 
@@ -94,24 +95,6 @@ static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8
 
 
 
-struct Restriction_t
-{
-  std::string name;
-  double min;
-  double max;
-};
-
-Restriction_t  restrict(std::string value, double min, double max)
-{
-  return {value, min, max};
-};
-
-struct ParticleID_t
-{
-  std::string name;
-  std::vector<std::string> cuts;
-  std::vector<Restriction_t> restrictions;
-};
 
 
 struct AcceleratorInfo_t {
@@ -1093,73 +1076,14 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 
-struct SelectionConfig_t {
-  std::string name;
-  std::string common_cut;
-  std::vector<ParticleID_t> pid;
-};
-
-struct ChannelSelection_t
-{
-  std::string title; //channel name  (temrinal)
-  std::string cut;
-  //std::string root_title; //title for root to print on canvas
-  std::string root_title() const { //remove greek letters
-    std::string result = title;
-    result = sub(result,"μ", "#mu");
-    result = sub(result,"π", "#pi");
-    result = sub(result,"ρ", "#rho");
-    //std::cout << result << std::endl;
-    return result;
-  };
-
-  std::string root_title2() const { //remove greek letters
-    std::string result = title;
-    result = sub(result,"μ", "mu");
-    result = sub(result,"π", "pi");
-    result = sub(result,"ρ", "rho");
-    //std::cout << result << std::endl;
-    return result;
-  };
-};
+//struct SelectionConfig_t {
+//  std::string name;
+//  std::string common_cut;
+//  std::vector<ParticleID_t> pid;
+//};
 
 
-struct Selection_t :  public SelectionConfig_t,  public std::vector<ChannelSelection_t>
-{
-  //Selection_t(CommonSelectionConfig_t && cfg, std::vector<ChannelSelection_t> && v) {
-  //  name = cfg.name;
-  //  common_cut = cfg.common_cut;
-  //  pid  = cfg.pid;
-  //  for(auto &  s : v) {
-  //    std::string cut = common_cut;
-  //    if(s.cut!="") cut  += " &&" + s.cut;
-  //    push_back({s.title, cut, s.root_title});
-  //  }
-  //}
-  Selection_t get_single(size_t i) const {
-    Selection_t  newSel = *this;
-    newSel.clear();
-    newSel.push_back((*this)[i]);
-    return newSel;
-  }
 
-  void apply_common_cut(void) {
-    std::regex empty_re(R"(\s*)");
-    std::smatch sm;
-    for(auto & s: *this) {
-      if(std::regex_match(s.cut, sm, empty_re)) s.cut = common_cut;
-      else s.cut = common_cut + "&&" + s.cut;
-    }
-  }
-
-  //std::string cut(size_t i) const {
-  //  if(i>=size()) return "";
-  //  std::regex empty_re(R"(\s*)");
-  //  std::smatch sm;
-  //  if(std::regex_match((*this)[i].cut, sm, empty_re)) return  common_cut;
-  //  return common_cut + "&&" + (*this)[i].cut;
-  //}
-};
 
 struct ChannelSelectionResult_t : public ChannelSelection_t,  public  std::vector<PointSelectionResult_t> 
 {
@@ -1408,6 +1332,7 @@ std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & 
     auto & r       = R[i];
     auto & p       = P[i];
     r.tt.N         = p.tt.tree->GetEntries(sel.c_str());
+    r.tt.N0mc      = p.tt.N0mc > 0 ? p.tt.N0mc : 0;
     r.bb           = p.bb;
     r.gg           = p.gg;
     r.name         = p.title;
@@ -1529,11 +1454,11 @@ std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, con
   return R;
 }
 
-std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection_t & S, int i, const std::string  var,  std::string extracut="", std::string gopt="")
+std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection_t & S, int i, const std::string  var,  std::string extracut="", std::string gopt="") 
 {
   set_pid(DATA, S.pid);
   std::string cut = S[i].cut;
-  if(S.common_cut!="") cut += " && " + S.common_cut;
+  if(S.cut!="") cut += " && " + S.cut;
   if(extracut!="")     cut += " && " + extracut;
   return draw(DATA, var, cut, gopt);
 };
@@ -1628,27 +1553,6 @@ TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  S
   return H;
 };
 
-TCanvas * get_new_tailed_canvas(std::string title)
-{
-  auto c = new TCanvas;
-  const int Nx = 4; //numbe of canvases on x size;
-  const int Ny = 3; //number of canvases on y size;
-  const int window_title_bar_ysize = 45;
-  const int window_border_xsize = 5;
-  const int panel_ysize = 40;
-  const int display_size_x = 1920*2;
-  const int display_size_y = 1080*2;
-  const int canvas_width_x = display_size_x/Nx;
-  const int canvas_width_y = (display_size_y-panel_ysize)/Ny;
-  int canvas_pos_x = (CANVAS_INDEX % Nx)* canvas_width_x;
-  int canvas_pos_y = ((CANVAS_INDEX/Nx)%Ny)* canvas_width_y;
-  c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
-  c->SetWindowSize(canvas_width_x-window_border_xsize,canvas_width_y-window_title_bar_ysize);
-  c->SetTitle(title.c_str());
-  c->cd();
-  CANVAS_INDEX++;
-  return c;
-}
 
 TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, std::string  var, std::string  sel, std::string gopt="")
 {
@@ -1679,7 +1583,7 @@ void cmp(const Scan_t & S1, const Scan_t & S2, std::string var, std::string sel=
 void cmp(const Scan_t & S1, const Scan_t & S2, const Selection_t & Sel, int i, std::string var, std::string extracut="", std::string gopt = "", int Nbin=100, double Min=0, double Max=0)
 {
   std::cout << Sel[i].title << std::endl;
-  std::string sel = Sel.common_cut  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+  std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
   cmp(S1,S2,var,sel,gopt,Nbin,Min,Max);
 };
 
@@ -1688,7 +1592,7 @@ TH1 * fold(const Scan_t & D, const Selection_t & Sel,  std::string var, std::str
   TH1 * H = new TH1F(name.c_str(),name.c_str() ,Nbin,Min,Max);
   for(int i =0;i<Sel.size();++i) {
     std::cout << Sel[i].title << ", " << std::flush;
-    std::string sel = Sel.common_cut  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+    std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
     auto h = fold(D, var,sel,gopt,Nbin,Min,Max);
     H->Add(h);
     delete h;
@@ -2599,10 +2503,10 @@ std::vector<ChannelSelectionResult_t> new_select(const Scan_t & DATA, const Sele
 {
   std::vector<ChannelSelectionResult_t> R(idx.size());
   //set_pid(DATA, SEL.pid);
-  std::string cut = SEL.common_cut;
+  std::string cut = SEL.common_cut();
   if(extracut != "")
   {
-    if(SEL.common_cut !="") cut = SEL.common_cut +"&&"+extracut;
+    if(SEL.common_cut() !="") cut = SEL.common_cut() +"&&"+extracut;
     else cut = extracut;
   }
   if(cut!="") cut = "&&"+cut;
@@ -2624,7 +2528,17 @@ std::vector<ChannelSelectionResult_t> new_select(const Scan_t & DATA, const Sele
 
 std::vector<PointSelectionResult_t> measure_efficiency(const std::vector<ScanPoint_t> & P, std::string cut)
 {
-  return new_select(P,cut);
+  auto s = new_select(P,cut);
+  for(auto & sp : s ) {
+    auto & eps = sp.tt.efficiency;
+    double N0 = sp.tt.N0mc;
+    sp.tt.efficiency.value = double(sp.tt.N)/N0;
+    sp.tt.efficiency.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
+    std::cout << sp.tt.N << " " <<  N0 << "  " << sp.tt.efficiency.value << " " << sp.tt.efficiency.error  << std::endl;
+    sp.tt.effcor.value = sp.tt.efficiency/s[0].tt.efficiency.value;
+    sp.tt.effcor.error = sp.tt.effcor.value*hypot( sp.tt.efficiency.error/sp.tt.efficiency.value, s[0].tt.efficiency.error / s[0].tt.efficiency.value);
+  }
+  return s;
 }
 
 std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionResult_t>  & psr,  const std::vector<PointSelectionResult_t>  & eff, long N0)
@@ -2834,7 +2748,7 @@ TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::str
 
 TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
 {
-  std::string global_cut = SEL.common_cut;
+  std::string global_cut = SEL.common_cut();
   std::string or_cut="(";
   for(auto  it=SEL.begin();it!=SEL.end();++it)
   {
@@ -2848,7 +2762,7 @@ TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Se
 
 TCanvas * compare3(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string subregex, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
 {
-  std::string global_cut = SEL.common_cut;
+  std::string global_cut = SEL.common_cut();
   std::string or_cut="(";
   for(auto  it=SEL.begin();it!=SEL.end();++it)
   {
@@ -2869,7 +2783,7 @@ TCanvas * compare3(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::str
 TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xtitle="")
 {
   if(S1.empty() || S2.empty()) return nullptr;
-  std::string global_cut = SEL.common_cut;
+  std::string global_cut = SEL.common_cut();
   std::string or_cut="(";
   for(auto  it=SEL.begin();it!=SEL.end();++it)
   {
@@ -2966,8 +2880,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
       "#","L,nb^-1","dL,nb^-1","W,MeV", "dW,MeV","Sw,MeV","dSw,MeV","Ntt","Nbb","Ngg","effcor");
   os << buf << '\n';
   int idx=0;
-  for(const auto & p : sr)
-  {
+  for(const auto & p : sr) {
     idx++;
     std::string point_name = p.name == "" ? std::to_string(idx) : p.name;
     double lum = p.luminosity*1000.0;
@@ -3408,10 +3321,20 @@ void set_luminosity(Scan_t & DATA, std::map<std::string, Scan_t>  & G ) {
 
 void print_luminosity(Scan_t & data) {
   //char buf[1024*16];
-  printf("%5s %10.6s %10.6s %10.6s %10.6s %10s %10.6s %10.6s %10s\n",
-      "point", "E,GeV", "Lonline,pb^-1","Lgg, pb^-1", "dLgg,pb^-1", "Ngg","Lbb,pb^-1", "dLbb,pb^-1", "Nbb"
+  printf("%5s %10.6s %10.6s %10.6s %10.6s %10s %10.6s %10.6s %10s %10s\n",
+      "point", "E,GeV", "Lonline,pb^-1","Lgg, pb^-1", "dLgg,pb^-1", "Ngg","Lbb,pb^-1", "dLbb,pb^-1", "Nbb", "Lbb/Lgg"
       );
+  ibn::valer<double> Lgg={0,0};
+  ibn::valer<double> Lee={0,0};
+  double Lonline=0;
+  long Ngg=0;
+  long Nee=0;
   for(auto & sp : data) {
+    Lgg+=sp.gg.luminosity;
+    Lee+=sp.bb.luminosity;
+    Ngg+=sp.gg.N;
+    Nee+=sp.bb.N;
+    Lonline+sp.luminosity.value;
     printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
         sp.title.c_str(), sp.energy.value, sp.luminosity.value, 
         sp.gg.luminosity.value*1e-3, sp.gg.luminosity.error*1e-3, sp.gg.N,
@@ -3419,6 +3342,11 @@ void print_luminosity(Scan_t & data) {
         sp.bb.luminosity.value/sp.gg.luminosity.value
         );
   }
+    printf("%5s %10s %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f %10.6f\n",
+        "total", "", Lonline, Lgg.value*1e-3, Lgg.error*1e-3, Ngg,
+                     Lee.value*1e-3, Lee.error*1e-3, Nee,
+                     (Lee/Lgg).value, (Lee/Lgg).error
+        );
 }
 
 void draw_luminosity(Scan_t & data) {
@@ -3738,7 +3666,7 @@ void draw_stack(std::vector<ScanPointRef_t> DATA, std::string var, std::string c
 
 
 void draw(ScanPoint_t & DATA, ScanPoint_t & MC, std::vector<ScanPointRef_t> BGs, Selection_t & SEL, int i, std::string var, int Nbin, double xmin, double xmax) {
-  std::string cut = SEL.common_cut + " && " +  SEL[i].cut;
+  std::string cut = SEL.common_cut() + " && " +  SEL[i].cut;
   //std::string cut = "";
   auto hs = new THStack("hs","");
   auto h = fold_histogram(BGs, var, cut, "HIS", Nbin,xmin,xmax);
@@ -3837,7 +3765,7 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGN
   std::vector< std::vector<TH1*> > Hbgs(BGs.size()); 
 
   for(auto & sel : SEL ) { //loop over selection channels
-    std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+    std::string cut = SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
     //std::string cut = remove_some_cuts(var,SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
     std::cout << cut << std::endl;
     const bool SCALE = true;
@@ -3972,201 +3900,42 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGN
   return c;
 }
 
-TCanvas * unconstrain_par_and_draw(const ChannelSelection_t & sel, const  Scan_t & DATA, const Simulation_t & SIM, std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
-  //auto  c = new TCanvas(sel.root_title().c_str(), sel.root_title().c_str());
-  auto pars = split(vars,"&&");
-  std::string var(pars[0]);
-  //cout << var << endl;
-  auto c = get_new_tailed_canvas(sel.root_title2() + ":" + var);
-  gStyle->SetPalette(kOcean);
-  gStyle->SetOptStat(kFALSE);
-  auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
-  std::vector<TH1*> Hsig; //signal histogram for different selection channels
-  std::vector<TH1*> Hdata;
-  std::vector< std::vector<TH1*> > Hbgs(SIM.bgs.size()); 
-
-  {
-    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    if(extracut!="") extracut = "&&" + extracut;
-    std::string cut = remove_some_cuts(vars,sel.cut+extracut);
-    std::cout << cut << std::endl;
-    const bool SCALE = true;
-    const bool NOSCALE = false;
-
-    auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
-      return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
-    };
-
-    //select data
-    auto hdata = select(DATA);
-    Hdata.push_back(hdata);
-
-    //select signal monte carlo
-    auto hsig = select(SIM.signal,SCALE);
-    Hsig.push_back(hsig);
-
-    //select background monte carlo
-    for(size_t i=0;i!=SIM.bgs.size();++i) {
-      auto hbg = select(SIM.bgs[i],SCALE);
-      Hbgs[i].push_back(hbg);
-    }
-  }
-
-  auto lfold = [Nbin,xmin,xmax] (auto & hs) {
-    return fold(hs,Nbin,xmin,xmax);
-  };
-
-  TH1 * hsig = lfold(Hsig);
-  TH1 * hdata = lfold(Hdata);
-
-  std::vector<TH1*> hbgs(SIM.bgs.size());
-  for(size_t i=0;i!=SIM.bgs.size();++i) {
-    hbgs[i] = lfold(Hbgs[i]);
-    std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
-  };
-  TH1 * hbg = lfold(hbgs);
-  /*
-     double Nbg_mc = hbg->Integral();
-     static constexpr double Nbg_exp = 45.9828;
-     double scale_bg = Nbg_exp/Nbg_mc;
-     */
-  double scale_bg = bg_scale >= 0 ? bg_scale  :  1.0;
-  //if(bg_scale>0) scale_bg=bg_scale;
-
-  hbg->Scale(scale_bg);
-  for(auto & h : hbgs) h->Scale(scale_bg);
-
-  auto set_color = [](auto & o , int color) {
-    o->SetFillColor(color);
-    o->SetLineColor(color);
-    o->SetMarkerColor(color);
-  };
-
-  set_color(hsig,kRed);
-  set_color(hdata,kBlue);
-  set_color(hbg, kBlack);
-
-  //int col=kBlack;
-  int col=0;
-  std::vector palette{1,8,6,11,40,42,46,29};
-  for(auto & h :hbgs) {
-    //while(col==2 || col==4 || col == 3 || col == 10) ++col;
-    std::cout << "h " << h->GetName() << " color = " << palette[col] << " kRed = " << kRed << "  kBlue = " << kBlue << " kBlack= " << kBlack <<  std::endl;
-    set_color(h,palette[col]);
-    ++col;
-  }
-  for(auto & h :hbgs) {
-    hs->Add(h,"HIST");
-  }
-  //hs->Add(hbg,"HIST");
-
-  hsig->SetFillColor(kWhite);
-  hs->Add(hsig,"HIST");
-
-  hdata->Draw("E");
-  hdata->SetTitle((sel.root_title() + " : " + var).c_str());
-  hdata->GetXaxis()->SetTitle(var.c_str());
-  hs->Draw("same");
-  hdata->SetLineWidth(3);
-  hdata->Draw("same E");
-
-  auto lbl = new TLegend(0.8,0.6,1.0,1.0);
-  //std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
-  {
-    lbl->AddEntry(hdata,"data","pl");
-    lbl->AddEntry(hsig,"MC signal+bg", "plf");
-    std::vector bg_leg_name = {"hadrons","Bhabha", "#mu#mu","#gamma#gamma","EEee","EE#mu#mu","EE#pi#pi","EEKK"};
-    for(size_t i = 0; i!=hbgs.size(); ++i) {
-      lbl->AddEntry(hbgs[i],bg_leg_name[i],"plf");
-    }
-  }
-
-  lbl->Draw();
-
-  //auto Ndata = hdata->GetEntries();
-  auto get_integral = [Nbin](TH1 * h) -> ibn::valer<double> {
-    ibn::valer<double> N;
-    N.value = h->IntegralAndError(0,Nbin,N.error);
-    return N;
-  };
-  ibn::valer<double> Ndata  = get_integral(hdata);
-  ibn::valer<double> Nsig   = get_integral(hsig);
-  ibn::valer<double> Nbg    = get_integral(hbg);
-  ibn::valer<double> Nsum   = Nsig + Nbg;
-
-  //std::cout << "bg: " << Nbg << std::endl;
-  auto hsig_bg = fold({hsig, hbg},Nbin,xmin,xmax);
-  double prob_kolm_sig_bg = hdata->KolmogorovTest(hsig_bg);
-  //std::cout << "Kolmogorov test (sig+bg): " << prob_kolm_sig_bg << std::endl;
-  double prob_kolm_sig = hdata->KolmogorovTest(hsig);
-  //std::cout << "Kolmogorov test (sig): " << prob_kolm_sig << std::endl;
-  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"UW");
-  //std::cout << "Chi2 test (sig+bg): " << prob_chi2_sig_bg << std::endl;
-  double prob_chi2_sig = hdata->Chi2Test(hsig,"UW");
-  //std::cout << "Chi2 test (sig): " << prob_chi2_sig << std::endl;
-  //
-  std::cout << "My chi2 test" << std::endl;
-  auto [chi2_my_sig_bg, prob_my_sig_bg] = my_chi2_histogram_test(hsig_bg,hdata);
-  auto [chi2_my_sig, prob_my_sig] = my_chi2_histogram_test(hsig,hdata);
-  std::cout << "chi2_my_sig_bg = " << chi2_my_sig_bg << std::endl;
-  std::cout << "chi2_my_sig = " << chi2_my_sig << std::endl;
-
-  std::cout << "====================  Number of events ===================  " << std::endl;
-  std::cout << std::setw(20) <<  "sample"  << std::setw(15) << "N" << std::endl;
-  std::cout << "----------------------------------------------------------  " << std::endl;
-  std::cout << std::setw(20) <<  "signal"      << std::setw(15) << Nsig     <<  " ± " << Nsig.error  << std::endl;
-  std::cout << std::setw(20) <<  "background"  << std::setw(15) << Nbg      <<  " ± " << Nbg.error   << std::endl;
-  std::cout << std::setw(20) <<  "sig + bg"    << std::setw(15) << Nsum     <<  " ± " << Nsum.error  << std::endl;
-  std::cout << std::setw(20) <<  "data"        << std::setw(15) << Ndata    <<  " ± " << Ndata.error << std::endl;
-  std::cout << "====================  Probability Test ===================  " << std::endl;
-  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           <<  std::setw(15) << "My chi2" << std::endl;
-  std::cout << "----------------------------------------------------------  " << std::endl;
-  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   <<  std::setw(15) << prob_my_sig_bg << std::endl;
-  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      <<  std::setw(15) << prob_my_sig    << std::endl;
-  std::cout << "----------------------------------------------------------  " << std::endl;
-  gSystem->ProcessEvents();
-  return c;
-}
-
-void unconstrain_par_and_draw_per_channel(const Selection_t & SEL, const  Scan_t & DATA, const Simulation_t & SIM, std::string var, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
-  for(const auto & sel : SEL) {
-    unconstrain_par_and_draw(sel,DATA,SIM,var,Nbin,xmin,xmax,extracut, bg_scale);
-  }
-}
-
-TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA, const Simulation_t & SIM, std::string var, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t & MC, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
   auto  c = new TCanvas;
   gStyle->SetPalette(kOcean);
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
   std::vector<TH1*> Hsig; //signal histogram for different selection channels
   std::vector<TH1*> Hdata;
-  std::vector< std::vector<TH1*> > Hbgs(SIM.bgs.size()); 
+  auto & SIGNAL = MC.signal;
+  auto & BGs = MC.bgs;
+  std::vector< std::vector<TH1*> > Hbgs(BGs.size()); 
 
-  for(auto & sel : SEL ) { //loop over selection channels
-    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    std::string cut = remove_some_cuts(var,SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
-    std::cout << cut << std::endl;
-    const bool SCALE = true;
-    const bool NOSCALE = false;
+  auto sel = [&]( const Selection_t & sel ) {
+      std::string cut = sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+      std::cout << cut << std::endl;
+      const bool SCALE = true;
+      const bool NOSCALE = false;
 
-    auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
-      return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
-    };
+      auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
+        return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
+      };
 
-    //select data
-    auto hdata = select(DATA);
-    Hdata.push_back(hdata);
+      //select data
+      auto hdata = select(DATA);
+      Hdata.push_back(hdata);
 
-    //select signal monte carlo
-    auto hsig = select(SIM.signal,SCALE);
-    Hsig.push_back(hsig);
+      //select signal monte carlo
+      auto hsig = select(SIGNAL,SCALE);
+      Hsig.push_back(hsig);
 
-    //select background monte carlo
-    for(size_t i=0;i!=SIM.bgs.size();++i) {
-      auto hbg = select(SIM.bgs[i],SCALE);
-      Hbgs[i].push_back(hbg);
-    }
-  }
+      //select background monte carlo
+      for(size_t i=0;i!=BGs.size();++i) {
+        auto hbg = select(BGs[i],SCALE);
+        Hbgs[i].push_back(hbg);
+      }
+  };
+  if(SEL.empty()) sel(SEL);
+  else for(auto & s : SEL ) sel(s);
 
   auto lfold = [Nbin,xmin,xmax] (auto & hs) {
     return fold(hs,Nbin,xmin,xmax);
@@ -4175,22 +3944,19 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
   TH1 * hsig = lfold(Hsig);
   TH1 * hdata = lfold(Hdata);
 
-  std::vector<TH1*> hbgs(SIM.bgs.size());
-  for(size_t i=0;i!=SIM.bgs.size();++i) {
+  std::vector<TH1*> hbgs(BGs.size());
+  for(size_t i=0;i!=BGs.size();++i) {
     hbgs[i] = lfold(Hbgs[i]);
     std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
   };
   TH1 * hbg = lfold(hbgs);
-  /*
   double Nbg_mc = hbg->Integral();
   static constexpr double Nbg_exp = 45.9828;
   double scale_bg = Nbg_exp/Nbg_mc;
-  */
-  double scale_bg = bg_scale >= 0 ? bg_scale  :  1.0;
-  //if(bg_scale>0) scale_bg=bg_scale;
-
-  hbg->Scale(scale_bg);
-  for(auto & h : hbgs) h->Scale(scale_bg);
+  if(!SEL.empty()){
+    hbg->Scale(scale_bg);
+    for(auto & h : hbgs) h->Scale(scale_bg);
+  }
 
   auto set_color = [](auto & o , int color) {
     o->SetFillColor(color);
@@ -4283,11 +4049,351 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
   return c;
 }
 
+//TCanvas * unconstrain_par_and_draw(const ChannelSelection_t & sel, const  Scan_t & DATA, const Simulation_t & SIM, std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+//  //auto  c = new TCanvas(sel.root_title().c_str(), sel.root_title().c_str());
+//  auto pars = split(vars,"&&");
+//  std::string var(pars[0]);
+//  //cout << var << endl;
+//  auto c = get_new_tailed_canvas(sel.root_title2() + ":" + var);
+//  gStyle->SetPalette(kOcean);
+//  gStyle->SetOptStat(kFALSE);
+//  auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
+//  std::vector<TH1*> Hsig; //signal histogram for different selection channels
+//  std::vector<TH1*> Hdata;
+//  std::vector< std::vector<TH1*> > Hbgs(SIM.bgs.size()); 
+//
+//  {
+//    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+//    if(extracut!="") extracut = "&&" + extracut;
+//    std::string cut = remove_some_cuts(vars,sel.cut+extracut);
+//    std::cout << cut << std::endl;
+//    const bool SCALE = true;
+//    const bool NOSCALE = false;
+//
+//    auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
+//      return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
+//    };
+//
+//    //select data
+//    auto hdata = select(DATA);
+//    Hdata.push_back(hdata);
+//
+//    //select signal monte carlo
+//    auto hsig = select(SIM.signal,SCALE);
+//    Hsig.push_back(hsig);
+//
+//    //select background monte carlo
+//    for(size_t i=0;i!=SIM.bgs.size();++i) {
+//      auto hbg = select(SIM.bgs[i],SCALE);
+//      Hbgs[i].push_back(hbg);
+//    }
+//  }
+//
+//  auto lfold = [Nbin,xmin,xmax] (auto & hs) {
+//    return fold(hs,Nbin,xmin,xmax);
+//  };
+//
+//  TH1 * hsig = lfold(Hsig);
+//  TH1 * hdata = lfold(Hdata);
+//
+//  std::vector<TH1*> hbgs(SIM.bgs.size());
+//  for(size_t i=0;i!=SIM.bgs.size();++i) {
+//    hbgs[i] = lfold(Hbgs[i]);
+//    std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
+//  };
+//  TH1 * hbg = lfold(hbgs);
+//  /*
+//     double Nbg_mc = hbg->Integral();
+//     static constexpr double Nbg_exp = 45.9828;
+//     double scale_bg = Nbg_exp/Nbg_mc;
+//     */
+//  double scale_bg = bg_scale >= 0 ? bg_scale  :  1.0;
+//  //if(bg_scale>0) scale_bg=bg_scale;
+//
+//  hbg->Scale(scale_bg);
+//  for(auto & h : hbgs) h->Scale(scale_bg);
+//
+//  auto set_color = [](auto & o , int color) {
+//    o->SetFillColor(color);
+//    o->SetLineColor(color);
+//    o->SetMarkerColor(color);
+//  };
+//
+//  set_color(hsig,kRed);
+//  set_color(hdata,kBlue);
+//  set_color(hbg, kBlack);
+//
+//  //int col=kBlack;
+//  int col=0;
+//  std::vector palette{1,8,6,11,40,42,46,29};
+//  for(auto & h :hbgs) {
+//    //while(col==2 || col==4 || col == 3 || col == 10) ++col;
+//    std::cout << "h " << h->GetName() << " color = " << palette[col] << " kRed = " << kRed << "  kBlue = " << kBlue << " kBlack= " << kBlack <<  std::endl;
+//    set_color(h,palette[col]);
+//    ++col;
+//  }
+//  for(auto & h :hbgs) {
+//    hs->Add(h,"HIST");
+//  }
+//  //hs->Add(hbg,"HIST");
+//
+//  hsig->SetFillColor(kWhite);
+//  hs->Add(hsig,"HIST");
+//
+//  hdata->Draw("E");
+//  hdata->SetTitle((sel.root_title() + " : " + var).c_str());
+//  hdata->GetXaxis()->SetTitle(var.c_str());
+//  hs->Draw("same");
+//  hdata->SetLineWidth(3);
+//  hdata->Draw("same E");
+//
+//  auto lbl = new TLegend(0.8,0.6,1.0,1.0);
+//  //std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
+//  {
+//    lbl->AddEntry(hdata,"data","pl");
+//    lbl->AddEntry(hsig,"MC signal+bg", "plf");
+//    std::vector bg_leg_name = {"hadrons","Bhabha", "#mu#mu","#gamma#gamma","EEee","EE#mu#mu","EE#pi#pi","EEKK"};
+//    for(size_t i = 0; i!=hbgs.size(); ++i) {
+//      lbl->AddEntry(hbgs[i],bg_leg_name[i],"plf");
+//    }
+//  }
+//
+//  lbl->Draw();
+//
+//  //auto Ndata = hdata->GetEntries();
+//  auto get_integral = [Nbin](TH1 * h) -> ibn::valer<double> {
+//    ibn::valer<double> N;
+//    N.value = h->IntegralAndError(0,Nbin,N.error);
+//    return N;
+//  };
+//  ibn::valer<double> Ndata  = get_integral(hdata);
+//  ibn::valer<double> Nsig   = get_integral(hsig);
+//  ibn::valer<double> Nbg    = get_integral(hbg);
+//  ibn::valer<double> Nsum   = Nsig + Nbg;
+//
+//  //std::cout << "bg: " << Nbg << std::endl;
+//  auto hsig_bg = fold({hsig, hbg},Nbin,xmin,xmax);
+//  double prob_kolm_sig_bg = hdata->KolmogorovTest(hsig_bg);
+//  //std::cout << "Kolmogorov test (sig+bg): " << prob_kolm_sig_bg << std::endl;
+//  double prob_kolm_sig = hdata->KolmogorovTest(hsig);
+//  //std::cout << "Kolmogorov test (sig): " << prob_kolm_sig << std::endl;
+//  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"UW");
+//  //std::cout << "Chi2 test (sig+bg): " << prob_chi2_sig_bg << std::endl;
+//  double prob_chi2_sig = hdata->Chi2Test(hsig,"UW");
+//  //std::cout << "Chi2 test (sig): " << prob_chi2_sig << std::endl;
+//  //
+//  std::cout << "My chi2 test" << std::endl;
+//  auto [chi2_my_sig_bg, prob_my_sig_bg] = my_chi2_histogram_test(hsig_bg,hdata);
+//  auto [chi2_my_sig, prob_my_sig] = my_chi2_histogram_test(hsig,hdata);
+//  std::cout << "chi2_my_sig_bg = " << chi2_my_sig_bg << std::endl;
+//  std::cout << "chi2_my_sig = " << chi2_my_sig << std::endl;
+//
+//  std::cout << "====================  Number of events ===================  " << std::endl;
+//  std::cout << std::setw(20) <<  "sample"  << std::setw(15) << "N" << std::endl;
+//  std::cout << "----------------------------------------------------------  " << std::endl;
+//  std::cout << std::setw(20) <<  "signal"      << std::setw(15) << Nsig     <<  " ± " << Nsig.error  << std::endl;
+//  std::cout << std::setw(20) <<  "background"  << std::setw(15) << Nbg      <<  " ± " << Nbg.error   << std::endl;
+//  std::cout << std::setw(20) <<  "sig + bg"    << std::setw(15) << Nsum     <<  " ± " << Nsum.error  << std::endl;
+//  std::cout << std::setw(20) <<  "data"        << std::setw(15) << Ndata    <<  " ± " << Ndata.error << std::endl;
+//  std::cout << "====================  Probability Test ===================  " << std::endl;
+//  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           <<  std::setw(15) << "My chi2" << std::endl;
+//  std::cout << "----------------------------------------------------------  " << std::endl;
+//  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   <<  std::setw(15) << prob_my_sig_bg << std::endl;
+//  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      <<  std::setw(15) << prob_my_sig    << std::endl;
+//  std::cout << "----------------------------------------------------------  " << std::endl;
+//  gSystem->ProcessEvents();
+//  return c;
+//}
+//
+//void unconstrain_par_and_draw_per_channel(const Selection_t & SEL, const  Scan_t & DATA, const Simulation_t & SIM, std::string var, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+//  for(const auto & sel : SEL) {
+//    unconstrain_par_and_draw(sel,DATA,SIM,var,Nbin,xmin,xmax,extracut, bg_scale);
+//  }
+//}
+
+TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA, const Simulation_t & SIM, const std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+  gStyle->Reset("Pub");
+  //auto  c = new TCanvas;
+  const std::string var= std::string(split(vars,"&&")[0]);
+  auto  c = get_new_tailed_canvas(var);
+  gStyle->SetPalette(kOcean);
+  auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
+  std::vector<TH1*> Hsig; //signal histogram for different selection channels
+  std::vector<TH1*> Hdata;
+  std::vector< std::vector<TH1*> > Hbgs(SIM.bgs.size()); 
+
+  auto sel = [&](const Selection_t & sel) {
+    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+    //std::string cut = remove_some_cuts(var,SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
+    std::string cut = remove_some_cuts(vars,sel.cut) + (extracut == "" ? "" :  (" && " + extracut));
+    std::cout << cut << std::endl;
+    const bool SCALE = true;
+    const bool NOSCALE = false;
+
+    auto select = [&var,&cut,&Nbin,&xmin, &xmax] (auto &  sample , bool is_scale=false) {
+      return select_histogram(sample,var,cut, Nbin,xmin,xmax, is_scale);
+    };
+
+    //select data
+    auto hdata = select(DATA);
+    Hdata.push_back(hdata);
+
+    //select signal monte carlo
+    auto hsig = select(SIM.signal,SCALE);
+    Hsig.push_back(hsig);
+
+    //select background monte carlo
+    for(size_t i=0;i!=SIM.bgs.size();++i) {
+      auto hbg = select(SIM.bgs[i],SCALE);
+      Hbgs[i].push_back(hbg);
+    }
+  };
+
+  if(SEL.empty()) sel(SEL);
+  else {
+    for(auto & s : SEL ) { sel(s); }
+  }
+
+  auto lfold = [Nbin,xmin,xmax] (auto & hs) {
+    return fold(hs,Nbin,xmin,xmax);
+  };
+
+  TH1 * hsig = lfold(Hsig);
+  TH1 * hdata = lfold(Hdata);
+
+  std::vector<TH1*> hbgs(SIM.bgs.size());
+  for(size_t i=0;i!=SIM.bgs.size();++i) {
+    hbgs[i] = lfold(Hbgs[i]);
+    std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
+  };
+  TH1 * hbg = lfold(hbgs);
+  /*
+  double Nbg_mc = hbg->Integral();
+  static constexpr double Nbg_exp = 45.9828;
+  double scale_bg = Nbg_exp/Nbg_mc;
+  */
+  double scale_bg = bg_scale >= 0 ? bg_scale  :  1.0;
+  //if(bg_scale>0) scale_bg=bg_scale;
+
+  hbg->Scale(scale_bg);
+  for(auto & h : hbgs) h->Scale(scale_bg);
+
+  auto set_color = [](auto & o , int color) {
+    o->SetFillColor(color);
+    o->SetLineColor(color);
+    o->SetMarkerColor(color);
+  };
+
+  set_color(hsig,kRed);
+  set_color(hdata,kBlue);
+  set_color(hbg, kBlack);
+
+  //int col=kBlack;
+  int col=0;
+  std::vector palette{1,8,6,11,40,42,46,29};
+  for(auto & h :hbgs) {
+    //while(col==2 || col==4 || col == 3 || col == 10) ++col;
+    std::cout << "h " << h->GetName() << " color = " << palette[col] << " kRed = " << kRed << "  kBlue = " << kBlue << " kBlack= " << kBlack <<  std::endl;
+    set_color(h,palette[col]);
+    ++col;
+  }
+  for(auto & h :hbgs) {
+    hs->Add(h,"HIST");
+  }
+  //hs->Add(hbg,"HIST");
+
+  hsig->SetFillColor(kWhite);
+  hs->Add(hsig,"HIST");
+
+  hdata->Draw("E");
+  hdata->SetTitle(var.c_str());
+  hdata->GetXaxis()->SetTitle(var.c_str());
+  hs->Draw("same");
+  hdata->SetLineWidth(3);
+  hdata->Draw("same E");
+
+  auto lbl = new TLegend(0.8,0.5,1.0,1.0);
+  //std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
+  {
+    lbl->AddEntry(hdata,"data","pl");
+    lbl->AddEntry(hsig,"MC signal+bg", "plf");
+    std::vector bg_leg_name = {"hadrons","Bhabha", "#mu#mu","#gamma#gamma","EEee","EE#mu#mu","EE#pi#pi","EEKK"};
+    for(size_t i = 0; i!=hbgs.size(); ++i) {
+      lbl->AddEntry(hbgs[i],bg_leg_name[i],"plf");
+    }
+  }
+
+  lbl->Draw();
+
+  //auto Ndata = hdata->GetEntries();
+  auto get_integral = [Nbin](TH1 * h) -> ibn::valer<double> {
+    ibn::valer<double> N;
+    N.value = h->IntegralAndError(0,Nbin,N.error);
+    return N;
+  };
+  ibn::valer<double> Ndata  = get_integral(hdata);
+  ibn::valer<double> Nsig   = get_integral(hsig);
+  ibn::valer<double> Nbg    = get_integral(hbg);
+  ibn::valer<double> Nsum   = Nsig + Nbg;
+
+  //std::cout << "bg: " << Nbg << std::endl;
+  auto hsig_bg = fold({hsig, hbg},Nbin,xmin,xmax);
+  double prob_kolm_sig_bg = hdata->KolmogorovTest(hsig_bg);
+  //std::cout << "Kolmogorov test (sig+bg): " << prob_kolm_sig_bg << std::endl;
+  double prob_kolm_sig = hdata->KolmogorovTest(hsig);
+  //std::cout << "Kolmogorov test (sig): " << prob_kolm_sig << std::endl;
+  double prob_chi2_sig_bg = hdata->Chi2Test(hsig_bg,"UW");
+  //std::cout << "Chi2 test (sig+bg): " << prob_chi2_sig_bg << std::endl;
+  double prob_chi2_sig = hdata->Chi2Test(hsig,"UW");
+  //std::cout << "Chi2 test (sig): " << prob_chi2_sig << std::endl;
+  //
+  std::cout << "My chi2 test" << std::endl;
+  auto [chi2_my_sig_bg, prob_my_sig_bg] = my_chi2_histogram_test(hsig_bg,hdata);
+  auto [chi2_my_sig, prob_my_sig] = my_chi2_histogram_test(hsig,hdata);
+  std::cout << "chi2_my_sig_bg = " << chi2_my_sig_bg << std::endl;
+  std::cout << "chi2_my_sig = " << chi2_my_sig << std::endl;
+
+  std::cout << "====================  Number of events ===================  " << std::endl;
+  std::cout << std::setw(20) <<  "sample"  << std::setw(15) << "N" << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
+  std::cout << std::setw(20) <<  "signal"      << std::setw(15) << Nsig     <<  " ± " << Nsig.error  << std::endl;
+  std::cout << std::setw(20) <<  "background"  << std::setw(15) << Nbg      <<  " ± " << Nbg.error   << std::endl;
+  std::cout << std::setw(20) <<  "sig + bg"    << std::setw(15) << Nsum     <<  " ± " << Nsum.error  << std::endl;
+  std::cout << std::setw(20) <<  "data"        << std::setw(15) << Ndata    <<  " ± " << Ndata.error << std::endl;
+  std::cout << "====================  Probability Test ===================  " << std::endl;
+  std::cout << std::setw(20) << " sample "             << std::setw(15) << " Kolmogorov "     << std::setw(15)   <<   " Chi2 "           <<  std::setw(15) << "My chi2" << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
+  std::cout << std::setw(20) << "signal + background"  << std::setw(15) << prob_kolm_sig_bg   << std::setw(15)   <<   prob_chi2_sig_bg   <<  std::setw(15) << prob_my_sig_bg << std::endl;
+  std::cout << std::setw(20) << "signal"               << std::setw(15) << prob_kolm_sig      << std::setw(15)   <<   prob_chi2_sig      <<  std::setw(15) << prob_my_sig    << std::endl;
+  std::cout << "----------------------------------------------------------  " << std::endl;
+  return c;
+}
+
 void draw_all(Selection_t & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=80) {
   gStyle->Reset("Pub");
   auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
     std::cout << "Draw " << var << std::endl;
     auto c = draw(SEL,DATA,MC,BGs,var, Nbin, xmin, xmax, extracut);
+    gSystem->ProcessEvents();
+    c->SetTitle(var.c_str());
+  };
+  compare("ptem"           , Nbin , 0  , 1.2);
+  compare("p"              , Nbin , 0.1   , 1.1);
+  compare("pt"             , Nbin , 0.15     , 1.1);
+  compare("tof"            , Nbin , 2.2     , 5.5);
+  compare("cos(theta)"     , Nbin , -0.9    , 0.9);
+  compare("cos_theta_mis2" , Nbin , -1    , 1);
+  compare("Mpi0"           , Nbin , 0.12 , 0.141       , "Npi0==1");
+  compare("Mrho[0]"        , Nbin , 0.5   , 1.1         , "PI0 && Npi0==1");
+  compare("acop"           , Nbin , 0     , 3.1415 , "");
+  compare("acol"           , Nbin , 0     , 3.1415 , "");
+};
+
+void unconstrain_draw_all(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t & MC, int Nbin=80) {
+  gStyle->Reset("Pub");
+  auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
+    std::cout << "Draw " << var << std::endl;
+    auto c = unconstrain_par_and_draw(SEL,DATA,MC,var, Nbin, xmin, xmax, extracut);
     gSystem->ProcessEvents();
     c->SetTitle(var.c_str());
   };
@@ -4539,7 +4645,7 @@ std::tuple<TGraph*, double, double, double>  scan_param(const Scan_t &DATA, cons
 void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL, int i, std::string par, std::string_view parfmt, int Nbin, double min, double max) {
   gStyle->Reset("Pub");
   auto c = new TCanvas(SEL[i].root_title().c_str(), SEL[i].root_title().c_str());
-  std::string initial_cut =  SEL.common_cut;
+  std::string initial_cut =  SEL.common_cut();
   if(SEL[i].cut!="") initial_cut + "&&" + SEL[i].cut;
   std::string cut =  remove_some_cuts(par, initial_cut);
   //}
@@ -4551,7 +4657,7 @@ void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL, int i, std::string
   //auto gptem = find_optimal_cut(SIG,BGs, SEL.common_cut + " && Nn==0 && eu && acop>0.1","ptem>%.3f", 0, 0.3,0.01); 
   //for(size_t channel = 0; channel<SEL.size(); ++i) {
   auto c = new TCanvas(SEL[i].root_title().c_str(), SEL[i].root_title().c_str());
-  std::string initial_cut =  SEL.common_cut;
+  std::string initial_cut =  SEL.common_cut();
   if(SEL[i].cut!="") initial_cut += "&&" + SEL[i].cut;
   std::string cut =  remove_some_cuts(par, initial_cut);
   std::cout << SEL[i].title << "  : " << par <<  "  cut = " <<  cut << std::endl;
@@ -4574,7 +4680,7 @@ void scan_param(const Scan_t & DATA, const Scan_t & SIG, Selection_t & SEL, int 
   gStyle->Reset("Pub");
   //auto c = new TCanvas(SEL[i].root_title.c_str(), SEL[i].root_title.c_str());
   new TCanvas;
-  std::string initial_cut =  SEL.common_cut;
+  std::string initial_cut =  SEL.common_cut();
   std::cout << "SEL[i].cut = " << SEL[i].cut << std::endl;
   std::regex re(R"(\s*)");
   std::smatch sm;
@@ -4594,7 +4700,7 @@ TCanvas * scan_param(const Scan_t & DATA, const Scan_t & SIG, Selection_t & SEL,
   auto c = new TCanvas(("scan_param_"+par).c_str(), ("Scan parameter + " + par ).c_str());
   TMultiGraph * mg = new TMultiGraph;
   std::cout << "=========== Scaning " << par << "  ======================== " << std::endl;
-  std::cout << "common_cut = " << SEL.common_cut << std::endl;
+  std::cout << "common_cut = " << SEL.common_cut() << std::endl;
   TLegend * l = new TLegend(0.6,0.8,1.0,1.0);
   l->SetHeader(par.c_str());
   for(size_t i = 0;i<SEL.size(); ++i) {
@@ -4637,7 +4743,7 @@ TCanvas * unconstrain_par_and_draw2d(const Selection_t & SEL, const std::vector<
   his2ds_t hsels;
   for(auto & sel : SEL ) { //loop over selection channels
     //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    std::string cut = remove_some_cuts(var,SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
+    std::string cut = remove_some_cuts(var,SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
     std::cout << cut << std::endl;
     his2ds_t hbgs;
     for(auto & scan : bgs ) {
@@ -4652,4 +4758,97 @@ TCanvas * unconstrain_par_and_draw2d(const Selection_t & SEL, const std::vector<
   auto h = fold(hsels);
   h->Draw("colz");
   return c;
+}
+
+
+TCanvas * draw_efficiency(const std::vector<PointSelectionResult_t> & SR) {
+  auto * c = get_new_tailed_canvas("efficiency");
+  TGraphErrors * g = new TGraphErrors;
+  int i=0;
+  for(auto & sp : SR ) {
+    std::cout << sp.energy.value << " " << sp.tt.efficiency.value << std::endl;
+    g->SetPoint(i, sp.energy.value, sp.tt.efficiency.value);
+    g->SetPointError(i, sp.energy.error, sp.tt.efficiency.error);
+    ++i;
+  }
+  g->Draw("a*");
+  return c;
+}
+
+
+void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
+  std::map<std::string, Scan_t> R;
+  R["base"] = measure_efficiency(SCAN,initial_cut);
+  auto proceed = [&](std::string s) {
+    R[s] = measure_efficiency(SCAN, remove_some_cuts(s, initial_cut));
+  };
+  proceed("p");
+  proceed("Nc");
+  proceed("theta");
+  proceed("pt");
+  proceed("cos_theta_mis2");
+  proceed("E");
+  std::map<std::string, TGraphErrors *> mgraph;
+  TMultiGraph * mg0 = new TMultiGraph;
+  TMultiGraph * mg = new TMultiGraph;
+  int color=0;
+  int marker=20;
+  for(auto & [par, sr] : R) {
+    auto g = new TGraphErrors;
+    auto g0 = new TGraphErrors;
+    ++color;
+    ++marker;
+    g->SetLineWidth(3);
+    g->SetMarkerSize(2);
+    g->SetLineColor(color);
+    g->SetMarkerColor(color);
+    g->SetMarkerStyle(marker);
+
+    g0->SetLineWidth(3);
+    g0->SetMarkerSize(2);
+    g0->SetLineColor(color);
+    g0->SetMarkerColor(color);
+    g0->SetMarkerStyle(marker);
+    int i=0;
+    for(auto & sp : sr) {
+      g->SetPoint(i, sp.energy.value, sp.tt.effcor.value);
+      g->SetPointError(i, sp.energy.error, sp.tt.effcor.error);
+      g0->SetPoint(i, sp.energy.value, sp.tt.efficiency.value);
+      g0->SetPointError(i, sp.energy.error, sp.tt.efficiency.error);
+      ++i;
+    }
+    mgraph[par]=g;
+    mg->Add(g,"lp");
+    mg0->Add(g0,"lp");
+  }
+  auto c_eff = get_new_tailed_canvas("efficiency");
+  mg0->Draw("a");
+  auto c_cor = get_new_tailed_canvas("effcor");
+  mg->Draw("a");
+  auto c_dif = get_new_tailed_canvas("effcor variation");
+  TMultiGraph * mg2 = new TMultiGraph;
+  auto & base = R["base"];
+  color=0;
+  marker=20;
+  for(auto & [par, sr] : R) {
+    auto g = new TGraphErrors;
+    ++color;
+    ++marker;
+    g->SetLineWidth(2);
+    g->SetMarkerSize(3);
+    g->SetLineColor(color);
+    g->SetMarkerColor(color);
+    g->SetMarkerStyle(marker);
+    int i=0;
+    for(auto & sp : sr) {
+      g->SetPoint(i, sp.energy.value, sp.tt.effcor.value/base[i].tt.effcor.value);
+      g->SetPointError(i, sp.energy.error, sp.tt.effcor.value/base[i].tt.effcor.value * hypot(base[i].tt.effcor.error/ base[i].tt.effcor.value, sp.tt.effcor.error/sp.tt.effcor.value));
+      ++i;
+    }
+    mgraph[par]=g;
+    mg2->Add(g,"lp");
+  }
+  mg2->Draw("a");
+
+
 }
