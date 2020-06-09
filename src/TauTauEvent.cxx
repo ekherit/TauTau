@@ -135,7 +135,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   ngood_charged_track = Tc.size();
   ngood_neutral_track = Tn.size(); 
 
-  std::cout << " Before PID.init() " << std::endl;
+  //std::cout << " Before PID.init() " << std::endl;
   Pid.init();
 
   std::vector<HepLorentzVector> Pc = GetMdcLorentzVector(Tc); //lorentz vector for charged tracks (electron hypoteza)
@@ -145,26 +145,26 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   Hep3Vector P3sum      = GetTotalMomentum(Pc);
   Hep3Vector Ptsum      = GetTotalTransverseMomentum(Pc);
 
-  std::cout << " Before PID fill  and fill(i,Tc[i])" << std::endl;
+  //std::cout << " Before PID fill  and fill(i,Tc[i])" << std::endl;
   for(int i=0;i<Tc.size();++i)
   {
-    std::cout << "    track " << i  << std::endl;
+    //std::cout << "    track " << i  << std::endl;
     Pid.fill(i, Tc[i]);
     fill(i, Tc[i]);
     if(eventHeader->runNumber() < 0)
     {
-      std::cout << "    McTruth " << i  << std::endl;
+      //std::cout << "    McTruth " << i  << std::endl;
       McTruth.fill(i,Tc[i],mcParticleCol);
     }
   }
-  std::cout << " Before M2, Entot, Emis, ptsum and ptem calculation" << std::endl;
+  //std::cout << " Before M2, Entot, Emis, ptsum and ptem calculation" << std::endl;
   M2    = Psum.mag2();
   Entot = GetTotalNeutralTracksEnergy(Tn);
   Emis  = cfg.CENTER_MASS_ENERGY - Psum.e() - Entot;
   ptsum = Ptsum.mag();
   ptem  = ptsum / Emis;
 
-  std::cout << " Before acop calculation" << std::endl;
+  //std::cout << " Before acop calculation" << std::endl;
   //acoplanarity and acolinearity for momentum with higher transverse momentum
   acop = Acoplanarity(Tc[0], Tc[1]);
   acol = Acolinearity(Tc[0], Tc[1]);
@@ -177,7 +177,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   lambda2 = V[1];
   lambda3 = V[2];
 
-  std::cout << "Before pi0 pairing" << std::endl;
+  //std::cout << "Before pi0 pairing" << std::endl;
   //if (Tgn.size() % 2 == 0) {
   if (Pn.size() >= 2) {
     //find best pi0 combination
@@ -191,7 +191,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     //loop over all combinations
     comb_list_t::iterator best_comb=pi0_cmb_list.begin();
     double chi2_mass=1e100;
-    std::cout << "Before making all combination" << std::endl;
+    //std::cout << "Before making all combination" << std::endl;
     for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it) {
       double chi2=0;
       for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair) {
@@ -207,7 +207,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     }
     npi0 = Pn.size()/2;
     Nrho = npi0*Tc.size();
-    std::cout << "Find good pi0" << std::endl;
+    //std::cout << "Find good pi0" << std::endl;
     if(pi0_cmb_list.size()!=0) {
       bool has_good_pi0 = false;
       int idx=0;
@@ -225,7 +225,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
       }
       select &= has_good_pi0; //supress some events completely without pi0
     }
-    std::cout << "Before accesing to track params" << std::endl;
+    //std::cout << "Before accesing to track params" << std::endl;
     select =  select && ( cfg.MIN_PTEM < ptem  && ptem   < cfg.MAX_PTEM); //ptem in (-1.5, 1.5)
     for(int i=0;i<Tc.size();++i) {
       select = select && ( cfg.MIN_MOMENTUM             < T.p[i]      && T.p[i]      < cfg.MAX_MOMENTUM);
