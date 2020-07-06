@@ -21,7 +21,7 @@
 #include "sys.C"
 #include <map>
 
-std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity";
+std::string TAUFIT = "taufit --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity --free-effcor";
 
 //const char * runtable_name = "../TauTau/share/scan_points_ems3_privalov_lum.txt";
 //const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
@@ -38,6 +38,7 @@ auto DATA        = read_data("data", RUNTABLE);
 
 //Monte Carlo simulation of the signal
 auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
+//auto SIGNAL          = read_mc("mc/signal_sys", RUNTABLE, N0MC);
 
 //background GALUGA
 std::map<std::string, Scan_t> GALUGA =
@@ -64,12 +65,13 @@ Simulation_t MC = { SIGNAL, BGs };
 
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
 std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.7 && Ep[1]>0.7";
+std::string LOCAL_GG_SEL = "";
 
 //particla identification configuration
 std::vector<ParticleID_t> PID = 
 {
   {
-    {"e", {""}, 
+    {"e", {}, 
       { 
         restrict("Ep",         0.8,  1.1), 
         restrict("chi2_dedx",   0 ,  3.0),  
@@ -110,6 +112,13 @@ std::vector<ParticleID_t> PID =
       { 
         restrict("Mrho", 0.6,1.0),
       }}, 
+
+      {"X", { "chi2_dedx_e[#]>3" 
+      //{"X", { "!e#"
+          },
+      { 
+        restrict("Ep",           0, 0.7), 
+      }},
   }
 };
 
@@ -210,44 +219,55 @@ Selection_t SEL8 =
   "SEL8", //selection name
   //common cuts
   "Nc==2"
-  "&& p[0] < 1.05 && p[1] < 1.05"
-  "&& E[0]>0.025 && E[1]>0.025"
+  "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& E[0]>0.025 && E[1]>0.025"
   "&& pt[0]>0.2 && pt[1]>0.2"
   "&& abs(cos(theta[0]))<0.8"
   "&& abs(cos(theta[1]))<0.8"
-  //"&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.90 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   , 
   PID,
   { //kinematic selection for different channel
-/*  0 */ {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem && acop>0.1"},
-/*  1 */ {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem && acop>0.1"},
+/*  0 */ {"eμ",  "Nn==0 && eu  && ptem>0.15*k_ptem"},
+/*  1 */ {"eπ",  "Nn==0 && epi && ptem>0.15*k_ptem"},
 /*  2 */ {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8 && acop>0.1"},
 /*  3 */ {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
 /*  4 */ {"μρ",  "Nn==2 && Npi0 == 1 && urho && ptem>0.25*k_ptem && acop>0.1"},
 /*  5 */ {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
-/*  6 */ {"μμ",  "Nn==0 && uu && ptem>0.25*k_ptem"},
+/*  6 */ {"μμ",  "Nn==0 && uu && ptem>0.2*k_ptem"},
 /*  7 */ {"ππ",  "Nn==0 && pipi && ptem>0.15*k_ptem &&  1.7 < Emis && Emis < 1.95"},
 /*  8 */ {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8 && ptem>0.15*k_ptem"},
   },
 };
 
-Selection_t SEL_BASE =
+
+Selection_t SELTEST =
 {
-  "SEL8", //selection name
+  "SELTEST", //selection name
   //common cuts
   "Nc==2"
-  "&& p[0] < 1.05 && p[1] < 1.05"
-  "&& E[0]>0.025 && E[1]>0.025"
+  "&& p[0] < 1.1 && p[1] < 1.1"
   "&& pt[0]>0.2 && pt[1]>0.2"
-  "&& abs(cos(theta[0]))<0.8"
-  "&& abs(cos(theta[1]))<0.8"
-  //"&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
-  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.90 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
+  "&& barrel"
+  "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   , 
   PID,
   { //kinematic selection for different channel
-    /*  0 */ {"",  "Nn==0"},
+// {"eX",  "Nn==0 &&  eX   && ptem>0.21*(1+0.5*cos_theta_mis2^2)"},
+ {"eX",  "Nn==0 &&  eX   && ptem>0.23"},
+// {"eX",  "Nn==0 &&  eX   && ptem>0.15 && Enmax<0.001"},
+/*  0 */ //{"uX",  "Nn==0 &&  uX   && ptem>0.3 && Emis<2.2 && abs(cos_theta_mis2) < 0.6"},
+    //{"eu",  "Nn==0 &&  eu   && ptem>0.1*(1+0.5*cos_theta_mis2^2) "},
+//    {"eu",  "Nn==0 &&  eu   && ptem>0.15 "},
+//    {"eπ",  "Nn==0 &&  epi   && ptem>0.15"},
+//    {"eX*",  "Nn==0 && eX && !eu && !epi && ptem>0.25 && acol>0.05"},
+//     {"eρ",  "Nn==2 && Npi0 == 1 && erho &&  ptem>k_ptem*0.15 &&  abs(cos_theta_mis2)<0.8"},
+//         {"μρ",  "Nn==2 && Npi0 == 1 && urho && 1.4<Emis && Emis < 2.2"},
+//          {"μπ",  "Nn==0 && upi && ptem>0.25*k_ptem && acop>0.1"},
+//         {"ee",  "Nn==0 && ee && Emis>1.8 && ptem > k_ptem*0.34*(1+cos_theta_mis2^2) && acop>0.1"},
+//         {"uu",  "Nn==0 &&  uu  && ptem>0.18*(1+0.2*cos_theta_mis2^2)"}, 
+//         {"ππ","Nn==0 && pipi && ptem>0.18 && Emis>1.6 && Emis<2.0"},
+//         {"πρ",  "Nn==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8"},
   },
 };
 
@@ -275,11 +295,13 @@ Selection_t SEL_BASE =
 //  },
 //};
 
-
 auto & SEL = SEL8;
+std::vector<SelRef_t> SELS = {SEL8,SELTEST};
 
-void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="gg")
+//void doall(Selection_t & S=SEL, double kptem=1.0, Scan_t & D = DATA/* data */ , Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="gg")
+void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, double kptem=1.0,  Scan_t & M = SIGNAL/* signal Monte Carlo */, std::string name="sel" /* the name of do all */, std::string default_lum="gg")
 {
+  S.apply_common_cut();
   set_kptem(D,kptem); 
   measure_luminosity(D, BB, GG,1e6);
   auto result = select(D,S); 
@@ -308,9 +330,12 @@ void cmpall(Selection_t &S=SEL) {
 void select() 
 {
   BB_SEL = LOCAL_BB_SEL;
+  GG_SEL = LOCAL_GG_SEL;
   TAUFIT_STR = TAUFIT;
   double Kptem = 1.0;
-  SEL.apply_common_cut();
+  for(auto & S : SELS) {
+    S.get().apply_common_cut();
+  }
 
   std::vector<ScanRef_t> LUM_MCs = {BB,GG};
   std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
@@ -365,3 +390,175 @@ void parameter_example(Selection_t & S=SEL)
   fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut(),"NORM SAME");
 }
 
+
+
+TCanvas * draw_tt_ee_compare(std::string sig_cut, std::string bb_cut) {
+  return draw_tt_ee_compare(SIGNAL, BB, sig_cut, bb_cut);
+}
+
+TCanvas * draw_tt_gg_compare(std::string cut1, std::string cut2) {
+  return draw_tt_gg_compare(SIGNAL, GG, cut1, cut2);
+}
+
+TCanvas * draw_gg_ee_compare(std::string cut1, std::string cut2) {
+  return draw_gg_ee_compare(GG, BB, cut1, cut2);
+}
+
+
+void test_for_mixing(Scan_t & D, std::string extracut = "") {
+  TCanvas * c = new TCanvas;
+  c->Divide(2,2);
+  int i=0;
+  auto get_graph  = [&](std::string cut1, std::string cut2) {
+    TGraphErrors * g1  = new TGraphErrors;
+    int i=0;
+    for(auto & d : D) {
+      std::string cut = cut1;
+      std::string truth = cut2;
+      double N0  = d.tt.tree->GetEntries(cut.c_str());
+      double N1  =  d.tt.tree->GetEntries((cut+truth).c_str());
+      g1->SetPoint(i, d.energy.value, 100*N1/N0);
+      g1->SetPointError(i, d.energy.error, 100*N1/N0*sqrt(1.0/N1 + 1.0/N0));
+      ++i;
+    }
+    return g1;
+  };
+  gStyle->SetOptFit();
+
+  auto make_and_draw_graph = [&](std::string cut1, std::string cut2, int col=1, std::string gopt="a*") {
+    TGraphErrors * g1 = get_graph(cut1,cut2);
+    g1->SetMarkerColor(col);
+    g1->SetLineColor(col);
+    g1->Draw(gopt.c_str());
+    g1->GetXaxis()->SetTitle("W_{cm}, MeV");
+    g1->GetYaxis()->SetTitle("missid, %");
+    g1->Fit("pol1");
+  };
+
+
+  c->cd(1);
+  make_and_draw_graph("e0 && X1", " && pid[1] == -11", kBlack,"a*");
+  c->cd(2);
+  make_and_draw_graph("e1 && X0", " && pid[0] == 11", kRed, "*a");
+
+  c->cd(3);
+  make_and_draw_graph("e0 && X1", " && pid[0] != 11", kBlack,"a*");
+  c->cd(4);
+  make_and_draw_graph("e1 && X0", " && pid[1] != -11", kRed, "a*");
+
+}
+
+void count(Scan_t & D, std::string cut) {
+  long N = D[0].tt.tree->Draw("pid[0]:pid[1]", cut.c_str(),"goff");
+  double * pid0 = D[0].tt.tree->GetV1();
+  double * pid1 = D[0].tt.tree->GetV2();
+  std::map<std::string, long> m;
+  std::map<std::pair<int, int> , long> om;
+  std::set<std::pair<long, std::string>, std::greater<std::pair<long, std::string>> > sm;
+  std::set<std::pair<long, std::pair<int, int>>,  std::greater<std::pair<long, std::pair<int, int>>> > som;
+  for(int i=0;i<N;++i) {
+    if(pid0[i] == 11 && pid1[i]==-11) ++m["ee"];
+
+    if(pid0[i] == 11 && pid1[i]==-13) ++m["eu"];
+    if(pid0[i] == 13 && pid1[i]==-11) ++m["eu"];
+
+    if(pid0[i] == 11 && pid1[i]==211) ++m["epi"];
+    if(pid0[i] == -211 && pid1[i]==-11) ++m["epi"];
+
+    if(pid0[i] == 11 && pid1[i]==321) ++m["eK"];
+    if(pid0[i] == -321 && pid1[i]==-11) ++m["eK"];
+
+    if(pid0[i] == 13 && pid1[i]==-13) ++m["uu"];
+
+    if(pid0[i] == 13 && pid1[i]==211) ++m["upi"];
+    if(pid0[i] == -211 && pid1[i]==-13) ++m["upi"];
+
+    if(pid0[i] == 13 && pid1[i]==321) ++m["uK"];
+    if(pid0[i] == -321 && pid1[i]==-13) ++m["uK"];
+
+
+    if(pid0[i] == -211 && pid1[i]==211) ++m["pipi"];
+
+    if(pid0[i] == -211 && pid1[i]==321) ++m["piK"];
+    if(pid0[i] == -321 && pid1[i]==211) ++m["piK"];
+
+    if(pid0[i] == -321 && pid1[i]==321) ++m["KK"];
+
+    switch(int(pid0[i])) {
+      case 11:
+      case 13:
+      case -211:
+      case -321:
+        break;
+      default:
+        ++om[{int(pid0[i]),int(pid1[i])}];
+        ++m["other"];
+    }
+    switch(int(pid1[i])) {
+      case -11:
+      case -13:
+      case 211:
+      case 321:
+        break;
+      default:
+        ++om[{int(pid0[i]),int(pid1[i])}];
+        ++m["other"];
+    }
+  }
+  long n=0;
+  long nother=0;
+  for(auto  & [channel, count] : m) {
+    sm.insert( {count, channel} );
+    n+=count;
+  }
+
+  for(auto & [p, count] : om) {
+    som.insert( {count, p} );
+    nother+=count;
+  }
+
+
+  int width=70;
+  auto print_double_line = [&width] () {
+    for(int i=0;i<70; ++i) std::cout << "=";
+    std::cout << "\n";
+  };
+  /*
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  print_double_line();
+  for(auto  & [channel, count] : m) {
+    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  //std::cout << "Other channels:  " << nother << std::endl;
+  print_double_line();
+  for(auto & [p, count] : om) {
+    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+  }
+  */
+
+
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  print_double_line();
+  for(auto  & [count,channel] : sm) {
+    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  //std::cout << "Other channels:  " << nother << std::endl;
+  print_double_line();
+  for(auto & [count, p] : som) {
+    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+
+}
+
+//TCanvas * draw_tt_gg_compare(std::string cut1, std::string cut2) {
+//  return draw_tt_gg_compare(SIGNAL, GG, cut1, cut2);
+//}

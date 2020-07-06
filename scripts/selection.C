@@ -25,6 +25,7 @@
 #include <list>
 #include <algorithm>
 #include <numeric>
+#include <functional>
 
 #include <variant>
 
@@ -91,6 +92,7 @@ void clean_taufit(void) {
 }
 
 static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
+static std::string GG_SEL = "";
 
 
 
@@ -541,6 +543,7 @@ const char * make_alias(int channel, const char * templ )
 
 void set_alias(TTree * tt, double W, double L=1.0)
 {
+  tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
   tt->SetAlias("MM","(p[0]+p[1])**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("Epi0","sqrt(p[0]**2 + 0.1396**2)");
   tt->SetAlias("Epi1","sqrt(p[1]**2 + 0.1396**2)");
@@ -555,14 +558,13 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("M2mue","(p[1]+Emu0)**2-psum*psum");
   tt->SetAlias("M2KK","(EK0+EK1)**2-psum*psum");
 
-  tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
 
   tt->SetAlias("lum",myfmt("%6.2f*1",L).c_str());
   char Eb[1024];
   sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);
   tt->SetAlias("MPI",(std::to_string(MPI)+"*1").c_str());
-  tt->SetAlias("Emis","(2*Eb-p[0]-p[1])");
+  tt->SetAlias("Emis2","(2*Eb-p[0]-p[1])");
   tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
   tt->SetAlias("cos_theta_mis2","(pz[0]+pz[1])/hypot(hypot(px[0]+px[1], py[0]+py[1]), pz[0]+pz[1])");
   tt->SetAlias("acol2","(px[0]*px[1]+py[0]*py[1]+pz[0]*pz[1])/(p[0]*p[1])");
@@ -570,6 +572,8 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("MM2pi","(2*Eb-sqrt(p[0]**2+MPI**2)-sqrt(p[1]**2+MPI**2))**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("M2pi","(sqrt(p[0]**2+MPI**2)+sqrt(p[1]**2+MPI**2))**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("k_ptem","(1.0*1.0)");
+
+  tt->SetAlias("ptem2","sqrt((px[0]+px[1]+npx[0]+npx[1])^2 + (py[0]+py[1]+npy[0]+npy[1])^2)/Emis");
 
   auto set_alias = [](TTree * tt, std::string track_name_prefix, int track, std::string selection_template) -> void
   {
@@ -589,13 +593,14 @@ void set_alias(TTree * tt, double W, double L=1.0)
     auto alias = sub(s1, "y", y);
     tt->SetAlias( (x+y).c_str(), alias.c_str());
   };
-  for (auto & x : {"e","u", "pi", "K","rho"} )
-    for (auto & y : {"e","u", "pi", "K","rho"} )
+  for (auto & x : {"e","u", "pi", "K","rho","X"} )
+    for (auto & y : {"e","u", "pi", "K","rho","X"} )
       make_xy(tt, x,y);
 
   tt->SetAlias("pil", "(pi0 && (u1 || e1 ))");
   tt->SetAlias("lpi", "(pi1 && (u0 || e0 ))");
 
+  //tt->SetAlias("eX",   "((!e0 && e1)||(!e1 && e0))");
   tt->SetAlias("Xrho",   "((!rho0 && rho1)||(!rho1 && rho0))");
   tt->SetAlias("lpipi0_cut","(Nc==2 && Npi0==1 && ( (pil && Mrho[0]>0.5 && Mrho[0]<1.0 && ) || ((lpi && (Mrho[1]>0.5 && Mrho[1]<1.0))) ) && acop>1.4)");
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
@@ -2322,7 +2327,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     os << "c";
     for(int i=0; i< SR[0].size(); ++i) os << "r";
     os << "|"<<"r}" << R"(\\)";
-    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    //os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
     int col_width=5;
 
     auto make_row = [&col_width](
@@ -2376,7 +2381,9 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
 
     make_row(os, total, 
         R"(point)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\myCF{%s})", p.name.c_str()); },
+        [](const PointSelectionResult_t & p) { 
+        //return myfmt(R"(\myCF{%s})", p.name.c_str()); },
+        return myfmt(R"(%s)", p.name.c_str()); },
         [&total]() { return "Total"; }
         );
     os<< R"(\hline)" <<  "\n";
@@ -2385,14 +2392,16 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print luminosity
     make_row(os, total, 
         R"($\int L, pb^{-1}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.luminosity.value); },
+        //[](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.luminosity.value); },
+        [](const PointSelectionResult_t & p) { return myfmt(R"(%4.1f)", p.luminosity.value); },
         [&total]() { return myfmt(R"(%4.1f)", total.L); }
         );
 
     //print energy for point
     make_row(os, total, 
         R"($E-M_{\tau}, MeV)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.energy.value*0.5 - MTAU)*1000.0); }
+        //[](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.energy.value*0.5 - MTAU)*1000.0); }
+        [](const PointSelectionResult_t & p) { return myfmt(R"(%3.3f)", (p.energy.value*0.5 - MTAU)*1000.0); }
         );
     os<< R"(\hline)" <<  "\n";
 
@@ -2895,14 +2904,14 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
       lum = p.gg.luminosity.value;
       lum_error = p.gg.luminosity.error;
     }
-    sprintf(buf,"%5s %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10ld %10ld %10ld %10.3f",
+    sprintf(buf,"%5s %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10ld %10ld %10ld %10.5f %10.5f",
         point_name.c_str(),
         lum,           lum_error,
         p.energy.value/MeV,        p.energy.error/MeV,
         1.258,             0.017,
         p.tt.N,
         p.bb.N,        p.gg.N,
-        p.tt.effcor.value);
+        p.tt.effcor.value, p.tt.effcor.error);
     os << buf <<'\n';
   }
   std::cout << os.str();
@@ -3300,10 +3309,36 @@ void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string s
 }
 
 void measure_luminosity(Scan_t & data, Scan_t & bb, Scan_t & gg, long N0_MC) {
-  measure_gg_luminosity(data,gg,N0_MC, "");
+  measure_gg_luminosity(data,gg,N0_MC, GG_SEL);
   measure_bhabha_luminosity(data,bb,N0_MC, BB_SEL);
 }
 
+//measure luminosity just for monte carlo only
+template<typename Projector>
+void measure_efficiency(Scan_t & mc, Projector proj, std::string sel) {
+  for(auto & sp : mc) {
+    //auto & ds = proj(sp);
+    auto & ds = std::invoke(proj,sp);
+    ds.Nmc = ds.tree->GetEntries(sel.c_str());
+    ds.efficiency.value = double(ds.Nmc)/ds.N0mc;
+    ds.efficiency.error = sqrt( ds.efficiency.value * ( 1.0 - ds.efficiency.value )/ds.N0mc );
+  }
+}
+
+void measure_ee_luminosity(Scan_t & mc, std::string sel) {
+  //measure_luminosity(mc,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.bb; } );
+  measure_efficiency(mc,&ScanPoint_t::bb, sel);
+}
+
+void measure_gg_luminosity(Scan_t & mc, std::string sel) {
+  //measure_luminosity(mc,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; } );
+  //measure_luminosity(mc,sel, &ScanPoint_t::gg);
+  measure_efficiency(mc,&ScanPoint_t::gg, sel);
+}
+
+void measure_tt_efficiency(Scan_t & mc, std::string sel) {
+  measure_efficiency(mc,&ScanPoint_t::tt, sel);
+}
 
 void set_luminosity(Scan_t & DATA, Scan_t & MC ) {
   for(auto & mc : MC ) {
@@ -4782,12 +4817,12 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
   auto proceed = [&](std::string s) {
     R[s] = measure_efficiency(SCAN, remove_some_cuts(s, initial_cut));
   };
-  proceed("p");
   proceed("Nc");
-  proceed("theta");
+  proceed("Nn");
+  proceed("p");
   proceed("pt");
+  proceed("theta");
   proceed("cos_theta_mis2");
-  proceed("E");
   std::map<std::string, TGraphErrors *> mgraph;
   TMultiGraph * mg0 = new TMultiGraph;
   TMultiGraph * mg = new TMultiGraph;
@@ -4830,6 +4865,9 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
   auto & base = R["base"];
   color=0;
   marker=20;
+  TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  std::ofstream ofs("effcor_variation_cut.txt");
+  char buf[128];
   for(auto & [par, sr] : R) {
     auto g = new TGraphErrors;
     ++color;
@@ -4840,15 +4878,208 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
     g->SetMarkerColor(color);
     g->SetMarkerStyle(marker);
     int i=0;
+    sprintf(buf,"%20s",par.c_str());
+    ofs << buf;
     for(auto & sp : sr) {
-      g->SetPoint(i, sp.energy.value, sp.tt.effcor.value/base[i].tt.effcor.value);
-      g->SetPointError(i, sp.energy.error, sp.tt.effcor.value/base[i].tt.effcor.value * hypot(base[i].tt.effcor.error/ base[i].tt.effcor.value, sp.tt.effcor.error/sp.tt.effcor.value));
+      double cor =  sp.tt.effcor.value/base[i].tt.effcor.value;
+      double error = cor*hypot(base[i].tt.effcor.error/ base[i].tt.effcor.value, sp.tt.effcor.error/sp.tt.effcor.value);
+      g->SetPoint(i, sp.energy.value, cor);
+      g->SetPointError(i, sp.energy.error,error);
       ++i;
+      sprintf(buf,"%15.8f  %15.8f", cor, error);
+      ofs << buf;
     }
+    ofs << endl;
     mgraph[par]=g;
+    l->AddEntry(g,par.c_str(), "lp");
     mg2->Add(g,"lp");
   }
   mg2->Draw("a");
-
-
+  l->Draw();
 }
+
+TCanvas * draw_ee_efficiency(const std::vector<ScanPoint_t> & SR) {
+  auto * c = get_new_tailed_canvas("efficiency");
+  TGraphErrors * g = new TGraphErrors;
+  int i=0;
+  for(auto & sp : SR ) {
+    std::cout << sp.energy.value << " " << sp.bb.efficiency.value << std::endl;
+    g->SetPoint(i, sp.energy.value, sp.bb.efficiency.value);
+    g->SetPointError(i, sp.energy.error, sp.bb.efficiency.error);
+    ++i;
+  }
+  g->Draw("a*");
+  g->GetXaxis()->SetTitle("W, GeV");
+  g->GetYaxis()->SetTitle("#varepsilon^{ee}");
+  return c;
+}
+
+TCanvas * draw_gg_efficiency(const std::vector<ScanPoint_t> & SR, std::string gopt="") {
+  TCanvas * c = nullptr;
+  if(gopt!="same") {
+    c = get_new_tailed_canvas("#gamma#gamma efficiency");
+  }
+  TGraphErrors * g = new TGraphErrors;
+  int i=0;
+  for(auto & sp : SR ) {
+    std::cout << sp.energy.value << " " << sp.gg.efficiency.value << std::endl;
+    g->SetPoint(i, sp.energy.value, sp.gg.efficiency.value);
+    g->SetPointError(i, sp.energy.error, sp.gg.efficiency.error);
+    ++i;
+  }
+  if(gopt!="same") {
+    g->Draw("a*");
+    g->GetXaxis()->SetTitle("W, GeV");
+    g->GetYaxis()->SetTitle("#varepsilon^{#gamma#gamma}");
+  }
+  else {
+    g->Draw("*");
+  }
+  return c;
+}
+
+template<typename Proj1, typename Proj2>
+TGraphErrors * efficiency_compare(std::vector<ScanPoint_t> & MC1, std::vector<ScanPoint_t> & MC2, Proj1 proj1, Proj2 proj2, std::string cut1, std::string cut2) {
+  measure_efficiency(MC1, proj1, cut1);
+  measure_efficiency(MC2, proj2, cut2);
+  TGraphErrors * g = new TGraphErrors;
+  //int i=0;
+  for(auto & sp1 :  MC1 ) {
+    for(auto & sp2 : MC2) {
+      if( fabs(sp1.energy.value -  sp2.energy.value) < 0.0001 ) {
+        auto & ds1 = std::invoke(proj1,sp1);
+        auto & ds2 = std::invoke(proj2,sp2);
+        ibn::valer<double> ratio = ds1.efficiency/ds2.efficiency;
+        ratio.error =  ratio.value*hypot(ds1.efficiency.error/ds1.efficiency.value, ds2.efficiency.error/ds2.efficiency.value );
+        AddPoint(g,sp1.energy, ratio);
+        //g->SetPoint(i, sp1.energy.value, ratio.value);
+        //g->SetPointError(i, sp1.energy.error, ratio.error);
+        //++i;
+      }
+    }
+  }
+  return g;
+}
+
+TCanvas * draw_tt_ee_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoint_t> & BB, std::string sig_cut, std::string bb_cut) {
+  auto g = efficiency_compare(SIG,BB,&ScanPoint_t::tt, &ScanPoint_t::bb, sig_cut, bb_cut);
+  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{ee}");
+  g->Draw("a*");
+  g->GetXaxis()->SetTitle("W, GeV");
+  g->GetYaxis()->SetTitle("#varepsilon_{#tau#tau} / #varepsilon_{ee}");
+  gStyle->SetOptFit(kTRUE);
+  g->Fit("pol1");
+  return c;
+}
+
+TCanvas * draw_tt_gg_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoint_t> & GG, std::string sig_cut, std::string bb_cut) {
+  auto g = efficiency_compare(SIG,GG,&ScanPoint_t::tt, &ScanPoint_t::gg, sig_cut, bb_cut);
+  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{#gamma #gamma}");
+  g->Draw("a*");
+  g->GetXaxis()->SetTitle("W, GeV");
+  g->GetYaxis()->SetTitle("#varepsilon_{#tau#tau} / #varepsilon_{#gamma#gamma}");
+  gStyle->SetOptFit(kTRUE);
+  g->Fit("pol1");
+  return c;
+}
+
+TCanvas * draw_ee_gg_compare(std::vector<ScanPoint_t> & BB, std::vector<ScanPoint_t> & GG, std::string sig_cut, std::string bb_cut) {
+  auto g = efficiency_compare(BB,GG,&ScanPoint_t::bb, &ScanPoint_t::gg, sig_cut, bb_cut);
+  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{ee} / #varepsilon_{#gamma #gamma}");
+  g->Draw("a*");
+  g->GetXaxis()->SetTitle("W, GeV");
+  g->GetYaxis()->SetTitle("#varepsilon_{ee} / #varepsilon_{#gamma#gamma}");
+  gStyle->SetOptFit(kTRUE);
+  g->Fit("pol1");
+  return c;
+}
+
+TCanvas * draw_gg_ee_compare(std::vector<ScanPoint_t> & GG, std::vector<ScanPoint_t> & BB, std::string gg_cut, std::string ee_cut) {
+  auto g = efficiency_compare(GG,BB,&ScanPoint_t::gg,&ScanPoint_t::bb, gg_cut,  ee_cut);
+  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{gg} / #varepsilon_{ee}");
+  g->Draw("a*");
+  g->GetXaxis()->SetTitle("W, GeV");
+  g->GetYaxis()->SetTitle("#varepsilon_{gg} / #varepsilon_{ee}");
+  gStyle->SetOptFit(kTRUE);
+  g->Fit("pol1");
+  return c;
+}
+
+//TCanvas * draw_tt_ee_compare(const std::vector<ScanPoint_t> & SIG, std::vector<ScanPoint_t> & BB, std::string sig_cut, std::string bb_cut) {
+//  auto S = measure_efficiency(SIG,sig_cut);
+//  measure_ee_luminosity(BB,bb_cut);
+//  TCanvas * c = nullptr;
+//  c = get_new_tailed_canvas("#gamma#gamma efficiency");
+//  TGraphErrors * g = new TGraphErrors;
+//  int i=0;
+//  for(auto & sig : S ) {
+//    for(auto & bb : BB) {
+//      if( fabs(sig.energy.value -  bb.energy.value) < 0.0001 ) {
+//        ibn::valer<double> ratio = sig.tt.efficiency/bb.bb.efficiency;
+//        ratio.error =  ratio.value*hypot(sig.tt.efficiency.error/sig.tt.efficiency.value, bb.bb.efficiency.error/bb.bb.efficiency.value );
+//        //std::cout << bb.bb.efficiency.error << std::endl;
+//        //std::cout << sig.tt.efficiency.error << std::endl;
+//        //std::cout << ratio.error << std::endl;
+//        //std::cout << sig.energy.value << " " << bb.energy.value << " " << ratio.value << " " << ratio.error  << std::endl;
+//        g->SetPoint(i, sig.energy.value, ratio.value);
+//        g->SetPointError(i, sig.energy.error, ratio.error);
+//        ++i;
+//      }
+//    }
+//  }
+//  g->Draw("a*");
+//  g->GetXaxis()->SetTitle("W, GeV");
+//  g->GetYaxis()->SetTitle("#varepsilon^{#tau#tau}/#varepsilon^{ee}");
+//  gStyle->SetOptFit(kTRUE);
+//  g->Fit("pol1");
+//  return c;
+//}
+
+void compare2D_base ( Scan_t & MC, Scan_t & D, std::string var, std::string cut="" ){
+  MC[0].tt.tree->SetMarkerColor(kBlue); 
+  MC[0].tt.tree->SetLineColor(kBlue); 
+  MC[0].tt.tree->SetLineWidth(3); 
+  MC[0].tt.tree->SetMarkerStyle(21); 
+  long Nsig = MC[0].tt.tree->Draw(var.c_str(),  cut.c_str(),"");
+
+  D[0].tt.tree->SetMarkerColor(kRed); 
+  D[0].tt.tree->SetLineColor(kRed); 
+  D[0].tt.tree->SetLineWidth(3); 
+  D[0].tt.tree->SetMarkerStyle(21); 
+  long n = D[0].tt.tree->Draw(var.c_str(), cut.c_str(),"same"); 
+  std::cout << "Nsig = " << Nsig << "  Nbg  = " << n << std::endl;
+}
+TCanvas * compare2D ( Scan_t & MC, Scan_t & D, std::string var, std::string cut="" ){
+  auto c = new TCanvas; 
+  compare2D_base(MC, D, var,cut );
+  return c;
+}
+
+//draw ptem:cos_theta_mis2 Emis:cos_theta_mis2  acop:cos_theta_mis2
+TCanvas * compare2D_2 ( Scan_t & MC, Scan_t & D, std::string cut="" ){
+  auto c = new TCanvas("compare2D_2c","compare2D_2",  3600,2000); 
+  c->Divide(4,2);
+  int idx=0;
+  c->cd(++idx);
+  compare2D_base(MC, D, "ptem:cos_theta_mis2",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "Emis:cos_theta_mis2",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "ptem:acop",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "Emis:acop",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "acop:cos_theta_mis2",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "acol:cos_theta_mis2",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "M2:ptem",cut);
+  c->cd(++idx);
+  compare2D_base(MC, D, "ptem:Enmax",cut);
+  return c;
+}
+
+
+
+
+

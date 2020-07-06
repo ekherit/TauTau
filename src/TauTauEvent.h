@@ -47,6 +47,11 @@ class TauTauEvent : public RootTuple
     NTuple::Item<long>    time; //time of the event
     NTuple::Item<long>    nctrack; //total number of charged tracks;
     NTuple::Item<long>    nntrack; //total number of neutral tracks;
+
+    NTuple::Item<double>  enmin; //min energy of all neutral tracks
+    NTuple::Item<double>  enmax; //min energy of all neutral tracks
+
+
     NTuple::Item<long>    nciptrack; //total number of charged tracks came from interaction points
 
     //NTuple::Item<double>  Emin_ntrack; //minimal energy of all netural tracks
@@ -76,8 +81,8 @@ class TauTauEvent : public RootTuple
     NTuple::Item<double>  lambda3; //
     NTuple::Item<double>  Emis; //
 
-    NTuple::Item<double>  Enmin; //minimum energy of all neutral tracks (not only selected)
-    NTuple::Item<double>  Enmax; //maximum energy of all neutral tracks (not only selected)
+    NTuple::Item<double>  Enmin; //minimum energy of neutral tracks
+    NTuple::Item<double>  Enmax; //maximum energy of neutral tracks
     NTuple::Item<double>  Entot; //total energy of neutral tracks
 
     NTuple::Array<double> Mpi0;
@@ -95,8 +100,12 @@ class TauTauEvent : public RootTuple
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
       tuple->addItem ("channel", channel);
-      tuple->addItem ("nctrack",   nctrack,   0,6); //total number of charged tracks
-      tuple->addItem ("nntrack",   nntrack,   0,8); //total number of neutral tracks
+      tuple->addItem ("nctrack",   nctrack,   0,6); 
+      tuple->addItem ("nntrack",   nntrack,   0,8); 
+
+      tuple->addItem ("enmin",enmin);
+      tuple->addItem ("enmax",enmax);
+
       tuple->addItem ("nciptrack", nciptrack, 0,8); //total number of charged tracks come from interaction points
       tuple->addItem ("Nc", ngood_charged_track, 0, 6);
       tuple->addItem ("Nn", ngood_neutral_track, 0, 8);

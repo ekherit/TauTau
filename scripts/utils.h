@@ -320,4 +320,17 @@ std::pair<double, double> get_maximum(const TGraph & g) {
   return { g.GetX()[n], *ptr };
 }
 
+#include "../ibn/valer.h"
+#include <TGraphErrors.h>
+void SetPoint(TGraphErrors * g, size_t i, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
+  g->SetPoint(i, x.value, y.value);
+  g->SetPointError(i, x.error, y.error);
+}
+
+void AddPoint(TGraphErrors * g, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
+  size_t i = g->GetN();
+  g->SetPoint(i, x.value, y.value);
+  g->SetPointError(i, x.error, y.error);
+}
+
 #endif

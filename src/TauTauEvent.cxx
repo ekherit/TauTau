@@ -106,6 +106,80 @@ void TauTauEvent::fill(int i,  EvtRecTrack * track)
   }
 }
 
+//fill the neutral tracks
+void TauTauEvent::nfill(int i,  EvtRecTrack * track)
+{
+  if(track->isEmcShowerValid())
+  {
+    RecEmcShower * emc = track->emcShower();
+    T.E[i] = emc->energy();
+    Tn.id[i] = emc->trackId(); //id of the track
+    T.q[i] = 0; //charge of the track
+    T.theta[i]= emc->theta();
+    T.phi[i] = emc->phi();
+    T.p[i] = mdc->p();
+    if(track->isEmcShowerValid())
+    {
+      T.Ep[i] = T.E[i]/T.p[i];
+    }
+    else
+    {
+      T.E[i] = UNSET_VALUE;
+      T.Ep[i] = UNSET_VALUE;
+    }
+    T.px[i] = mdc->px();
+    T.py[i] = mdc->py();
+    T.pz[i] = mdc->pz();
+    T.pt[i] = mdc->pxy();
+    T.x[i] = mdc->x();
+    T.y[i] = mdc->y();
+    T.z[i] = mdc->z(); 
+    T.r[i] = 0; 
+
+    Vertex_t vtx(track->mdcTrack());
+    vtx.use_db(track->mdcTrack());
+    //double rho,z,phi;
+    //calculate_vertex(track->mdcTrack(),rho,z,phi);
+    //T.vxy[i] = rho;
+    //T.vz[i] = z; 
+    //T.vphi[i] = phi; 
+    T.vxy[i] = vtx.rho;
+    T.z[i] = vtx.z;
+    T.phi[i] = vtx.phi;
+  }
+  else
+  {
+    T.id[i] = UNSET_VALUE;
+    T.q[i]  = UNSET_VALUE;
+    T.E[i]  = UNSET_VALUE; 
+    T.p[i]  = UNSET_VALUE; 
+    T.px[i] = UNSET_VALUE; 
+    T.py[i] = UNSET_VALUE; 
+    T.pz[i] = UNSET_VALUE; 
+    T.pt[i] = UNSET_VALUE; 
+    T.theta[i]= UNSET_VALUE; 
+    T.phi[i] =  UNSET_VALUE;
+    T.x[i] = UNSET_VALUE;
+    T.y[i] = UNSET_VALUE;
+    T.z[i] = UNSET_VALUE; 
+    T.r[i] = UNSET_VALUE; 
+    T.vxy[i] = UNSET_VALUE;
+    T.vz[i] = UNSET_VALUE; 
+    T.vphi[i] = UNSET_VALUE; 
+  }
+  if(track->isMucTrackValid())
+  {
+    RecMucTrack *mucTrk = track->mucTrack();
+    T.depth[i]= mucTrk->depth();
+    T.Nmuhit[i] = mucTrk->numHits();
+  }
+  else 
+  {
+    T.depth[i] =  UNSET_VALUE;
+    T.Nmuhit[i] = UNSET_VALUE;
+  }
+}
+
 bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
 {
   bool result = true;

@@ -40,7 +40,7 @@ class BhabhaEvent : public RootTuple
     {
       //default preselection selections
       MAX_CHARGED_TRACKS_NUMBER = 3;
-      MAX_NEUTRAL_TRACKS_NUMBER = 5;
+      MAX_NEUTRAL_TRACKS_NUMBER = 15;
       COS_THETA_CUT = 0.93; 
       DELTA_THETA_CUT = 0.04;
       MIN_DELTA_PHI_CUT = -0.06;
@@ -68,7 +68,14 @@ class BhabhaEvent : public RootTuple
 
     RootTracks T;  //track information (momentum, vertex, muon depth...)
 
-    NTuple::Item<long> N0;            //number of neutral tracks
+    NTuple::Item<long> nntrack;       //raw number of neutral tracks
+    NTuple::Item<long> nctrack;       //raw number of charged tracks
+
+    NTuple::Item<double>  Enmin; //minimum energy of all neutral tracks (not only selected)
+    NTuple::Item<double>  Enmax; //maximum energy of all neutral tracks (not only selected)
+    NTuple::Item<double>  Entot; //total energy of neutral tracks
+
+    NTuple::Item<long> N0;            //number of neutral tracks with energy more then threshold
     NTuple::Item<long> Nq;            //number of charged tracks in event
     NTuple::Item<double> delta_phi;   //delta phi
     NTuple::Item<double> delta_theta; //delta theta
@@ -81,7 +88,13 @@ class BhabhaEvent : public RootTuple
       tuple->addItem ("run", run);
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
-      tuple->addItem ("Nn", N0, 0,5); 
+      tuple->addItem ("nntrack", nntrack); //raw number of neutral tracks
+      tuple->addItem ("nctrack", nctrack); //raw number of charged tracks
+      tuple->addItem ("Enmin",Enmin);
+      tuple->addItem ("Enmax",Enmax);
+      tuple->addItem ("Entot",Entot);
+
+      tuple->addItem ("Nn", N0, 0,5);  //number of neutral tracks with energy more theshold
       tuple->addItem ("Nc", Nq, 0,3); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 

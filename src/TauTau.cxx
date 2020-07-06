@@ -216,6 +216,7 @@ StatusCode TauTau::execute()
     fTT.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
     fTT.Enmin     = tracker.MinNeutralTracksEnergy();
     fTT.Enmax     = tracker.MaxNeutralTracksEnergy();
+    //fTT.Entot     = tracker.GetTotalNeutralTracksEnergy();
 
     fTT.write();
     ntautau_events++;
@@ -237,6 +238,11 @@ StatusCode TauTau::execute()
   if(fBB.pass(eventHeader.ptr(), Tc,Tn))
   {
     //std::cout << "Before BB write" << std::endl;
+    fBB.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
+    fBB.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
+    fBB.Enmin     = tracker.MinNeutralTracksEnergy();
+    fBB.Enmax     = tracker.MaxNeutralTracksEnergy();
+    fBB.Entot     = tracker.GetTotalNeutralTracksEnergy();
     fBB.write();
     //std::cout << "After BB write" << std::endl;
     nbhabha_events++;
