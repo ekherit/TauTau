@@ -57,6 +57,8 @@
 #include "../ibn/indexer.h"
 #include "utils.h"
 
+#include "pdg_table.h"
+
 constexpr double GeV=1.0;
 constexpr double MeV=1e-3*GeV;
 constexpr double barn = 1.0;
@@ -83,8 +85,8 @@ constexpr double ALPHAPI=ALPHA/TMath::Pi(); //alpha / pi
 constexpr double PIALPHA=ALPHA*TMath::Pi(); 
 
 
-//std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
-static std::string TAUFIT_STR = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
+//std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
+static std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
 
 
 void clean_taufit(void) {
@@ -544,6 +546,7 @@ const char * make_alias(int channel, const char * templ )
 void set_alias(TTree * tt, double W, double L=1.0)
 {
   tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
+  tt->SetAlias("missed_photon_angle","( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )");
   tt->SetAlias("MM","(p[0]+p[1])**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("Epi0","sqrt(p[0]**2 + 0.1396**2)");
   tt->SetAlias("Epi1","sqrt(p[1]**2 + 0.1396**2)");
@@ -921,89 +924,6 @@ TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t
   return g;
 }
 
-
-
-//void add_last(std::vector<ScanPoint_t> & P)
-//{
-//  for ( auto & p : P)
-//  {
-//    p.NttMap[p.selection]=p.tt.N;
-//  }
-//}
-//void set_last(std::vector<ScanPoint_t> & P)
-//{
-//  for ( auto & p : P)
-//  {
-//    p.NttMap.clear();
-//    p.NttMap[p.selection]=p.tt.N;
-//  }
-//}
-/*
-void fit(std::vector<ScanPoint_t> & P, std::string filename="scan.txt", bool nofit=false, std::string title="")
-{
-  long totalNtt=0;
-  long totalNgg = 0;
-  long totalNbb = 0;
-  double totalL=0;
-  std::string total_title="";
-  for(int i=0; i<P.size();++i)
-  {
-    for(auto & item: P[i].NttMap)
-    {
-      totalNtt += item.second;
-    }
-    if(P[i].Ngg==0) P[i].Ngg = P[i].gg->GetEntries();
-    if(P[i].Nbb==0) P[i].Nbb = P[i].bb->GetEntries(BB_SEL.c_str());
-    totalNgg+=P[i].Ngg;
-    totalNbb+=P[i].Nbb;
-    totalL += P[i].L;
-  }
-  //total_title = total_title + " " + P[i].selection;
-  double sigma_gg;
-  if( totalNgg == 0 || totalL == 0) sigma_gg = 1;
-  else sigma_gg = totalNgg == 0 ? 1 : totalNgg/totalL;
-  std::ofstream ofs(filename);
-  ofs << "#Selection: " << P[0].selection << std::endl;
-  ofs << "#Aliases: " << std::endl;
-  ofs << "#    e0 = " << P[0].tt->GetAlias("e0") << std::endl;
-  ofs << "#    e1 = " << P[0].tt->GetAlias("e1") << std::endl;
-  ofs << "#    u0 = " << P[0].tt->GetAlias("u0") << std::endl;
-  ofs << "#    u1 = " << P[0].tt->GetAlias("u1") << std::endl;
-  ofs << "#    pi0 = " << P[0].tt->GetAlias("pi0") << std::endl;
-  ofs << "#    pi1 = " << P[0].tt->GetAlias("pi1") << std::endl;
-  ofs << "#" << std::setw(4) << " " << std::setw(15) << "L, nb-1" << std::setw(10) << "dL, nb-1" << std::setw(15) << "W, MeV" << std::setw(15) << "dW, MeV" << std::setw(10) << "SW, MeV" << std::setw(10) << "dSW, MeV";
-  ofs << std::setw(10) << "Ntt" << std::setw(10) << "Nee" << std::setw(10) << "Ngg" << std::setw(10) << "effcor" << std::endl;
-  for(int i=0; i<P.size();++i)
-  {
-    long Ntt=0;
-    for(auto & item: P[i].NttMap) Ntt+=item.second;
-    long Ngg = P[i].Ngg;
-    long Nbb = P[i].Nbb;
-    double L = Ngg==0 ? 1 : Ngg/(sigma_gg*pow(P[i].W/(2*MTAU),2.0));
-    L = P[i].L;
-    ofs << std::setw(5) << i <<  std::setw(15) << L*1000 << std::setw(10) << P[i].dL << std::setw(15) << P[i].W/MeV  << std::setw(15) << P[i].dW/MeV;
-    ofs << std::setw(10) << 1.24 << " " << std::setw(10) << 0.017;
-    ofs << std::setw(10) << Ntt << std::setw(10) <<  Nbb << std::setw(10) << Ngg <<  std::setw(10) << P[i].effcor << std::endl;
-  }
-  if(!nofit)
-  {
-    char command[65536];
-    //if(title=="") title=total_title;
-    //sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename);
-    //sprintf(command, "taufit --tau-spread=1.24 --mjpsi=0.076 --mpsi2s=0.076 --correct-energy --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename,filename); //sprintf(command, "taufit --tau-spread=1.256  '%s' --output '%s.txt' &",  filename,filename); system(command);
-    sprintf(command, (TAUFIT_STR + " --title='sigma: %s' '%s' --output '%s' & ").c_str(), title.c_str(), filename.c_str(),filename.c_str());
-  }
-}
-
-void fit_last(std::vector<ScanPoint_t> & P, const char * filename="scan.txt", bool nofit=false, std::string title="")
-{
-  set_last(P);
-  fit(P,filename,nofit,title);
-}
-
-*/
-
-
 void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const char * cut, const char * his="")
 {
   std::string title = std::string("mc_data: ") + selection + " cut= " + cut;
@@ -1329,7 +1249,7 @@ void set_pid_kptem(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID
 };
 
 
-std::vector<PointSelectionResult_t> new_select(const std::vector<ScanPoint_t> & P, const std::string  sel)
+std::vector<PointSelectionResult_t> select(const std::vector<ScanPoint_t> & P, const std::string  sel)
 {
   std::vector<PointSelectionResult_t> R(P.size());
   for(int i=0;i<P.size();++i)
@@ -2465,12 +2385,12 @@ void make_tex(std::string latex, std::string filename = "scan.tex")
 };
 
 
-ChannelSelectionResult_t new_select(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")
+ChannelSelectionResult_t select(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")
 {
   if(extra_cut!="") extra_cut = " && " + extra_cut;
   ChannelSelectionResult_t r;
   r = S; //copy selection config
-  r  = new_select(P, S.cut + extra_cut);
+  r  = select(P, S.cut + extra_cut);
   print(r,0);
   return r;
 };
@@ -2484,34 +2404,22 @@ std::vector<ChannelSelectionResult_t> select(const Scan_t & P, const Selection_t
     auto & r = R[i];
     r = s; //save current selection for channel
     r.cut = s.cut + extra_cut;
-    r = new_select(P, s.cut + extra_cut);
+    r = select(P, s.cut + extra_cut);
     print(r,i);
   };
   print(fold(R,"all"),-1);
   return R;
 };
 
-/*
-std::vector<ChannelSelectionResult_t> new_select(const std::vector<ScanPoint_t> & DATA, const Selection_t & SEL, std::string extracut="")
-{
-  //set_pid(DATA, SEL.pid);
-  if(extracut!="") extracut = " && " + extracut;
-  return new_select(DATA, SEL, SEL.common_cut + extracut);
-};
-*/
 
-ChannelSelectionResult_t new_select(const std::vector<ScanPoint_t> & DATA, const Selection_t & SEL, int i, std::string extracut="")
-{
-  //set_pid(DATA, SEL.pid);
-  //if(extracut!="") extracut = " && " + extracut;
-  //return new_select(DATA, SEL[i], SEL.common_cut + extracut);
-  return new_select(DATA, SEL[i], extracut);
-};
+//ChannelSelectionResult_t select(const std::vector<ScanPoint_t> & DATA, const Selection_t & SEL, int channel, std::string extracut="")
+//{
+//  return select(DATA, SEL[channel], extracut);
+//};
 
-std::vector<ChannelSelectionResult_t> new_select(const Scan_t & DATA, const Selection_t & SEL, std::vector<int> idx, std::string extracut="")
+std::vector<ChannelSelectionResult_t> select(const Scan_t & DATA, const Selection_t & SEL, std::vector<int> channels, std::string extracut="")
 {
-  std::vector<ChannelSelectionResult_t> R(idx.size());
-  //set_pid(DATA, SEL.pid);
+  std::vector<ChannelSelectionResult_t> R(channels.size());
   std::string cut = SEL.common_cut();
   if(extracut != "")
   {
@@ -2521,13 +2429,13 @@ std::vector<ChannelSelectionResult_t> new_select(const Scan_t & DATA, const Sele
   if(cut!="") cut = "&&"+cut;
 
   int j=0;
-  for(auto i : idx)
+  for(auto i : channels)
   {
     auto & s = SEL[i];
     auto & r = R[i];
     r = s;
     r.cut = SEL[i].cut +  cut;
-    r = new_select(DATA, SEL[i].cut +  cut);
+    r = select(DATA, SEL[i].cut +  cut);
     print(r,j++);
   }
   print(fold(R,"all"),-1);
@@ -2537,13 +2445,13 @@ std::vector<ChannelSelectionResult_t> new_select(const Scan_t & DATA, const Sele
 
 std::vector<PointSelectionResult_t> measure_efficiency(const std::vector<ScanPoint_t> & P, std::string cut)
 {
-  auto s = new_select(P,cut);
+  auto s = select(P,cut);
   for(auto & sp : s ) {
     auto & eps = sp.tt.efficiency;
     double N0 = sp.tt.N0mc;
     sp.tt.efficiency.value = double(sp.tt.N)/N0;
     sp.tt.efficiency.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
-    std::cout << sp.tt.N << " " <<  N0 << "  " << sp.tt.efficiency.value << " " << sp.tt.efficiency.error  << std::endl;
+    //std::cout << sp.tt.N << " " <<  N0 << "  " << sp.tt.efficiency.value << " " << sp.tt.efficiency.error  << std::endl;
     sp.tt.effcor.value = sp.tt.efficiency/s[0].tt.efficiency.value;
     sp.tt.effcor.error = sp.tt.effcor.value*hypot( sp.tt.efficiency.error/sp.tt.efficiency.value, s[0].tt.efficiency.error / s[0].tt.efficiency.value);
   }
@@ -2894,7 +2802,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
     std::string point_name = p.name == "" ? std::to_string(idx) : p.name;
     double lum = p.luminosity*1000.0;
     double lum_error = 10;
-    if(default_lum == "bb") {
+    if(default_lum == "bb" || default_lum=="ee") {
       std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
       lum = p.bb.luminosity.value;
       lum_error = p.bb.luminosity.error;
@@ -2908,7 +2816,8 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
         point_name.c_str(),
         lum,           lum_error,
         p.energy.value/MeV,        p.energy.error/MeV,
-        1.258,             0.017,
+        //1.258,             0.017,
+        1.258,             0.060,
         p.tt.N,
         p.bb.N,        p.gg.N,
         p.tt.effcor.value, p.tt.effcor.error);
@@ -2926,19 +2835,9 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
   char command[65536];
   std::string basename = sub(filename,R"(\..+)", "");
   std::string output_file = basename + "_fit";
-  sprintf(command, (TAUFIT_STR + " --title='sigma: %s' '%s' --output '%s' & ").c_str(), title.c_str(), filename.c_str(),output_file.c_str());
+  sprintf(command, (TAUFIT + " --title='taufit: %s' '%s' --output '%s' & ").c_str(), title.c_str(), filename.c_str(),output_file.c_str());
   system(command);
 }
-
-//void fit(const std::vector<PointSelectionResult_t>  & ps, std::string  filename="scan.txt", std::string title="")
-//{
-//  ChannelSelectionResult_t sr;
-//  sr = ps;
-//  save(sr,filename);
-//  char command[65536];
-//  sprintf(command, "taufit --tau-spread=1.256 --title='sigma: %s' '%s' --output '%s.txt' &", title.c_str(), filename.c_str(),filename.c_str());
-//  system(command);
-//}
 
 void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
 {
@@ -5080,6 +4979,638 @@ TCanvas * compare2D_2 ( Scan_t & MC, Scan_t & D, std::string cut="" ){
 }
 
 
+// Рисует график зависимости эффективности регистрации от энергии с разными катами
+void check_common_cuts2(const Scan_t & SCAN, const std::vector<std::string> & cuts, std::string file_prefix="", const std::vector<std::string>  titles ={}) {
+  //std::multimap<std::string, Scan_t> R;
+  std::vector<Scan_t> R;
+  for(auto & cut : cuts) {
+    auto c = cut;
+    //c.erase(std::remove(c.begin(), c.end(), ' '), c.end());
+    //std::cout << c <<std::endl;
+    //R.insert({cut, measure_efficiency(SCAN,cut)});
+    R.push_back(measure_efficiency(SCAN,c));
+  }
+
+  std::map<std::string, TGraphErrors *> mgraph;
+  TMultiGraph * mg0 = new TMultiGraph;
+  TMultiGraph * mg = new TMultiGraph;
+  //int color=0;
+  int marker=20;
+  std::vector<int> color={kBlack, kRed, kBlue, kGreen+2, kOrange+7, kPink+7, kMagenta, kBlue-6, kCyan};
+  int idx=0;
+  auto escale  = [](double W) {
+    return 0.5*(W-2.0*MTAU)*1000.0;
+  };
+  auto descale  = [](double dW) {
+    return 0.5*dW*1000.0;
+  };
+  for(auto & sr : R) {
+    auto g = new TGraphErrors;
+    auto g0 = new TGraphErrors;
+    ++marker;
+    g->SetLineWidth(3);
+    g->SetMarkerSize(2);
+    g->SetLineColor(color[idx%color.size()]);
+    g->SetMarkerColor(color[idx%color.size()]);
+    g->SetMarkerStyle(marker);
+
+    g0->SetLineWidth(3);
+    g0->SetMarkerSize(2);
+    g0->SetLineColor(color[idx%color.size()]);
+    g0->SetMarkerColor(color[idx%color.size()]);
+    g0->SetMarkerStyle(marker);
+    int i=0;
+    for(auto & sp : sr) {
+      g->SetPoint(i, escale(sp.energy.value), (sp.tt.effcor.value-1.0)*100.0);
+      g->SetPointError(i, descale(sp.energy.error), sp.tt.effcor.error*100.0);
+      g0->SetPoint(i, escale(sp.energy.value), sp.tt.efficiency.value*100.0);
+      g0->SetPointError(i, descale(sp.energy.error), sp.tt.efficiency.error*100.0);
+      ++i;
+    }
+    mgraph[cuts[idx]]=g;
+    mg->Add(g,"lp");
+    mg0->Add(g0,"lp");
+    ++idx;
+  }
+  TMultiGraph * mg2 = new TMultiGraph;
+  auto & base = *R.begin();
+  marker=20;
+  //TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+  TLegend * l = new TLegend(0.33,0.15, 0.66,0.85);
+  std::ofstream ofs("effcor_variation_cut.txt");
+  char buf[65535];
+  idx=0;
+  for(auto & sr : R) {
+    //std::cout << idx << std::endl;
+    std::string par = cuts[idx];
+    //std::cout << par << std::endl;
+    auto g = new TGraphErrors;
+    ++marker;
+    g->SetLineWidth(3);
+    g->SetMarkerSize(3);
+    g->SetLineColor(color[idx%color.size()]);
+    g->SetMarkerColor(color[idx%color.size()]);
+    g->SetMarkerStyle(marker);
+    int i=0;
+    sprintf(buf,"%-20s",par.c_str());
+    ofs << buf;
+    std::cout << buf;
+    //std::cout << " base.size = " << base.size() << std::endl;
+    for(auto & sp : sr) {
+ //     std::cout << sp.energy.value << std::endl;
+      double cor =  sp.tt.effcor.value/base[i].tt.effcor.value;
+      double error = cor*hypot(base[i].tt.effcor.error/ base[i].tt.effcor.value, sp.tt.effcor.error/sp.tt.effcor.value);
+      g->SetPoint(i, escale(sp.energy.value), (cor-1.0)*100.0);
+      g->SetPointError(i, descale(sp.energy.error),error*100.0);
+      ++i;
+      sprintf(buf,"%15.8f  %15.8f     ", (cor-1.0)*100.0, error*100);
+      ofs << buf;
+      std::cout << buf;
+    }
+    ofs << std::endl;
+    std::cout << std::endl;
+    mgraph[par]=g;
+    if(idx<titles.size()) {
+        l->AddEntry(g,titles[idx].c_str(), "lp");
+    } else {
+      if(par.size() < 30) {
+        l->AddEntry(g,par.c_str(), "lp");
+      } else {
+        std::string shrinked_name = par.substr(0,27)+"...";
+        l->AddEntry(g, shrinked_name.c_str(), "lp");
+      }
+    }
+    mg2->Add(g,"lp");
+    ++idx;
+  }
+  auto c_eff = get_new_tailed_canvas("efficiency");
+  mg0->Draw("a");
+  mg0->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
+  mg0->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}, %");
+  mg0->GetYaxis()->SetDecimals();
+  l->Draw();
+
+  auto c_cor = get_new_tailed_canvas("effcor");
+  mg->Draw("a");
+  mg->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
+  mg->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}/#varepsilon^{cut}_{M#tau}-1, %");
+  mg->GetYaxis()->SetDecimals();
+  l->Draw();
+
+  auto c_dif = get_new_tailed_canvas("effcor variation");
+  mg2->Draw("a");
+  mg2->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}/#varepsilon^{cut}_{M#tau} / #varepsilon^{0}_{i}/#varepsilon^{0}_{M#tau}  - 1, %");
+  mg2->GetYaxis()->SetDecimals();
+  mg2->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
+  l->Draw();
+  if(file_prefix!="") {
+    c_eff->SaveAs((file_prefix+"eff.pdf").c_str());
+    c_cor->SaveAs((file_prefix+"effcor.pdf").c_str());
+    c_dif->SaveAs((file_prefix+"effcor-diff.pdf").c_str());
+  }
+}
+
+void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  std::string file_prefix="sys-") {
+  std::vector< std::pair<std::string, std::string > > pars
+  {
+    {""                         , "nocut"}             ,
+      {"Nn==0"                    , "N_{n}=0"}           ,
+      {"Nc==2"                    , "N_{c}=2"}           ,
+      {"barrel"                   , "|cos(#theta)|<0.8"}            ,
+      {"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
+      {"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
+      {"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
+      {"missed_photon_angle"      , "cos(#theta_{mis})"} ,
+      {"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5"}       ,
+      {"eX"                       , "eX"}                ,
+      {"ptem>0.25"                , "ptem>0.25"}         ,
+      {"E[0]>0.1 && E[1]>0.1"     , "E>0.1"}             ,
+      {"z[0]<2 && z[1]<2"         , "|z|<2"}             ,
+      {"vxy[0]<0.5 && vxy[1]<0.5" , "#rho<0.5"}          ,
+      {SEL[0].cut                 , "all"}               ,
+  };
+  std::vector<std::string> cuts, titles;
+  for(auto & [cut, title] : pars) {
+    cuts.push_back(cut);
+    titles.push_back(title);
+  }
+  check_common_cuts2(SCAN, cuts,file_prefix, titles); 
+}
+
+
+inline std::string operator&&(const std::string & a, const std::string & b) {
+  if (  a.empty() &&  b.empty() ) return "";
+  if (  a.empty() && !b.empty() ) return b;
+  if ( !a.empty() &&  b.empty() ) return a;
+  return a+ "&&" + b;
+}
+struct Config {
+  std::string name = "";
+  std::string lum = "gg"; //gg or ee
+  std::string energy_version ="ems3";
+  std::string gglum_extra_cut = "";
+  std::string eelum_extra_cut = "";
+  std::string taufit_extra_opt = "";
+  //double ecor=+0.011;
+  //double spread=1.258;
+  //bool free_energy=true;
+  //bool free_luminosity=true;
+  //bool free_effcor=true;
+  //bool minos=true;
+  //bool pdgshift=true;
+} CFG;
+
+void clear_canvas(std::string regex="") {
+  //auto lst = ;
+  std::vector<TCanvas*> to_delete;
+  std::regex re(regex);
+  std::smatch sm;
+  for(auto l : *(gROOT->GetListOfCanvases())) {
+    std::string name = l->GetName();
+    if(std::regex_search(name, sm, re)) {
+      to_delete.push_back((TCanvas*)l);
+    }
+  }
+  for(auto l : to_delete) delete l;
+}
+
+//void parameter_example(Selection_t & S)
+//{
+//  fold_and_draw(DATA,"ptem","Nc==2 && Nn==0 &&" + S.common_cut(),"NORM");
+//  fold_and_draw(SIGNAL,"ptem","Nc==2 && Nn==0 &&" + S.common_cut(),"NORM SAME");
+//}
 
 
 
+//TCanvas * draw_tt_ee_compare(std::string sig_cut, std::string bb_cut) {
+//  return draw_tt_ee_compare(SIGNAL, BB, sig_cut, bb_cut);
+//}
+//
+//TCanvas * draw_tt_gg_compare(std::string cut1, std::string cut2) {
+//  return draw_tt_gg_compare(SIGNAL, GG, cut1, cut2);
+//}
+//
+//TCanvas * draw_gg_ee_compare(std::string cut1, std::string cut2) {
+//  return draw_gg_ee_compare(GG, BB, cut1, cut2);
+//}
+
+
+void test_for_mixing(Scan_t & D, std::string extracut = "") {
+  TCanvas * c = new TCanvas;
+  c->Divide(2,2);
+  int i=0;
+  auto get_graph  = [&](std::string cut1, std::string cut2) {
+    TGraphErrors * g1  = new TGraphErrors;
+    int i=0;
+    for(auto & d : D) {
+      std::string cut = cut1;
+      std::string truth = cut2;
+      double N0  = d.tt.tree->GetEntries(cut.c_str());
+      double N1  =  d.tt.tree->GetEntries((cut+truth).c_str());
+      g1->SetPoint(i, d.energy.value, 100*N1/N0);
+      g1->SetPointError(i, d.energy.error, 100*N1/N0*sqrt(1.0/N1 + 1.0/N0));
+      ++i;
+    }
+    return g1;
+  };
+  gStyle->SetOptFit();
+
+  auto make_and_draw_graph = [&](std::string cut1, std::string cut2, int col=1, std::string gopt="a*") {
+    TGraphErrors * g1 = get_graph(cut1,cut2);
+    g1->SetMarkerColor(col);
+    g1->SetLineColor(col);
+    g1->Draw(gopt.c_str());
+    g1->GetXaxis()->SetTitle("W_{cm}, MeV");
+    g1->GetYaxis()->SetTitle("missid, %");
+    g1->Fit("pol1");
+  };
+
+
+  c->cd(1);
+  make_and_draw_graph("e0 && X1", " && pid[1] == -11", kBlack,"a*");
+  c->cd(2);
+  make_and_draw_graph("e1 && X0", " && pid[0] == 11", kRed, "*a");
+
+  c->cd(3);
+  make_and_draw_graph("e0 && X1", " && pid[0] != 11", kBlack,"a*");
+  c->cd(4);
+  make_and_draw_graph("e1 && X0", " && pid[1] != -11", kRed, "a*");
+
+}
+
+void count(Scan_t & D, std::string cut) {
+  long N = D[0].tt.tree->Draw("pid[0]:pid[1]:mother_pid[0]:mother_pid[1]", cut.c_str(),"goff");
+  double * pid0 = D[0].tt.tree->GetV1();
+  double * pid1 = D[0].tt.tree->GetV2();
+  double * mpid0 = D[0].tt.tree->GetV3();
+  double * mpid1 = D[0].tt.tree->GetV4();
+  std::map<std::string, long> m; //basic count
+  std::map<std::pair<int, int> , long> om;
+  std::set<std::pair<long, std::string>, std::greater<std::pair<long, std::string>> > sm;
+  std::set<std::pair<long, std::pair<int, int>>,  std::greater<std::pair<long, std::pair<int, int>>> > som;
+  for(int i=0;i<N;++i) {
+    if(mpid0[i]==15 && mpid1[i]==-15) {
+      if(pid0[i] == 11 && pid1[i]==-11) ++m["ee"];
+
+      if(pid0[i] == 11 && pid1[i]==-13) ++m["eu"];
+      if(pid0[i] == 13 && pid1[i]==-11) ++m["eu"];
+
+      if(pid0[i] == 11 && pid1[i]==211) ++m["epi"];
+      if(pid0[i] == -211 && pid1[i]==-11) ++m["epi"];
+
+      if(pid0[i] == 11 && pid1[i]==321) ++m["eK"];
+      if(pid0[i] == -321 && pid1[i]==-11) ++m["eK"];
+
+      if(pid0[i] == 13 && pid1[i]==-13) ++m["uu"];
+
+      if(pid0[i] == 13 && pid1[i]==211) ++m["upi"];
+      if(pid0[i] == -211 && pid1[i]==-13) ++m["upi"];
+
+      if(pid0[i] == 13 && pid1[i]==321) ++m["uK"];
+      if(pid0[i] == -321 && pid1[i]==-13) ++m["uK"];
+
+
+      if(pid0[i] == -211 && pid1[i]==211) ++m["pipi"];
+
+      if(pid0[i] == -211 && pid1[i]==321) ++m["piK"];
+      if(pid0[i] == -321 && pid1[i]==211) ++m["piK"];
+
+      if(pid0[i] == -321 && pid1[i]==321) ++m["KK"];
+
+      switch(int(pid0[i])) {
+        case 11:
+        case 13:
+        case -211:
+        case -321:
+          break;
+        default:
+          ++om[{int(pid0[i]),int(pid1[i])}];
+          ++m["other"];
+      }
+      switch(int(pid1[i])) {
+        case -11:
+        case -13:
+        case 211:
+        case 321:
+          break;
+        default:
+          ++om[{int(pid0[i]),int(pid1[i])}];
+          ++m["other"];
+      }
+    }
+    else {
+      std::cout << mpid0[i] << " " << mpid1[i] <<  "  " << pid0[i] << "  " << pid1[i] << std::endl;
+    }
+  }
+  long n=0;
+  long nother=0;
+  for(auto  & [channel, count] : m) {
+    sm.insert( {count, channel} );
+    n+=count;
+  }
+
+  for(auto & [p, count] : om) {
+    som.insert( {count, p} );
+    nother+=count;
+  }
+
+
+  int width=70;
+  auto print_double_line = [&width] () {
+    for(int i=0;i<70; ++i) std::cout << "=";
+    std::cout << "\n";
+  };
+  /*
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  print_double_line();
+  for(auto  & [channel, count] : m) {
+    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  //std::cout << "Other channels:  " << nother << std::endl;
+  print_double_line();
+  for(auto & [p, count] : om) {
+    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+  }
+  */
+
+
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  print_double_line();
+  for(auto  & [count,channel] : sm) {
+    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  //std::cout << "Other channels:  " << nother << std::endl;
+  print_double_line();
+  for(auto & [count, p] : som) {
+    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+  }
+  print_double_line();
+
+}
+
+struct event_t{
+  int mpid0;
+  int mpid1;
+  int pid0;
+  int pid1;
+  int q0;
+  int q1;
+  double c0;
+  double c1;
+};
+
+inline  bool operator<(const event_t & e1, const event_t & e2) {
+  if      ( e1.mpid0 <  e2.mpid0 ) return true;
+  else if ( e2.mpid0 <  e1.mpid0 ) return false;
+    else if ( e1.mpid0 == e2.mpid0 ) {
+      if      ( e1.mpid1 <  e2.mpid1 ) return true;
+      else if ( e2.mpid1 <  e1.mpid1 ) return false;
+        else if ( e1.mpid1 == e2.mpid1 ) {
+          if      ( e1.pid0 < e2.pid0 )  return true;
+          else if ( e2.pid0 < e1.pid0 )  return false;
+          else if ( e1.pid0 == e2.pid0 ) return e1.pid1 < e2.pid1;
+        }
+    }
+    std::cout << "ERROR: Unable to compare " << std::endl;
+    return false;
+}
+
+size_t count_multibyte_symbols(const std::string & s) {
+  size_t count=0;
+  for(size_t i=0;i<s.size();++i) {
+    if( ((s[i] >> 6) & 0b11) == 0b10  ) {
+      count++;
+    }
+  }
+  return count;
+}
+
+size_t utf_size(const std::string  & s) {
+  return s.size()-count_multibyte_symbols(s);
+}
+
+std::string adjast_utf_string(std::string  s, int width=0) {
+  int count=0;
+  for(size_t i=0;i<s.size();++i) {
+    if( ((s[i] >> 6) & 0b11) == 0b10  ) {
+      count++;
+    }
+  }
+  width-=s.size();
+  if(width<0) width=0;
+  return s+std::string(width+count,' ');
+}
+
+std::map<std::string, std::vector<double> >  make_vectors(Scan_t & D, std::string cut) {
+  std::vector<double> pid0;
+  std::vector<double> pid1;
+  std::vector<double> mpid0;
+  std::vector<double> mpid1;
+  std::vector<double> q0;
+  std::vector<double> q1;
+  std::map<std::string, std::vector<double> > v;
+  for(const auto &  d : D) {
+    auto & t  = d.tt.tree;
+    long N = t->Draw("pid[0]:pid[1]:mother_pid[0]:mother_pid[1]", cut.c_str(),"goff");
+    for(long i =0;i<N;++i) {
+      v["pid0"].push_back(t->GetV1()[i]);
+      v["pid1"].push_back(t->GetV2()[i]);
+      v["mpid0"].push_back(t->GetV3()[i]);
+      v["mpid1"].push_back(t->GetV4()[i]);
+    }
+    N = t->Draw("q[0]:q[1]:cos(theta[0]):cos(theta[1])", cut.c_str(),"goff");
+    for(long i =0;i<N;++i) {
+      v["q0"].push_back(t->GetV1()[i]);
+      v["q1"].push_back(t->GetV2()[i]);
+      v["c0"].push_back(t->GetV3()[i]);
+      v["c1"].push_back(t->GetV4()[i]);
+    }
+  }
+  return v;
+}
+
+void count2(Scan_t & D, std::string cut="", std::string filter="") {
+  /*
+  auto & t  = D.tt.tree;
+
+  long N = t->Draw("pid[0]:pid[1]:mother_pid[0]:mother_pid[1]", cut.c_str(),"goff");
+  auto make_vector = [](double * ptr, long N) {
+    return std::vector<double>(ptr, ptr+N);
+  };
+  auto pid0 = make_vector(t->GetV1(), N);
+  auto pid1 = make_vector(t->GetV2(), N);
+  auto mpid0 = make_vector(t->GetV3(), N);
+  auto mpid1 = make_vector(t->GetV4(), N);
+
+  long N1 = t->Draw("pid[0]:pid[1]:cos(theta[0]):cos(theta[1])", cut.c_str(),"goff");
+  auto p0 = make_vector(t->GetV1(), N1);
+  auto p1 = make_vector(t->GetV2(), N1);
+  auto c0 = make_vector(t->GetV3(), N1);
+  auto c1 = make_vector(t->GetV4(), N1);
+
+  long N2 = t->Draw("pid[0]:pid[1]:q[0]:q[1]", cut.c_str(),"goff");
+  auto pp0 = make_vector(t->GetV1(), N2);
+  auto pp1 = make_vector(t->GetV2(), N2);
+  auto q0 = make_vector(t->GetV3(), N2);
+  auto q1 = make_vector(t->GetV4(), N2);
+
+  //check pid
+  if(N != N1 || N1 != N2 ) {
+    std::cout << "ERROR: different length of the arrays" << std::endl;
+  }
+  */
+  auto V = make_vectors(D,cut);
+  auto pid0 = V["pid0"]; 
+  auto pid1 = V["pid1"]; 
+  auto mpid0 = V["mpid0"]; 
+  auto mpid1 = V["mpid1"]; 
+  auto q0 = V["q0"]; 
+  auto q1 = V["q1"]; 
+  auto c0 = V["c0"]; 
+  auto c1 = V["c1"]; 
+
+  std::map<event_t, long> m;
+  std::multimap<long, event_t, std::greater<long> > rm;
+  std::multimap<long, event_t, std::greater<long> > rm_unknown;
+  std::multimap<long, event_t, std::greater<long> > rm_tt,rm_not_tt, rm_tt_eX, rm_tt_not_eX, head;
+
+  long N  = pid0.size();
+  for(long i =0; i<N; ++i) {
+   // std::cout << pid0[i] << " " << pid1[i] << " " << mpid0[i] << " " << mpid1[i] << " " << c0[i] << " " << c1[i] << " "<< q0[i] << " " <<  q1[i] << std::endl;
+    //if( pid0[i] != p0[i] || pid1[i]!=p1[i] || pp0[i]!=p0[i] || pp1[i]!=p1[i] ) {
+    //  std::cout << "ERROR: mismatch of pid" << std::endl;
+    //}
+    m[{int(mpid0[i]), int(mpid1[i]), int(pid0[i]), int(pid1[i]),int(q0[i]), int(q1[i]), c0[i], c1[i]}]++;
+  }
+
+  for(auto & [e,n] : m) {
+    //std::cout << e.mpid0 << " " << e.mpid1 << " " << e.pid0 << " " << e.pid1 << " " << e.q0 << " " << e.q1 << "   :   " << n << endl;
+    if( e.mpid0 == 0 || e.mpid1 == 0 || e.pid0 ==0  || e.pid1 == 0) {
+      rm_unknown.insert({n,e});
+    } else {
+      rm.insert({n,e});
+      if(filter.find("tt")!= std::string::npos && e.mpid0==15 && e.mpid1==-15) {
+        rm_tt.insert({n,e});
+        if(filter.find("eX") != std::string::npos && ( (e.pid0 == 11 && e.pid1!=-11 ) || (e.pid0 != 11 && e.pid1==-11 ) )) {
+          rm_tt_eX.insert({n,e});
+        } else {
+          rm_tt_not_eX.insert({n,e});
+        }
+      }
+      else {
+        rm_not_tt.insert({n,e});
+      }
+    }
+
+  }
+
+  auto make_names = [](const event_t & e ) -> std::tuple<std::string, std::string, std::string, std::string> {
+    auto im0 = PdgTable.find(e.mpid0);
+    auto im1 = PdgTable.find(e.mpid1);
+    auto ip0 = PdgTable.find( e.pid0);
+    auto ip1 = PdgTable.find( e.pid1);
+    std::string m0;
+    std::string m1;
+    std::string p0;
+    std::string p1;
+
+    if(im0==PdgTable.end()) m0=std::to_string(e.mpid0);
+    else m0=im0->second;
+
+    if(im1==PdgTable.end()) m1=std::to_string(e.mpid1);
+    else m1=im1->second;
+
+    if(ip0==PdgTable.end()) p0=std::to_string(e.pid0);
+    else p0=ip0->second;
+
+    if(ip1==PdgTable.end()) p1=std::to_string(e.pid1);
+    else p1=ip1->second;
+    return {m0,m1,p0,p1};
+  };
+
+  auto make_process = [&make_names](const event_t & e) {
+    auto [m0,m1,p0,p1] = make_names(e);
+    return m0+m1+" → "+p0+p1;
+  };
+
+  double total_identified  = 0;
+  double total_unknown  = 0;
+  double total;
+  for(auto & [n,e] :rm) { total_identified+=n; }
+  for(auto & [n,e] :rm_unknown) { total_unknown+=n; }
+  total = total_unknown + total_identified;
+  int width=80;
+  auto print_double_line = [&width] () {
+    for(int i=0;i<width; ++i) std::cout << "=";
+    std::cout << "\n";
+  };
+  auto print_line = [&width] () {
+    for(int i=0;i<width; ++i) std::cout << "-";
+    std::cout << "\n";
+  };
+
+  print_double_line();
+  auto print = [&](auto & rm, double ntotal=1, double ntotal_identified=1,   std::string title = "") {
+    char buf[1024];
+    if(rm.empty()) {
+      print_double_line();
+      sprintf(buf, "%-30s %6s  %10s  %10s \n", "channel", "N", "% of total", "% of idtfy");
+      std::cout << buf;
+      width = strlen(buf);
+      print_line();
+      return;
+    }
+
+    //calculate and print digest for topolist 
+    long sum = 0;
+    for(auto & [n,e] : rm) sum+=n; 
+    std::string fmt = "%-30s %6ld  %10.4f%% %10.4f%%\n";
+    title = adjast_utf_string("Total " + title,30);
+    sprintf(buf,fmt.c_str(), title.c_str(), sum, sum*100.0/ntotal, sum*100.0/ntotal_identified);
+    std::cout << buf;
+    print_line();
+
+    //print stats for each channel
+    for(auto & [n,e] : rm) {
+      auto process = make_process(e);
+      process = adjast_utf_string(process,30);
+      double p = double(n)/ntotal*100.0;
+      double pi = double(n)/ntotal_identified*100.0;
+      sprintf(buf, fmt.c_str(), process.c_str(), n, p, pi);
+      std::cout << buf;
+//      std::cout << "         "  <<  e.mpid0 << " " << e.mpid1 << " " << e.pid0 << " " << e.pid1 << " " << e.q0 << " " << e.q1 << "   :   " << n;
+      //std::cout << endl;
+    }
+    print_double_line();
+  };
+  char buf[1024];
+  //print(rm, total, total_identified);
+  sprintf(buf, "%-20s %20.0f\n","Total events:",  total);
+  std::cout << buf;
+  print(head);
+  //print(rm_tt,total,total_identified,"τ⁻τ⁺");
+  print(rm_tt_eX,total,total_identified,"τ⁻τ⁺ → eX");
+  print(rm_tt_not_eX,total,total_identified,"τ⁻τ⁺ → xx");
+  print(rm_not_tt, total,total_identified, "not τ⁻τ⁺");
+  print(rm_unknown, total, total_identified, "unknown");
+}
+
+void cmpall(Scan_t DATA, Scan_t SIGNAL, Selection_t &S) {
+  //cmp({SIGNAL , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({SIGNAL , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
+  //cmp({SIGNAL , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());
+  //cmp({SIGNAL , DATA} , S , "acol"           , "" , "NORM" , 40 , 0   , 1);
+  //cmp({SIGNAL , DATA} , S , "p"              , "" , "NORM" , 40 , 0   , 1.1);
+  //cmp({SIGNAL , DATA} , S , "Emis"           , "" , "NORM" , 40 , 1.0 , 3.5);
+  //cmp({SIGNAL , DATA} , S , "cos(theta)"     , "" , "NORM" , 40 , -1  , -1);
+  cmp({SIGNAL , DATA} , S , "Mpi0"     , "" , "NORM" , 40 , 0.11  , 0.15);
+  cmp({SIGNAL , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
+}

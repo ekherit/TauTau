@@ -254,7 +254,7 @@ Selection_t SELTEST =
   PID,
   { //kinematic selection for different channel
 // {"eX",  "Nn==0 &&  eX   && ptem>0.21*(1+0.5*cos_theta_mis2^2)"},
- {"eX",  "Nn==0 &&  eX   && ptem>0.23"},
+ {"eX",  "Nn==0 &&  eX   && ptem>0.25"},
 // {"eX",  "Nn==0 &&  eX   && ptem>0.15 && Enmax<0.001"},
 /*  0 */ //{"uX",  "Nn==0 &&  uX   && ptem>0.3 && Emis<2.2 && abs(cos_theta_mis2) < 0.6"},
     //{"eu",  "Nn==0 &&  eu   && ptem>0.1*(1+0.5*cos_theta_mis2^2) "},
