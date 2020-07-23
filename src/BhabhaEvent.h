@@ -71,6 +71,10 @@ class BhabhaEvent : public RootTuple
     NTuple::Item<long> nntrack;       //raw number of neutral tracks
     NTuple::Item<long> nctrack;       //raw number of charged tracks
 
+    NTuple::Item<double>  enmin; //minimum energy of all neutral tracks (not only selected)
+    NTuple::Item<double>  enmax; //maximum energy of all neutral tracks (not only selected)
+    NTuple::Item<double>  entot; //total energy of neutral tracks
+
     NTuple::Item<double>  Enmin; //minimum energy of all neutral tracks (not only selected)
     NTuple::Item<double>  Enmax; //maximum energy of all neutral tracks (not only selected)
     NTuple::Item<double>  Entot; //total energy of neutral tracks
@@ -90,11 +94,15 @@ class BhabhaEvent : public RootTuple
       tuple->addItem ("time", time);
       tuple->addItem ("nntrack", nntrack); //raw number of neutral tracks
       tuple->addItem ("nctrack", nctrack); //raw number of charged tracks
+      tuple->addItem ("enmin",enmin);
+      tuple->addItem ("enmax",enmax);
+      tuple->addItem ("entot",entot);
+
       tuple->addItem ("Enmin",Enmin);
       tuple->addItem ("Enmax",Enmax);
       tuple->addItem ("Entot",Entot);
 
-      tuple->addItem ("Nn", N0, 0,5);  //number of neutral tracks with energy more theshold
+      tuple->addItem ("Nn", N0, 0,15);
       tuple->addItem ("Nc", Nq, 0,3); 
       tuple->addItem ("dphi", delta_phi); 
       tuple->addItem ("dtheta", delta_theta); 
@@ -212,6 +220,10 @@ class BhabhaEvent : public RootTuple
       std::vector<EvtRecTrack*> Tr = Zip(Ts[0],Ts[1]);
 
       for(int i=0;i<Tr.size(); ++i) fill(i, Tr[i]); 
+
+      Enmin = MinNeutralTracksEnergy(Tn);
+      Enmax = MinNeutralTracksEnergy(Tn);
+      Entot = GetTotalNeutralTracksEnergy(Tn);
 
 
       acol = Acolinearity(Tr[0], Tr[1]);

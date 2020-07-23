@@ -49,15 +49,13 @@ class TauTauEvent : public RootTuple
     NTuple::Item<long>    nntrack; //total number of neutral tracks;
 
     NTuple::Item<double>  enmin; //min energy of all neutral tracks
-    NTuple::Item<double>  enmax; //min energy of all neutral tracks
+    NTuple::Item<double>  enmax; //max energy of all neutral tracks
 
 
     NTuple::Item<long>    nciptrack; //total number of charged tracks came from interaction points
 
-    //NTuple::Item<double>  Emin_ntrack; //minimal energy of all netural tracks
-
-    NTuple::Item<long>    ngood_charged_track;     //number of good charged tracks in event
-    NTuple::Item<long>    ngood_neutral_track;     //number of good neutral tracks in event
+    NTuple::Item<long>    Nc;     //number of good charged tracks in event
+    NTuple::Item<long>    Nn;     //number of good neutral tracks in event
     NTuple::Item<long>    npi0; //number of pi0
 
     NTuple::Item<long> channel; //used channel
@@ -67,12 +65,13 @@ class TauTauEvent : public RootTuple
     RootPid Pid;   //particle id for charged track
     //NTuple::Array<double> pid; //particle id
     //NTuple::Array<double> mother_pid;
-    RootMcTruth  McTruth; // mc truth for nuetral tracks
+    RootMcTruth  McTruth; // mc truth
     //RootMcTruth nMcTruth; // mc truth for nuetral tracks
     NTuple::Item<double>  ptsum;
     NTuple::Item<double>  ptem;
     NTuple::Item<double>  acop;
     NTuple::Item<double>  acol;
+    NTuple::Item<double>  cos_theta_mis;
     NTuple::Item<double>  M2;
     NTuple::Item<double>  S; //sphericity (lambda2+lambda3)*1.5
     NTuple::Item<double>  A; //aplanarity 1.5*lambda3
@@ -81,34 +80,31 @@ class TauTauEvent : public RootTuple
     NTuple::Item<double>  lambda3; //
     NTuple::Item<double>  Emis; //
 
-    NTuple::Item<double>  Enmin; //minimum energy of neutral tracks
-    NTuple::Item<double>  Enmax; //maximum energy of neutral tracks
-    NTuple::Item<double>  Entot; //total energy of neutral tracks
+    NTuple::Item<double>  Enmin; //minimum energy of accepted neutral tracks
+    NTuple::Item<double>  Enmax; //maximum energy of accepted neutral tracks
+    NTuple::Item<double>  Entot; //total energy of the acceptd neutral tracks
 
     NTuple::Array<double> Mpi0;
 
     NTuple::Item<long>    Nrho; //number of rho candidates
     NTuple::Array<double> Mrho; //this mass of rho candidates
 
-    //void init_tuple(Algorithm * algo, const char * dir, const char * title)
-    //{
-    //  RootTuple::init_tuple(algo,dir,title);
-    //}
+
     virtual void bind_tuple(void)
     {
       tuple->addItem ("run", run);
       tuple->addItem ("event", event);
       tuple->addItem ("time", time);
       tuple->addItem ("channel", channel);
-      tuple->addItem ("nctrack",   nctrack,   0,6); 
-      tuple->addItem ("nntrack",   nntrack,   0,8); 
+      tuple->addItem ("nctrack",   nctrack); 
+      tuple->addItem ("nntrack",   nntrack); 
 
       tuple->addItem ("enmin",enmin);
       tuple->addItem ("enmax",enmax);
 
       tuple->addItem ("nciptrack", nciptrack, 0,8); //total number of charged tracks come from interaction points
-      tuple->addItem ("Nc", ngood_charged_track, 0, 6);
-      tuple->addItem ("Nn", ngood_neutral_track, 0, 8);
+      tuple->addItem ("Nc", Nc, 6);
+      tuple->addItem ("Nn", Nn, 0, 8);
       tuple->addItem ("Npi0", npi0, 0, 4);
       tuple->addItem ("Nrho", Nrho, 0, 24);
 
@@ -117,10 +113,10 @@ class TauTauEvent : public RootTuple
       tuple->addItem ("Enmax",Enmax);
       tuple->addItem ("Entot",Entot);
 
-      T.add_to_tuple (tuple,ngood_charged_track); 
-      Tn.add_to_tuple(tuple,ngood_neutral_track,"n");
-      Pid.add_to_tuple(tuple,ngood_charged_track); 
-      McTruth.add_to_tuple(tuple,ngood_charged_track);
+      T.add_to_tuple (tuple,Nc); 
+      Tn.add_to_tuple(tuple,Nn,"n");
+      Pid.add_to_tuple(tuple,Nc); 
+      McTruth.add_to_tuple(tuple,Nc);
 
       //nMcTruth.add_to_tuple(tuple,ntrack,"n");
       tuple->addItem("acop",acop);
@@ -128,6 +124,7 @@ class TauTauEvent : public RootTuple
       tuple->addItem("ptem",ptem);
       tuple->addItem("ptsum",ptsum);
       tuple->addItem("Emis",Emis);
+      tuple->addItem("cos_theta_mis", cos_theta_mis);
       tuple->addItem("M2",M2);
       tuple->addItem("S",S);
       tuple->addItem("A",A);

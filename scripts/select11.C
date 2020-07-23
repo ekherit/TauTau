@@ -21,7 +21,7 @@
 #include <map>
 #include "Config.h"
 
-std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4";
+std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=0.1332 --draw-diff";
 
 //const char * runtable_name = "../TauTau/share/scan_points_ems3_privalov_lum.txt";
 //const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
@@ -37,8 +37,8 @@ constexpr long N0MC  = 1e6;
 auto DATA        = read_data("data", RUNTABLE);
 
 //Monte Carlo simulation of the signal
-auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
-//auto SIGNAL          = read_mc("mc/signal_sys", RUNTABLE, N0MC);
+//auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
+auto SIGNAL          = read_mc("mc/signal_sys", RUNTABLE, N0MC);
 
 //background GALUGA
 std::map<std::string, Scan_t> GALUGA =
@@ -127,7 +127,7 @@ Selection_t SEL11 =
 {
   "sel11", //selection name
   //common cuts
-  "Nc==2"
+  "Nc<=3"
   "&& q[0]==-1 && q[1]==1"
   "&& p[0] < 1.1 && p[1] < 1.1"
   "&& pt[0] > 0.2 && pt[1] > 0.2"
@@ -136,7 +136,11 @@ Selection_t SEL11 =
   , 
   PID,
   { 
-    {"eX",  "Nn<=2 &&  eX   && ptem>0.25"},
+    //{"eX",  "Nn==0 && eX   && ptem>0.25"},
+    //{"eX",  "Nn<=2 && eX   && ptem>0.25"},
+    {"eX",    "Nn<=2 && eX   && ptem>0.25"},
+    //{"eX",    "Nn==2 && eX   && ptem>0.25"},
+    //{"eρ",  "Nn==2 && Npi0 == 1 && erho "},
   },
 };
 

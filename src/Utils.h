@@ -365,5 +365,37 @@ inline double GetPairChi2(const  PairContainers &   pairs, double data_expected=
 */
 
 
+//std::vector<std::vector<EvtRecTrack*> > SplitByCharge(const  std::vector<EvtRecTrack*> & Tc) {
+//  std::vector<EvtRecTrack*> Tcn, Tcp;// negative and positive charged tracks
+//  std::vector<std::vector<EvtRecTrack*> >  T;
+//  T.resize(2);
+//  T[0].reserve(Tc.size());
+//  T[1].reserve(Tc.size());
+//  for(auto track : Tc) {
+//    int charge = GetCharge(track);
+//    if( charge == -1) T[0].push_back(track);
+//    if( charge == +1 ) T[1].push_back(track);
+//  }
+//  //Sort by transverse momentum desccending
+//  std::sort(T[0].rbegin(), T[0].rend(),PtOrder);
+//  std::sort(T[1].rbegin(), T[1].rend(),PtOrder);
+//  return T;
+//};
 
+/*
 
+std::vector<EvtRecTrack * > JoinTracks(const std::vector< std::vector<EvtRecTrack*> & T) {
+  std::vector<EvtRecTrack * >  R; 
+  bool not_empty=true;
+  for(size_t idx=0; not_empty; ++idx) {
+    not_empty = false;
+    for(size_t i =0; i!=T.size(); ++i) {
+      if(idx < T[i].size()) {
+        not_empty = true;
+        R.push_back(T[i]);
+      }
+    }
+  }
+  return R;
+};
+*/

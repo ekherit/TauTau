@@ -70,7 +70,7 @@ struct Tracker
   long GetNtrackTotal(void)    { return  evtRecEvent->totalTracks(); };
 
   template<typename Container>
-    Container GetNeutralTracks(double Emin)
+    Container GetNeutralTracks(double Emin=0)
     {
       Container result;
       for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++) {
@@ -168,6 +168,20 @@ struct Tracker
     }
     return Emin;
   };
+  template <typename Container>
+    double GetTotalNeutralTracksEnergy(void)
+    {
+      double Etotal=0;
+      for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+      {
+        EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+        RecEmcShower *emcTrk = (*itTrk)->emcShower();
+        if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+        double E = emcTrk->energy();
+        if ( E> Emin ) Etotal+=E;
+      }
+      return Etotal;
+    }
 };
 
 template <typename Container>
@@ -176,14 +190,40 @@ double GetTotalNeutralTracksEnergy(const Container & input, double Emin=0)
   double Etotal=0;
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
-    //EvtRecTrack * track = *it;
-    //assert((*it)->isEmcShowerValid(), "ERROR: GetTotalNeutralTracksEnergy: No EMC information for a track");
     assert((*it)->isEmcShowerValid());
     RecEmcShower *emcTrk = (*it)->emcShower();
     double E = emcTrk->energy();
     if ( E> Emin ) Etotal+=E;
   }
   return Etotal;
+}
+
+template <typename Container>
+double MinNeutralTracksEnergy(const Container & input)
+{
+  double Emin = std::numeric_limits<double>::max(); //unfound value
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    assert((*it)->isEmcShowerValid());
+    RecEmcShower *emcTrk = (*it)->emcShower();
+    double E = emcTrk->energy();
+    if (E < Emin)  Emin = E;
+  }
+  return Emin;
+}
+
+template <typename Container>
+double MaxNeutralTracksEnergy(const Container & input)
+{
+  double Emax = 0;
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
+  {
+    assert((*it)->isEmcShowerValid());
+    RecEmcShower *emcTrk = (*it)->emcShower();
+    double E = emcTrk->energy();
+    if (E > Emax)  Emax = E;
+  }
+  return Emax;
 }
 
 
@@ -320,7 +360,7 @@ template <typename Container>
 Container Zip(const Container & C1, const Container & C2, bool is_add_remains = false) {
   Container result;
   size_t npairs = std::min( C1.size(), C2.size()); //number of pairs
-  for(int i=0; i < npairs; ++i) {
+  for(int i=0; i != npairs; ++i) {
     result.push_back(C1[i]);
     result.push_back(C2[i]);
   }

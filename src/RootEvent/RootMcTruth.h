@@ -24,7 +24,8 @@
 
 struct RootMcTruth
 {
-	//NTuple::Item<long> * ntrack; 
+  NTuple::Item<long> flag1; //tag the number of root particle decay mode in *.dec file
+  NTuple::Item<long> flag2; //tag the type of the root particle decay
 	NTuple::Array<double> pid; //particle id
 	NTuple::Array<double> mother_pid;
   std::set<int> blacklist;
@@ -32,6 +33,8 @@ struct RootMcTruth
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrk, const std::string & prefix="")
   {
     //ntrack = & ntrk;
+    tuple->addItem ("flag1", flag1);
+    tuple->addItem ("flag2", flag2);
     tuple->addIndexedItem (prefix+"pid",  ntrk, pid);
     tuple->addIndexedItem (prefix+"mother_pid", ntrk, mother_pid);
     //add black item for McTruth
