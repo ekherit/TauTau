@@ -157,7 +157,7 @@ struct Tracker
 
   double MinNeutralTracksEnergy(void)
   {
-    if(evtRecEvent->totalCharged() == evtRecEvent->totalTracks() ) retur -1.0;
+    if(evtRecEvent->totalCharged() == evtRecEvent->totalTracks() ) return -1.0;
     double Emin = std::numeric_limits<double>::max(); //unfound value
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
     {
