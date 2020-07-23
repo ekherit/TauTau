@@ -103,7 +103,7 @@ class TauTauEvent : public RootTuple
       tuple->addItem ("enmax",enmax);
 
       tuple->addItem ("nciptrack", nciptrack, 0,8); //total number of charged tracks come from interaction points
-      tuple->addItem ("Nc", Nc, 6);
+      tuple->addItem ("Nc", Nc, 0, 6);
       tuple->addItem ("Nn", Nn, 0, 8);
       tuple->addItem ("Npi0", npi0, 0, 4);
       tuple->addItem ("Nrho", Nrho, 0, 24);

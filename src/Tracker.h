@@ -178,7 +178,7 @@ struct Tracker
         RecEmcShower *emcTrk = (*itTrk)->emcShower();
         if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
         double E = emcTrk->energy();
-        if ( E> Emin ) Etotal+=E;
+        Etotal+=E;
       }
       return Etotal;
     }
