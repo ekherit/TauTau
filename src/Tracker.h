@@ -215,7 +215,7 @@ double MinNeutralTracksEnergy(const Container & input)
 template <typename Container>
 double MaxNeutralTracksEnergy(const Container & input)
 {
-  double Emax = 0;
+  double Emax = -1; //unfound value
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
     assert((*it)->isEmcShowerValid());

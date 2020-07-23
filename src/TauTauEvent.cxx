@@ -60,18 +60,13 @@ void TauTauEvent::fill(int i,  EvtRecTrack * track)
     T.x[i] = mdc->x();
     T.y[i] = mdc->y();
     T.z[i] = mdc->z(); 
-    T.r[i] = 0; 
+    T.r[i] = sqrt(mdc->x()*mdc->x() + mdc->y()*mdc->y());
 
     Vertex_t vtx(track->mdcTrack());
     vtx.use_db(track->mdcTrack());
-    //double rho,z,phi;
-    //calculate_vertex(track->mdcTrack(),rho,z,phi);
-    //T.vxy[i] = rho;
-    //T.vz[i] = z; 
-    //T.vphi[i] = phi; 
     T.vxy[i] = vtx.rho;
-    T.z[i] = vtx.z;
-    T.phi[i] = vtx.phi;
+    T.vz[i] = vtx.z;
+    T.vphi[i] = vtx.phi;
   }
   else
   {
@@ -113,35 +108,35 @@ void TauTauEvent::nfill(int i,  EvtRecTrack * track)
   double E = emc->energy();
   double phi = emc->phi();
   double theta = emc->theta();
-  T.E[i] = E;
+  Tn.E[i] = E;
   Tn.id[i] = emc->trackId(); //id of the track
-  T.q[i] = 0; //charge of the track
-  T.theta[i]= theta;
-  T.phi[i] = phi;
-  T.p[i] = E;
-  T.Ep[i] = 1;
+  Tn.q[i] = 0; //charge of the track
+  Tn.theta[i]= theta;
+  Tn.phi[i] = phi;
+  Tn.p[i] = E;
+  Tn.Ep[i] = 1;
   double st = sin(theta);
-  T.px[i] = E*st*cos(phi);
-  T.py[i] = E*st*sin(phi);
-  T.pz[i] = E*cos(theta);
-  T.pt[i] = E*st;
-  T.x[i] = 0;
-  T.y[i] = 0;
-  T.z[i] = 0;
-  T.r[i] = 0; 
-  T.vxy[i] = 0;
-  T.z[i] = 0;
-  T.phi[i] = 0;
+  Tn.px[i] = E*st*cos(phi);
+  Tn.py[i] = E*st*sin(phi);
+  Tn.pz[i] = E*cos(theta);
+  Tn.pt[i] = E*st;
+  Tn.x[i] = 0;
+  Tn.y[i] = 0;
+  Tn.z[i] = 0;
+  Tn.r[i] = 0; 
+  Tn.vxy[i] = 0;
+  Tn.vz[i] = 0;
+  Tn.vphi[i] = 0;
   if(track->isMucTrackValid())
   {
     RecMucTrack *mucTrk = track->mucTrack();
-    T.depth[i]= mucTrk->depth();
-    T.Nmuhit[i] = mucTrk->numHits();
+    Tn.depth[i]= mucTrk->depth();
+    Tn.Nmuhit[i] = mucTrk->numHits();
   }
   else 
   {
-    T.depth[i] =  UNSET_VALUE;
-    T.Nmuhit[i] = UNSET_VALUE;
+    Tn.depth[i] =  UNSET_VALUE;
+    Tn.Nmuhit[i] = UNSET_VALUE;
   }
 }
 
@@ -200,7 +195,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   acop = Acoplanarity(Tq[0], Tq[1]);
   acol = Acolinearity(Tq[0], Tq[1]);
   
-  cos_theta_mis  = Ptsum.z()/Psum.mag();
+  cos_theta_mis  = Ptsum.z()/P3sum.mag();
 
   //calculate sphericity 
   std::vector<double> V = getSphericityEigenvalues(Tq);
