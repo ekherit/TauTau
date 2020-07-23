@@ -200,7 +200,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   acop = Acoplanarity(Tq[0], Tq[1]);
   acol = Acolinearity(Tq[0], Tq[1]);
   
-  cos_theta_mis2  = Ptsum.z()/Psum.mag();
+  cos_theta_mis  = Ptsum.z()/Psum.mag();
 
   //calculate sphericity 
   std::vector<double> V = getSphericityEigenvalues(Tq);
@@ -212,8 +212,8 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
 
   select =  select && (cfg.MIN_PTEM < ptem); 
   for(int i=0;i<2;++i) {
-    select = select && (T.p[i] < cfg.MAX_MOMENTUM);
-    select = select && (cfg.MIN_TRANSVERSE_MOMENTUM  < T.pt[i] );
+    select = select && (Tq.p[i] < cfg.MAX_MOMENTUM);
+    select = select && (cfg.MIN_TRANSVERSE_MOMENTUM  < Tq.pt[i] );
     select = select && (cfg.MIN_TOF                  < Pid.ftof[i] && Pid.ftof[i] < cfg.MAX_TOF);
   }
 

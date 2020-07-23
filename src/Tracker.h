@@ -168,20 +168,20 @@ struct Tracker
     }
     return Emin;
   };
-  template <typename Container>
-    double GetTotalNeutralTracksEnergy(void)
+
+  double GetTotalNeutralTracksEnergy(void)
+  {
+    double Etotal=0;
+    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
     {
-      double Etotal=0;
-      for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
-      {
-        EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
-        RecEmcShower *emcTrk = (*itTrk)->emcShower();
-        if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
-        double E = emcTrk->energy();
-        Etotal+=E;
-      }
-      return Etotal;
+      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      RecEmcShower *emcTrk = (*itTrk)->emcShower();
+      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+      double E = emcTrk->energy();
+      Etotal+=E;
     }
+    return Etotal;
+  }
 };
 
 template <typename Container>
