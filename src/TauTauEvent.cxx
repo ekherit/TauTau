@@ -160,11 +160,11 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   //T[0] -- negative charged
   //T[1] -- positive charged
   if(T[0].empty() || T[1].empty()) return false; //Must be one opposite charged pair
+  //sort it by transverse momentum in dessceding order
+  std::sort(T[0].rbegin(), T[0].rend(),PtOrder);
+  std::sort(T[1].rbegin(), T[1].rend(),PtOrder);
 
   std::vector<EvtRecTrack*> Tq = Zip(T[0],T[1], true);//JoinTracks(T);
-  //sort it by transverse momentum in dessceding order
-  std::sort(Tq[0].rbegin(), Tq[0].rend(),PtOrder);
-  std::sort(Tq[1].rbegin(), Tq[1].rend(),PtOrder);
 
   Nc = Tq.size();
   Nn = Tn.size(); 
