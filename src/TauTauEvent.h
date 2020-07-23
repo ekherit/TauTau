@@ -136,6 +136,7 @@ class TauTauEvent : public RootTuple
     };
     virtual void init(void) {};
     virtual void fill(int i,  EvtRecTrack * track);
+    virtual void nfill(int i,  EvtRecTrack * track);
 
     bool pass(const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const SelectionConfig & cfg);
     bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader, const Event::McParticleCol *,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
