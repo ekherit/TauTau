@@ -77,7 +77,7 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 3);
 
   declareProperty("MIN_NEUTRAL_TRACKS"         , cfg.MIN_NEUTRAL_TRACKS         = 0);
-  declareProperty("MAX_NEUTRAL_TRACKS"         , cfg.MAX_NEUTRAL_TRACKS         = 4);
+  declareProperty("MAX_NEUTRAL_TRACKS"         , cfg.MAX_NEUTRAL_TRACKS         = 15);
 
   declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z                   = 15.0); //cm
   declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO                 = 1.5); //cm
@@ -210,7 +210,7 @@ StatusCode TauTau::execute()
   Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(cfg.MIN_EMC_ENERGY_FOR_NEUTRAL);
   Tracker::Vector Tgn             = tracker.GetGoodNeutralTracks<Tracker::Vector>();
 
-  //std::sort(Tc.begin(),Tc.end(), ChargeOrder);
+  std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
 
   /* ****************** TAU PAIR SELECTION **********************************/
   //if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
