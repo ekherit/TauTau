@@ -116,7 +116,7 @@ struct Tracker
   //minimum and maximum neutral tracks energy of all reconstructed tracks
   double MaxNeutralTracksEnergy(void)
   {
-    double Emax = 0;
+    double Emax = -1;
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
     {
       EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
@@ -157,6 +157,7 @@ struct Tracker
 
   double MinNeutralTracksEnergy(void)
   {
+    if(evtRecEvent->totalCharged() == evtRecEvent->totalTracks() ) retur -1.0;
     double Emin = std::numeric_limits<double>::max(); //unfound value
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
     {
@@ -201,6 +202,7 @@ double GetTotalNeutralTracksEnergy(const Container & input, double Emin=0)
 template <typename Container>
 double MinNeutralTracksEnergy(const Container & input)
 {
+  if(input.empty()) return -1.0;
   double Emin = std::numeric_limits<double>::max(); //unfound value
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
