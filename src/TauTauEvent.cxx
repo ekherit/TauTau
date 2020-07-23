@@ -164,7 +164,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   std::sort(Ts[0].rbegin(), Ts[0].rend(),PtOrder);
   std::sort(Ts[1].rbegin(), Ts[1].rend(),PtOrder);
 
-  std::vector<EvtRecTrack*> Tq = Zip(T[0],T[1], true);//JoinTracks(T);
+  std::vector<EvtRecTrack*> Tq = Zip(Ts[0],Ts[1], true);//JoinTracks(T);
 
   Nc = Tq.size();
   Nn = Tn.size(); 
