@@ -162,7 +162,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   if(T[0].empty() || T[1].empty()) return false; //Must be one opposite charged pair
 
   std::vector<EvtRecTrack*> Tq = Zip(T[0],T[1], true);//JoinTracks(T);
-  //sort it by momentum
+  //sort it by transverse momentum in dessceding order
   std::sort(Tq[0].rbegin(), Tq[0].rend(),PtOrder);
   std::sort(Tq[1].rbegin(), Tq[1].rend(),PtOrder);
 
@@ -172,20 +172,19 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   Pid.init();
 
   std::vector<HepLorentzVector> Pc = GetMdcLorentzVector(Tq); //lorentz vector for charged tracks (electron hypoteza)
-  std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tgn);
 
   HepLorentzVector Psum = GetTotalFourMomentum(Pc);
   Hep3Vector P3sum      = GetTotalMomentum(Pc);
   Hep3Vector Ptsum      = GetTotalTransverseMomentum(Pc);
 
-  for(int i=0;i<Tq.size();++i) {
+  for(size_t i=0;i<Tq.size();++i) {
     Pid.fill(i, Tq[i]);
     fill(i, Tq[i]);
     if(eventHeader->runNumber() < 0) {
       McTruth.fill(i,Tq[i],mcParticleCol);
     }
   }
-  for(int i=0;i<Tn.size();++i) {
+  for(size_t i=0;i<Tn.size();++i) {
     nfill(i, Tn[i]);
   }
   M2    = Psum.mag2();
@@ -218,6 +217,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     select = select && (cfg.MIN_TOF                  < Pid.ftof[i] && Pid.ftof[i] < cfg.MAX_TOF);
   }
 
+  std::vector<HepLorentzVector> Pn = GetEmcLorentzVector(Tgn);
   if (Pn.size() >= 2) {
     //find best pi0 combination
     //create combination list
