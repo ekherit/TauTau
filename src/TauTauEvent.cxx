@@ -156,13 +156,13 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   if(!select) return false;  //number of tracks cut
 
   //Now devide track into sign of charge
-  std::vector< std::vector<EvtRecTrack*>  > T = SplitByCharge(Tc);
+  std::vector< std::vector<EvtRecTrack*>  > Ts = SplitByCharge(Tc);
   //T[0] -- negative charged
   //T[1] -- positive charged
-  if(T[0].empty() || T[1].empty()) return false; //Must be one opposite charged pair
+  if(Ts[0].empty() || Ts[1].empty()) return false; //Must be one opposite charged pair
   //sort it by transverse momentum in dessceding order
-  std::sort(T[0].rbegin(), T[0].rend(),PtOrder);
-  std::sort(T[1].rbegin(), T[1].rend(),PtOrder);
+  std::sort(Ts[0].rbegin(), Ts[0].rend(),PtOrder);
+  std::sort(Ts[1].rbegin(), Ts[1].rend(),PtOrder);
 
   std::vector<EvtRecTrack*> Tq = Zip(T[0],T[1], true);//JoinTracks(T);
 
@@ -212,8 +212,8 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
 
   select =  select && (cfg.MIN_PTEM < ptem); 
   for(int i=0;i<2;++i) {
-    select = select && (Tq.p[i] < cfg.MAX_MOMENTUM);
-    select = select && (cfg.MIN_TRANSVERSE_MOMENTUM  < Tq.pt[i] );
+    select = select && (T.p[i] < cfg.MAX_MOMENTUM);
+    select = select && (cfg.MIN_TRANSVERSE_MOMENTUM  < T.pt[i] );
     select = select && (cfg.MIN_TOF                  < Pid.ftof[i] && Pid.ftof[i] < cfg.MAX_TOF);
   }
 
