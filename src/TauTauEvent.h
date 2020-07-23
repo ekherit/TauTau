@@ -50,6 +50,7 @@ class TauTauEvent : public RootTuple
 
     NTuple::Item<double>  enmin; //min energy of all neutral tracks
     NTuple::Item<double>  enmax; //max energy of all neutral tracks
+    NTuple::Item<double>  entot; //total energy of all neutral tracks
 
 
     NTuple::Item<long>    nciptrack; //total number of charged tracks came from interaction points
@@ -101,6 +102,7 @@ class TauTauEvent : public RootTuple
 
       tuple->addItem ("enmin",enmin);
       tuple->addItem ("enmax",enmax);
+      tuple->addItem ("entot",entot);
 
       tuple->addItem ("nciptrack", nciptrack, 0,8); //total number of charged tracks come from interaction points
       tuple->addItem ("Nc", Nc, 0, 6);
