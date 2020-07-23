@@ -196,6 +196,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   acol = Acolinearity(Tq[0], Tq[1]);
   
   cos_theta_mis  = Ptsum.z()/P3sum.mag();
+  std::cout << "cos_theta_mis = " << cos_theta_mis << std::endl;
 
   //calculate sphericity 
   std::vector<double> V = getSphericityEigenvalues(Tq);
