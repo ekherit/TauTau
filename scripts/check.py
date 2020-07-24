@@ -22,7 +22,7 @@ for subdir, dirs, files in os.walk(dir):
             file_size = 0
             try :
                 st = os.stat(root_fname)
-                file_size =  st.st_size/1024/1024 #in Mb
+                file_size =  st.st_size/1024./1024. #in Mb
                 file = open(fname_boss,"r");
                 for line in file.readlines():
                     if(re.match(r, line)):
