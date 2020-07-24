@@ -26,7 +26,7 @@ for subdir, dirs, files in os.walk(dir):
                 file = open(fname_boss,"r");
                 for line in file.readlines():
                     if(re.match(r, line)):
-                        ok = file_size > 0.1
+                        ok = file_size > 0.01
                         break
                 file.close()
             except:
