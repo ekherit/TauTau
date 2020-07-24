@@ -4,7 +4,7 @@ import re
 dir = "./"
 count = 1
 #re_file_pattern = ".+.cfg.bosslog"
-re_file_pattern = ".+.cfg"
+re_file_pattern = ".+.cfg$"
 r = re.compile("Event proceed:")
 okfile = open("OK.txt", "w")
 failfile = open("FAIL.txt", "w")
