@@ -15,8 +15,8 @@ for subdir, dirs, files in os.walk(dir):
             print(f)
             fname = os.path.join(subdir, f)
             fname_boss = fname+".bosslog"
-            print(fname_boss)
             match = False
+            print("Checking %s  %s" % (fname, fname_boss))
             try:
                 file = open(fname_boss,"r");
                 for line in file.readlines():
@@ -29,6 +29,4 @@ for subdir, dirs, files in os.walk(dir):
                 match = False
             if not match:
                 failfile.write("%-50s %10s\n" % (fname, "FAIL"))
-            if(count>100): break
-    if(count>100): break
 
