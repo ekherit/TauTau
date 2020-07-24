@@ -6,8 +6,8 @@ count = 1
 #re_file_pattern = ".+.cfg.bosslog"
 re_file_pattern = ".+.cfg$"
 r = re.compile("Event proceed:")
-okfile = open("OK.txt", "w")
-failfile = open("FAIL.txt", "w")
+okfile = open("check.txt", "w")
+#failfile = open("FAIL.txt", "w")
 fmt = "%-50s %50s %50s %10.3f Mb %10s\n" 
 for subdir, dirs, files in os.walk(dir):
     for f in files:
@@ -31,8 +31,5 @@ for subdir, dirs, files in os.walk(dir):
                 file.close()
             except:
                 ok = False
-            if ok:
-                okfile.write(fmt % (fname, fname_boss, root_fname, file_size, "OK"))
-            else:
-                failfile.write(fmt % (fname, fname_boss, root_fname, file_size, "FAIL"))
+            okfile.write(fmt % (fname, fname_boss, root_fname, file_size, "OK" if ok else "FAIL"))
 
