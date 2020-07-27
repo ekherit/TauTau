@@ -159,7 +159,7 @@ void TauTauEvent::nfill(int i,  EvtRecTrack * track)
 void FillIndexedArrayWithFourMomentum(NTuple::Array<double>  & d4p, const HepLorentzVector  & dP) {
     d4p[0] = dP.e();
     d4p[1] = dP.vect().mag();
-    d4p[2] = dP.perp().mag();
+    d4p[2] = dP.perp();
     d4p[3] = dP.vect().theta();
     d4p[4] = dP.vect().phi();
     d4p[5] = dP.m2();
