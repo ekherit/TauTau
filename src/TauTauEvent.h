@@ -41,13 +41,14 @@ typedef std::list < LorentzPairPtr > comb_t;
 //        Class:  RootEvent
 //  Description:  Main event information supposed to used for selection
 // =====================================================================================
+#define  MAX_NEUTRAL_TRACKS 16;
+#define  MAX_CHARGED_TRACKS 8;
+#define  MAX_PI0_NUMBER   6;
+#define  MAX_RHO_NUMBER  6;
+
 class TauTauEvent : public RootTuple
 {
   public:
-    static const long MAX_NEUTRAL_TRACKS=16;
-    static const long MAX_CHARGED_TRACKS=8;
-    static const long MAX_PI0_NUMBER  = 6;
-    static const long MAX_RHO_NUMBER  = 6;
     virtual ~TauTauEvent(void);
     NTuple::Item<long>    run; //run number
     NTuple::Item<long>    event; //event number 
