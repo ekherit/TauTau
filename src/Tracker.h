@@ -112,36 +112,6 @@ struct Tracker
       return result;
     }
 
-  template<typename Container>
-    Container GetGoodNeutralTracks(void)
-    {
-      Container input = GetNeutralTracks<Container>(0.025); //Get preliminary neutral tracks
-      Container result;
-      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
-        assert((*it)->isEmcShowerValid());
-        RecEmcShower *emcTrk = (*it)->emcShower();
-        double c =  fabs(cos(emcTrk->theta())); //abs cos theta
-        double E  =  emcTrk->energy();
-        double t  =  emcTrk->time();
-        double angle = 180/(CLHEP::pi) * AngleToCloseCharged(emcTrk);
-        bool hit_barrel = (c < 0.8);
-        bool hit_endcup = (0.86 <c) && (c < 0.92);
-        //barrel and endcup calorimeters have different energy threshold
-        bool barrel_good_track = hit_barrel && (E > 0.025);
-        bool endcup_good_track = hit_endcup && (E > 0.050);
-        //bool good_time = 0 < t && t < 14;
-        bool no_close_charged = angle > 20;
-        if(//good_time 
-           // && 
-            (barrel_good_track || endcup_good_track) 
-            && 
-            no_close_charged
-          ) {
-          result.push_back(*it);
-        }
-      }
-      return result;
-    }
 
   long CountNeutralTracks(double E) {
     long count=0;
