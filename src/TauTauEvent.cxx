@@ -28,6 +28,10 @@
 
 TauTauEvent::~TauTauEvent(void)
 {
+  MAX_NEUTRAL_TRACKS = 16; 
+  MAX_CHARGED_TRACKS = 8; 
+  MAX_PI0_NUMBER = 4;   
+  MAX_RHO_NUMBER = 4;  
 }
 
 const int UNSET_VALUE = -999;
