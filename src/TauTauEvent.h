@@ -49,6 +49,7 @@ class TauTauEvent : public RootTuple
   const int MAX_PI0_NUMBER;   
   const int MAX_RHO_NUMBER;  
   public:
+    TauTauEvent(void);
     virtual ~TauTauEvent(void);
     NTuple::Item<long>    run; //run number
     NTuple::Item<long>    event; //event number 
