@@ -112,23 +112,6 @@ class GammaGammaEvent : public RootTuple
       result = result && N0 <= MAX_NEUTRAL_TRACKS_NUMBER;
       result = result && Nq <= MAX_CHARGED_TRACKS_NUMBER;
       if(!result) return false;
-      /*  
-          std::cout << fGG.N0 << " " << fGG.Nq << std::endl;
-          std::cout << " N0 cut = " << fGG.NEUTRAL_TRACKS_NUMBER;
-          std::cout << " Nq cut = " << fGG.CHARGED_TRACKS_NUMBER;
-          std::cout << " E/B min = " << fGG.EEB_MIN_CUT;
-          std::cout << " E/B max = " << fGG.EEB_MAX_CUT;
-          std::cout << " cos = " << fGG.COS_THETA_CUT;
-          std::cout << " delta theta = " << fGG.DELTA_THETA_CUT;
-          std::cout << " delta phi min = " << fGG.MIN_DELTA_PHI_CUT;
-          std::cout << " delta phi max = " << fGG.MAX_DELTA_PHI_CUT;
-          std::cout << " EMC_BAR_MIN = " << cfg.EMC_BARREL_MIN_ENERGY;
-          std::cout << " EMC_END_MIN = " << cfg.EMC_ENDCUP_MIN_ENERGY;
-          std::cout << " END_END_MIN_COS = " << cfg.EMC_ENDCUP_MIN_COS_THETA;
-          std::cout << " END_END_MAX_COS = " << cfg.EMC_ENDCUP_MAX_COS_THETA;
-          std::cout << " END_BARREL_MAX_COS = " << cfg.EMC_BARREL_MAX_COS_THETA;
-          std::cout << std::endl;
-          */
 
       std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
       bool keep=true;

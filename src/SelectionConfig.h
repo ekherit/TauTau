@@ -21,35 +21,35 @@ struct SelectionConfig
 {
   double CENTER_MASS_ENERGY;      //center mass energy
 
-  int MIN_CHARGED_TRACKS; //minimum good charged tracks in selection
-  int MAX_CHARGED_TRACKS; //maximum good charged tracks in selection
+  //int MIN_CHARGED_TRACKS; //minimum good charged tracks in selection
+  //int MAX_CHARGED_TRACKS; //maximum good charged tracks in selection
 
-  int MAX_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
-  int MIN_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
+  //int MAX_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
+  //int MIN_NEUTRAL_TRACKS; //maximum good neutral tracks in selection
 
   double IP_MAX_RHO, IP_MAX_Z; //interection point cut
   int  USE_VERTEX_DB; //user vertex db information
 
-  double MAX_COS_THETA_FOR_CHARGED; //maximum  cos(theta) for good charged track
-  double MIN_EMC_ENERGY_FOR_CHARGED;
+  //double MAX_COS_THETA_FOR_CHARGED; //maximum  cos(theta) for good charged track
+  //double MIN_EMC_ENERGY_FOR_CHARGED;
 
 
-  double MIN_EMC_ENERGY_FOR_NEUTRAL;
+  //double MIN_EMC_ENERGY_FOR_NEUTRAL;
 
-  double MIN_MOMENTUM;
-  double MAX_MOMENTUM;
+  //double MIN_MOMENTUM;
+  //double MAX_MOMENTUM;
 
-  double MIN_TRANSVERSE_MOMENTUM;
-  double MAX_TRANSVERSE_MOMENTUM;
+  //double MIN_TRANSVERSE_MOMENTUM;
+  //double MAX_TRANSVERSE_MOMENTUM;
 
-  double MIN_EP_RATIO;
-  double MAX_EP_RATIO;
+  //double MIN_EP_RATIO;
+  //double MAX_EP_RATIO;
 
-  double MIN_PTEM;
-  double MAX_PTEM;
+  //double MIN_PTEM;
+  //double MAX_PTEM;
 
-  double MIN_TOF;
-  double MAX_TOF;
+  //double MIN_TOF;
+  //double MAX_TOF;
 
   double DELTA_MJPSI;
   //double EMC_ENDCUP_MIN_COS_THETA;
@@ -169,27 +169,27 @@ struct SelectionConfig
     //std::cout << "TEST = " << TEST << std::endl;      //center mass energy
     std::cout << "CENTER_MASS_ENERGY = "         << CENTER_MASS_ENERGY         << "\n"; 
 
-    std::cout << "MIN_CHARGED_TRACKS = "         << MIN_CHARGED_TRACKS         << "\n";
-    std::cout << "MAX_CHARGED_TRACKS = "         << MAX_CHARGED_TRACKS         << "\n";
+    //std::cout << "MIN_CHARGED_TRACKS = "         << MIN_CHARGED_TRACKS         << "\n";
+    //std::cout << "MAX_CHARGED_TRACKS = "         << MAX_CHARGED_TRACKS         << "\n";
 
     std::cout << "IP_MAX_Z = "                   << IP_MAX_Z                   << "\n"; 
     std::cout << "IP_MAX_RHO = "                 << IP_MAX_RHO                 << "\n"; 
     std::cout << "USE_VERTEX_DB = "              << USE_VERTEX_DB              << "\n"; 
-    std::cout << "MAX_COS_THETA = "              << MAX_COS_THETA_FOR_CHARGED  << "\n"; 
-    std::cout << "MIN_EMC_ENERGY_FOR_CHARGED = " << MIN_EMC_ENERGY_FOR_CHARGED << "\n"; 
+    //std::cout << "MAX_COS_THETA = "              << MAX_COS_THETA_FOR_CHARGED  << "\n"; 
+    //std::cout << "MIN_EMC_ENERGY_FOR_CHARGED = " << MIN_EMC_ENERGY_FOR_CHARGED << "\n"; 
 
-    std::cout << "MIN_EMC_ENERGY_FOR_NEUTRAL = " << MIN_EMC_ENERGY_FOR_NEUTRAL << "\n"; 
+    //std::cout << "MIN_EMC_ENERGY_FOR_NEUTRAL = " << MIN_EMC_ENERGY_FOR_NEUTRAL << "\n"; 
 
-    std::cout << "MIN_MOMENTUM = "               << MIN_MOMENTUM               << "\n"; 
-    std::cout << "MAX_MOMENTUM = "               << MAX_MOMENTUM               << "\n"; 
-    std::cout << "MIN_TRANSVERSE_MOMENTUM = "    << MIN_TRANSVERSE_MOMENTUM    << "\n"; 
-    std::cout << "MAX_TRANSVERSE_MOMENTUM = "    << MAX_TRANSVERSE_MOMENTUM    << "\n"; 
-    std::cout << "MIN_EP_RATIO = "               << MIN_EP_RATIO               << "\n"; 
-    std::cout << "MAX_EP_RATIO = "               << MAX_EP_RATIO               << "\n"; 
-    std::cout << "MIN_PTEM = "                   << MIN_PTEM                   << "\n"; 
-    std::cout << "MAX_PTEM = "                   << MAX_PTEM                   << "\n"; 
-    std::cout << "MIN_TOF = "                    << MIN_TOF                    << "\n"; 
-    std::cout << "MAX_TOF = "                    << MAX_TOF                    << "\n"; 
+    //std::cout << "MIN_MOMENTUM = "               << MIN_MOMENTUM               << "\n"; 
+    //std::cout << "MAX_MOMENTUM = "               << MAX_MOMENTUM               << "\n"; 
+    //std::cout << "MIN_TRANSVERSE_MOMENTUM = "    << MIN_TRANSVERSE_MOMENTUM    << "\n"; 
+    //std::cout << "MAX_TRANSVERSE_MOMENTUM = "    << MAX_TRANSVERSE_MOMENTUM    << "\n"; 
+    //std::cout << "MIN_EP_RATIO = "               << MIN_EP_RATIO               << "\n"; 
+    //std::cout << "MAX_EP_RATIO = "               << MAX_EP_RATIO               << "\n"; 
+    //std::cout << "MIN_PTEM = "                   << MIN_PTEM                   << "\n"; 
+    //std::cout << "MAX_PTEM = "                   << MAX_PTEM                   << "\n"; 
+    //std::cout << "MIN_TOF = "                    << MIN_TOF                    << "\n"; 
+    //std::cout << "MAX_TOF = "                    << MAX_TOF                    << "\n"; 
     std::cout << "########################################################################################################\n";
   };
 

@@ -73,25 +73,25 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
 {
   declareProperty("CENTER_MASS_ENERGY"         , cfg.CENTER_MASS_ENERGY         = 1.777*2); //GeV
 
-  declareProperty("MIN_CHARGED_TRACKS"         , cfg.MIN_CHARGED_TRACKS         = 2);
-  declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 3);
+  //declareProperty("MIN_CHARGED_TRACKS"         , cfg.MIN_CHARGED_TRACKS         = 2);
+  //declareProperty("MAX_CHARGED_TRACKS"         , cfg.MAX_CHARGED_TRACKS         = 3);
 
-  declareProperty("MIN_NEUTRAL_TRACKS"         , cfg.MIN_NEUTRAL_TRACKS         = 0);
-  declareProperty("MAX_NEUTRAL_TRACKS"         , cfg.MAX_NEUTRAL_TRACKS         = 15);
+  //declareProperty("MIN_NEUTRAL_TRACKS"         , cfg.MIN_NEUTRAL_TRACKS         = 0);
+  //declareProperty("MAX_NEUTRAL_TRACKS"         , cfg.MAX_NEUTRAL_TRACKS         = 15);
 
   declareProperty("IP_MAX_Z"                   , cfg.IP_MAX_Z                   = 15.0); //cm
   declareProperty("IP_MAX_RHO"                 , cfg.IP_MAX_RHO                 = 1.5); //cm
 
   declareProperty("USE_VERTEX_DB"              , cfg.USE_VERTEX_DB              = 1);
 
-  declareProperty("MAX_COS_THETA_FOR_CHARGED"  , cfg.MAX_COS_THETA_FOR_CHARGED  = 0.93);
-  declareProperty("MIN_EMC_ENERGY_FOR_CHARGED" , cfg.MIN_EMC_ENERGY_FOR_CHARGED = 0.0); //GeV
+  //declareProperty("MAX_COS_THETA_FOR_CHARGED"  , cfg.MAX_COS_THETA_FOR_CHARGED  = 0.93);
+  //declareProperty("MIN_EMC_ENERGY_FOR_CHARGED" , cfg.MIN_EMC_ENERGY_FOR_CHARGED = 0.0); //GeV
 
-  declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL = 0.01); //GeV
+  //declareProperty("MIN_EMC_ENERGY_FOR_NEUTRAL" , cfg.MIN_EMC_ENERGY_FOR_NEUTRAL = 0.01); //GeV
 
-  declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.2); //GeV
+  //declareProperty("MAX_MOMENTUM"               , cfg.MAX_MOMENTUM               = 1.2); //GeV
 
-  declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0.05); //GeV
+  //declareProperty("MIN_TRANSVERSE_MOMENTUM"    , cfg.MIN_TRANSVERSE_MOMENTUM    = 0.05); //GeV
   //declareProperty("MAX_TRANSVERSE_MOMENTUM"    , cfg.MAX_TRANSVERSE_MOMENTUM    = 1.5); //GeV
 
 
@@ -99,11 +99,11 @@ TauTau::TauTau(const std::string& name, ISvcLocator* pSvcLocator) :
   //declareProperty("MIN_EP_RATIO"               , cfg.MIN_EP_RATIO               = 0.0);
   //declareProperty("MAX_EP_RATIO"               , cfg.MAX_EP_RATIO               = 10);
 
-  declareProperty("MIN_PTEM"                     , cfg.MIN_PTEM                   = 0);
+  //declareProperty("MIN_PTEM"                     , cfg.MIN_PTEM                   = 0);
   //declareProperty("MAX_PTEM"                   , cfg.MAX_PTEM                   = 2);
 
-  declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 1);
-  declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 6);
+  //declareProperty("MIN_TOF"                    , cfg.MIN_TOF                    = 1);
+  //declareProperty("MAX_TOF"                    , cfg.MAX_TOF                    = 6);
 
   declareProperty("DELTA_MJPSI"                , cfg.DELTA_MJPSI                   = 0.2);
   declareProperty("TEST_COMBINATIONS", cfg.TEST_COMBINATIONS=0);
@@ -206,16 +206,12 @@ StatusCode TauTau::execute()
 
   Tracker tracker(evtRecEvent, evtRecTrkCol); //helper class for excracting information about tracks
   Tracker::Vector  central_tracks = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
-  Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks, cfg.MIN_EMC_ENERGY_FOR_CHARGED);
-  Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(cfg.MIN_EMC_ENERGY_FOR_NEUTRAL);
+  Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks);
+  Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(0);
   Tracker::Vector Tgn             = tracker.GetGoodNeutralTracks<Tracker::Vector>();
 
   std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
 
-  /* ****************** TAU PAIR SELECTION **********************************/
-  //if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
-  //if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
-  //if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
   if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), tracker))
   {
     fTT.McTruth.flag1=eventHeader->flag1();
@@ -228,8 +224,7 @@ StatusCode TauTau::execute()
 
   /* *******************  SELECT  DIGAMMA  EVENTS ********************************** */
   //see selection detail in GammaGammaEvent.h
-  if(fGG.pass(eventHeader.ptr(), cfg.CENTER_MASS_ENERGY, Tc,Tgn) )
-  {
+  if(fGG.pass(eventHeader.ptr(), cfg.CENTER_MASS_ENERGY, Tc,Tgn) ) {
     fGG.write();
     ngg_events++;
     nwritten_events++;
@@ -237,8 +232,7 @@ StatusCode TauTau::execute()
 
   /* *******************  SELECT  BHABHA EVENTS ********************************** */
   //see selection detail in BhabhaEvent.h
-  if(fBB.pass(eventHeader.ptr(), Tc,Tn))
-  {
+  if(fBB.pass(eventHeader.ptr(), Tc,Tn)) {
     //std::cout << "Before BB write" << std::endl;
     fBB.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
     fBB.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
