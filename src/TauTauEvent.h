@@ -243,7 +243,8 @@ class TauTauEvent : public RootTuple
 
     void fillPi0Rho(const comb_t & pi0s, std::vector<EvtRecTrack*> & );
 
-    bool pass(const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const SelectionConfig & cfg);
-    bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader, const Event::McParticleCol *,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
+    //bool pass(const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const SelectionConfig & cfg);
+    //bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader, const Event::McParticleCol *,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
+      bool pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  Tracker & tracker);
 };
 
