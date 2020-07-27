@@ -237,7 +237,8 @@ void TauTauEvent::fillPi0Rho(comb_t & pi0s, std::vector<EvtRecTrack*> & Tq) {
         int tq_idx = NotEidxs[i];
         HepLorentzVector p = Tq[tq_idx]->mdcKalTrack()->p4(PION_MASS);
         double mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
-        Rhos.push_back(  std::pair<double, int>(mrho, tq_idx) );
+        std::pair<double, int> item(mrho, tq_idx);
+        Rhos.push_back(item);
       }
     }
     std::sort(Rhos.begin(), Rhos.end(), CloseToMrhoOrder);
