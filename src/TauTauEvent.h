@@ -146,7 +146,7 @@ class TauTauEvent : public RootTuple
       tuple->addItem ("Nc", Nc); //total number of charged tracks
       tuple->addItem ("Ncc", Ncc); //central charged tracks
       tuple->addItem ("Nce", Nce); //central charged tracks with EMC
-      tuple->addItem ("Ncg", Ncg, MAX_CHARGED_TRACKS); //Good charged tracks with EMC
+      tuple->addItem ("Ncg", Ncg, 0, MAX_CHARGED_TRACKS); //Good charged tracks with EMC
 
       tuple->addItem ("Nn", Nn, 0, MAX_NEUTRAL_TRACKS); //total number of neutral tracks (raw)
       tuple->addItem ("NnE10",  NnE10);
