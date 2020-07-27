@@ -34,7 +34,7 @@
 
 class EvtRecTrack;
 
-typedef std::pair<const HepLorentzVector*, const HepLorentzVector*> LorentzPairPtr;
+typedef std::pair<HepLorentzVector*, HepLorentzVector*> LorentzPairPtr;
 typedef std::list < LorentzPairPtr > comb_t;
 
 // =====================================================================================
