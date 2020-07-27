@@ -174,9 +174,11 @@ inline bool CloseToMpi0Order(const LorentzPairPtr & p1, const LorentzPairPtr & p
   return fabs(m1-PI0_MASS) < fabs(m2-PI0_MASS);
 }
 
+/*
 inline bool CloseToMrhoOrder(double m1,double m2) {
   return fabs(m1-RHO_MASS) < fabs(m2-RHO_MASS);
 }
+*/
 
 inline bool CloseToMrhoOrder(const std::pair<double, int> & p1, const std::pair<double, int> & p2) {
   return fabs(p1.first-RHO_MASS) < fabs(p2.first-RHO_MASS);
