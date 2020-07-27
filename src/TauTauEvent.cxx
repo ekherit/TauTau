@@ -390,6 +390,9 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   if (Png.size() >= 2) {
     comb_t pi0s = MakePi0List(Png); //make all gamma gamma combinations orderer by close to pi0
     fillPi0Rho(pi0s,Tq); //fill tuple by resuls. In this function we keep only most close to pi0 and rho
+  } else {
+    Npi0 = 0;
+    Nrho = 0;
   }
 
   run   = eventHeader->runNumber();
