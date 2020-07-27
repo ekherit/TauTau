@@ -337,13 +337,13 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   HepLorentzVector dP  = Psum - P0;
   for(size_t i=0; i<d4p.size(); ++i) {
     FillIndexedArrayWithFourMomentum(*(d4p[i]), dP);
-    if( i >= Pn.size()) dP += Pn[i];
+    if( i < Pn.size()) dP += Pn[i];
   }
 
   HepLorentzVector dPg  = Psum - P0;
   for(size_t i=0; i<d4pg.size(); ++i) {
     FillIndexedArrayWithFourMomentum(*(d4pg[i]), dPg);
-    if( i >= Png.size()) dP += Png[i];
+    if( i < Png.size()) dP += Png[i];
   }
 
   std::cout << "Before RootTracke fil " << std::endl;
