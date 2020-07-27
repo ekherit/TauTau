@@ -182,7 +182,7 @@ inline bool CloseToMrhoOrder(std::pair<double, int> & p1,  std::pair<double, int
   return fabs(p1.first - RHO_MASS) < fabs(p2.first - RHO_MASS);
 }
 
-comb_t MakePi0List(const std::vector<HepLorentzVector> & Png) {
+comb_t MakePi0List(std::vector<HepLorentzVector> & Png) {
     assert( Png.size() >=2 );
     //create combination list
     comb_list_t pi0_cmb_list = make_combination_list(Png); //all pi0 combination 
