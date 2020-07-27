@@ -328,6 +328,8 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   ptem25  = ptsum / (cfg.CENTER_MASS_ENERGY - Psum.e() - Entot25);
   ptem50  = ptsum / (cfg.CENTER_MASS_ENERGY - Psum.e() - Entot50);
 
+  std::cout << "Tq.size = " << Tq.size() << std::endl;
+  std::cout << "Before FillIndexedArrayWithFourMomentum " << std::endl;
   FillIndexedArrayWithFourMomentum(P4, Psum);
   HepLorentzVector P0 = getInitialFourMomentum(cfg.CENTER_MASS_ENERGY); //initial Momentum
 
@@ -344,6 +346,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
     if( i >= Png.size()) dP += Png[i];
   }
 
+  std::cout << "Before RootTracke fil " << std::endl;
   //Save good charged tracks from IP point with EMC signal
   for(size_t i=0;i<Tq.size();++i) {
     Pid.fill(i, Tq[i]);
@@ -352,6 +355,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
       McTruth.fill(i,Tq[i],mcParticleCol);
     }
   }
+  std::cout << "Before RootTrack nfill " << std::endl;
   for(size_t i=0;i<Tn.size();++i) {
     nfill(i, Tn[i]);
   }
