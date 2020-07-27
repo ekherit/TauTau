@@ -34,6 +34,9 @@
 
 class EvtRecTrack;
 
+typedef std::pair<const HepLorentzVector*, const HepLorentzVector*> LorentzPairPtr;
+typedef std::list < LorentzPairPtr > comb_t;
+
 // =====================================================================================
 //        Class:  RootEvent
 //  Description:  Main event information supposed to used for selection
@@ -234,5 +237,3 @@ class TauTauEvent : public RootTuple
     bool pass(const SelectionConfig & cfg, const Event::EventHeader * eventHeader, const Event::McParticleCol *,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn);
 };
 
-typedef std::pair<const HepLorentzVector*, const HepLorentzVector*> LorentzPairPtr;
-typedef std::list < LorentzPairPtr > comb_t;
