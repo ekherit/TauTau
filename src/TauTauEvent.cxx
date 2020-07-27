@@ -187,12 +187,12 @@ comb_t MakePi0List(const std::vector<HepLorentzVector> & Png) {
     //create combination list
     comb_list_t pi0_cmb_list = make_combination_list(Png); //all pi0 combination 
     //loop over all combinations
-    comb_list_t::iterator best_comb=pi0_cmb_list.begin();
+    comb_list_t::const_iterator best_comb=pi0_cmb_list.begin();
     double chi2_mass=std::numeric_limits<double>::max();
     //Find best combinations"
     for(comb_list_t::iterator it=pi0_cmb_list.begin(); it!=pi0_cmb_list.end(); ++it) {
       double chi2=0;
-      for(comb_t::iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair) {
+      for(comb_t::const_iterator it_pair = it->begin(); it_pair!=it->end(); ++it_pair) {
         //calculate invariant mass
         double m = (*(it_pair->first) +  *(it_pair->second)).mag();
         //add to chi square
@@ -233,7 +233,7 @@ void TauTauEvent::fillPi0Rho(const comb_t & pi0s, std::vector<EvtRecTrack*> & Tq
 
       //Now loop over Not electron and calculate Rho mass
       for(int i = 0; i<NotEidxs.size(); ++i) {
-        HepLorentzVector p = Tq[RhoIdxs[i]]->mdcKalTrack()->p4(PION_MASS);
+        HepLorentzVector p = Tq[NotEIdxs[i]]->mdcKalTrack()->p4(PION_MASS);
         double mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
         Rhos.push_back(  std::pair<double, int>(mrho, NotEidxs[i]) );
       }
