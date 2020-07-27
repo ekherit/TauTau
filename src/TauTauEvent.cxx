@@ -203,7 +203,8 @@ comb_t MakePi0List(std::vector<HepLorentzVector> & Png) {
         best_comb = it;
       }
     }
-    std::sort(best_comb->begin(), best_comb->end(), CloseToMpi0Order);
+    best_comb->sort(CloseToMpi0Order);
+    //std::sort(best_comb->begin(), best_comb->end(), CloseToMpi0Order);
     return *best_comb;
 };
 
