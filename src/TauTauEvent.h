@@ -217,15 +217,15 @@ class TauTauEvent : public RootTuple
       // 3 - theta
       // 4 - phi
       // 5 - m2
-      tuple->addIndexedItem("Psum",P4, ndp);
+      tuple->addIndexedItem("Psum",ndp, P4);
       char buf[1024];
       for(size_t i=0; i< d4p.size(); ++i) {
         sprintf(buf,"d4p%d",i);
-        tuple->addIndexedItem(buf, d4p[i], ndp);
+        tuple->addIndexedItem(buf, ndp, d4p[i]);
       }
       for(size_t i=0; i< d4pg.size(); ++i) {
         sprintf(buf,"d4pg%d",i);
-        tuple->addIndexedItem(buf, d4pg[i], ndp);
+        tuple->addIndexedItem(buf, ndp, d4pg[i]);
       }
     };
     virtual void init(void) {};
