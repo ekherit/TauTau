@@ -207,7 +207,7 @@ comb_t MakePi0List(const std::vector<HepLorentzVector> & Png) {
     return *best_comb;
 };
 
-void TauTauEvent::fillPi0Rho(const comb_t & pi0s, std::vector<EvtRecTrack*> & Tq) {
+void TauTauEvent::fillPi0Rho(comb_t & pi0s, std::vector<EvtRecTrack*> & Tq) {
     size_t npi0 = pi0s.size() < MAX_PI0_NUMBER ? pi0s.size() : MAX_PI0_NUMBER;
     Npi0 = npi0;
 
@@ -247,7 +247,7 @@ void TauTauEvent::fillPi0Rho(const comb_t & pi0s, std::vector<EvtRecTrack*> & Tq
     }
 }
 //bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  std::vector<EvtRecTrack*>  & Tc, const  std::vector<EvtRecTrack*>  & Tn, const  std::vector<EvtRecTrack*>  & Tgn) 
-bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  const  Tracker & tracker) 
+bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  eventHeader, const Event::McParticleCol * mcParticleCol,  Tracker & tracker) 
 {
   //central tracks T_{ineracion point}, T_ip
   Tracker::Vector  Tcc     = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
