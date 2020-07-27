@@ -164,11 +164,9 @@ void FillIndexedArrayWithFourMomentum(NTuple::Array<double>  & d4p, const HepLor
     d4p[4] = dP.vect().phi();
     d4p[5] = dP.m2();
 };
-//typedef std::pair<const HepLorentzVector*, const HepLorentzVector*> LorentzPairPtr;
-//typedef std::list < LorentzPairPtr > comb_t;
 typedef std::vector< comb_t > comb_list_t;
 
-inline bool CloseToMpi0Order(const LorentzPairPtr & p1, const LorentzPairPtr & p2) {
+inline bool CloseToMpi0Order(LorentzPairPtr & p1,  LorentzPairPtr & p2) {
   double m1 = (*(p1.first) +  *(p1.second)).mag();
   double m2 = (*(p2.first) +  *(p2.second)).mag();
   return fabs(m1-PI0_MASS) < fabs(m2-PI0_MASS);
