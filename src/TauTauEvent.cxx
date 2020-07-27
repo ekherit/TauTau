@@ -254,7 +254,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
 {
   //central tracks T_{ineracion point}, T_ip
   Tracker::Vector  Tcc     = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
-  Tracker::Vector  Tce     = FilterMdcTracksByEmcEnergy(Tip, 0);
+  Tracker::Vector  Tce     = FilterMdcTracksByEmcEnergy(Tcc, 0);
   Tracker::Vector  Tcg     = FilterMdcTracksByCosTheta(Tce, 0.93); //good charged tracks with emc and from IP
   Tracker::Vector  Tn      = tracker.GetNeutralTracks<Tracker::Vector>(0); //all neutral tracks in the event
   Tracker::Vector  Tng     = tracker.GetGoodNeutralTracks<Tracker::Vector>();
