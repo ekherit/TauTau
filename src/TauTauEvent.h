@@ -23,6 +23,7 @@
 #include "RootEvent/RootMcTruth.h"
 #include "RootEvent/RootPid.h"
 
+#include "Tracker.h"
 
 #include "SelectionConfig.h"
 
