@@ -139,20 +139,6 @@ struct Tracker
     return Emax;
   };
 
-  //minimum and maximum neutral tracks energy of all reconstructed tracks
-  double MaxNeutralTracksEnergy(void)
-  {
-    double Emax = -1;
-    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
-    {
-      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
-      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
-      RecEmcShower *emcTrk = (*itTrk)->emcShower();
-      double E = emcTrk->energy();
-      if ( E > Emax )  Emax = E;
-    }
-    return Emax;
-  };
 
   inline double AngleToCloseCharged(RecEmcShower * emcTrk)
   {
