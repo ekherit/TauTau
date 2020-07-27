@@ -232,8 +232,8 @@ void TauTauEvent::fillPi0Rho(comb_t & pi0s, std::vector<EvtRecTrack*> & Tq) {
       Mpi0[idx] = m;
 
       //Now loop over Not electron and calculate Rho mass
-      for(int i = 0; i<NotEidxs.size(); ++i) {
-        tq_idx = NotEidxs[i];
+      for(size_t i = 0; i<NotEidxs.size(); ++i) {
+        int tq_idx = NotEidxs[i];
         HepLorentzVector p = Tq[tq_idx]->mdcKalTrack()->p4(PION_MASS);
         double mrho = (p + *(it_pair->first) + *(it_pair->second)).mag();
         Rhos.push_back(  std::pair<double, int>(mrho, tq_idx) );
