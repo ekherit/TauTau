@@ -178,8 +178,8 @@ inline bool CloseToMrhoOrder(double m1,double m2) {
 }
 */
 
-inline bool CloseToMrhoOrder(const std::pair<double, int> & p1, const std::pair<double, int> & p2) {
-  return fabs(p1.first-RHO_MASS) < fabs(p2.first-RHO_MASS);
+inline bool CloseToMrhoOrder(std::pair<double, int> & p1,  std::pair<double, int> & p2) {
+  return fabs(p1.first - RHO_MASS) < fabs(p2.first - RHO_MASS);
 }
 
 comb_t MakePi0List(const std::vector<HepLorentzVector> & Png) {
