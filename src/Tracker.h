@@ -340,14 +340,14 @@ inline Container FilterMdcTracksByCosTheta(Container  &  input, const double max
 }
 
 template<typename Container>
-inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double MIN_EMC_ENERGY /* minimum allowed emc energy for charged tracks */)
+inline Container FilterMdcTracksByEmcEnergy(const Container  &  input, const double Emin =0 /* minimum allowed emc energy for charged tracks */)
 {
   Container result;
   for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
   {
     if(!(*it)->isEmcShowerValid()) continue; //charged track must have energy deposition in EMC
     RecEmcShower *emcTrk = (*it)->emcShower();
-    if ( emcTrk->energy() > MIN_EMC_ENERGY ) result.push_back(*it);
+    if ( emcTrk->energy() > Emin ) result.push_back(*it);
   }
   return result;
 }

@@ -207,7 +207,7 @@ StatusCode TauTau::execute()
   Tracker tracker(evtRecEvent, evtRecTrkCol); //helper class for excracting information about tracks
   Tracker::Vector  central_tracks = tracker.GetCentralTracks<Tracker::Vector>(cfg.IP_MAX_Z, cfg.IP_MAX_RHO, cfg.USE_VERTEX_DB);
   Tracker::Vector Tc              = FilterMdcTracksByEmcEnergy(central_tracks);
-  Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>(0);
+  Tracker::Vector Tn              = tracker.GetNeutralTracks<Tracker::Vector>();
   Tracker::Vector Tgn             = tracker.GetGoodNeutralTracks<Tracker::Vector>();
 
   std::sort(Tn.rbegin(),Tn.rend(), EmcEnergyOrder);
