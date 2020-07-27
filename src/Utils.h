@@ -46,6 +46,12 @@ inline HepLorentzVector getTotalMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
 	return HepLorentzVector(Wcm*tan(a_2),0,0,Wcm/cos(a_2)); //check this formula 2019-01-25
 }
 
+inline HepLorentzVector getInitialFourMomentum(double Wcm = BEAM_CENTER_MASS_ENERGY)
+{
+  double a_2 = 0.5*BEPC_CROSSING_ANGLE;
+	return HepLorentzVector(Wcm*tan(a_2),0,0,Wcm/cos(a_2)); //check this formula 2019-01-25
+}
+
 
 /*
 inline std::list<EvtRecTrack*> createGoodChargedTrackList(

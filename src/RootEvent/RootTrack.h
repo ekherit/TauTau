@@ -36,6 +36,7 @@ struct RootTracks
 	NTuple::Array<double> vxy, vz, vphi; //poca coordinate of track
   NTuple::Array<double> depth; //depth in muon system
   NTuple::Array<double> Nmuhit; //number of muon hits
+  NTuple::Array<double> temc; //time of EMC
 	virtual void add_to_tuple(NTuple::Tuple * tuple, NTuple::Item<long> & ntrack, const std::string & prefix="")
 	{
 		//tuple->addItem ("ntrack", ntrack); 
@@ -59,5 +60,6 @@ struct RootTracks
 		tuple->addIndexedItem (prefix+"vphi",      ntrack, vphi);
 		tuple->addIndexedItem (prefix+"depth",     ntrack, depth);
 		tuple->addIndexedItem (prefix+"Nmuhit",    ntrack, Nmuhit);
+		tuple->addIndexedItem (prefix+"temc",      ntrack, temc);
 	}
 };

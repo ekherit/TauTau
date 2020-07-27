@@ -215,16 +215,9 @@ StatusCode TauTau::execute()
   /* ****************** TAU PAIR SELECTION **********************************/
   //if ( Tc.size() == central_tracks.size()  && fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))  //all central tracks has energy deposite in EMS
   //if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
-  if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
+  //if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), Tc,Tn,Tgn))
+  if ( fTT.pass(cfg, eventHeader.ptr(), mcParticleCol.ptr(), tracker))
   {
-    fTT.nctrack   = tracker.GetNtrackCharged(); //save total number of all reconstructed charged tracks
-    fTT.nciptrack = central_tracks.size(); //fill the total number of central tracks
-
-    fTT.nntrack   = tracker.GetNtrackNeutral(); //save total number of all reconstructed neutral tracks
-    fTT.enmin     = tracker.MinNeutralTracksEnergy();
-    fTT.enmax     = tracker.MaxNeutralTracksEnergy();
-    fTT.entot     = tracker.GetTotalNeutralTracksEnergy();
-
     fTT.McTruth.flag1=eventHeader->flag1();
     fTT.McTruth.flag2=eventHeader->flag2();
     fTT.write();

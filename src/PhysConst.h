@@ -23,6 +23,7 @@ const double PROTON_MASS   = 0.93827231;//GeV
 const double PI0_MASS      = 0.1349770; //GeV PDG-2018 134.9770±0.0005 MeV
 const double JPSI_MASS     = 3.096900; //GeV +- 0.006 MeV - PDG-2018 
 const double PSIP_MASS     = 3.686109; //GeV PDG-2014
+const double RHO_MASS      = 0.77511;  //GeV PDG-2020
 
 //enum  {ID_KAON=0, ID_MUON=1, ID_ELECTRON=2, ID_PION=3, ID_PROTON=4};
 

@@ -560,6 +560,13 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("M2emu","(p[0]+Emu1)**2-psum*psum");
   tt->SetAlias("M2mue","(p[1]+Emu0)**2-psum*psum");
   tt->SetAlias("M2KK","(EK0+EK1)**2-psum*psum");
+  tt->SetAlias("NnE100","Sum$(nE>0.1)");
+  tt->SetAlias("NnE50","Sum$(nE>0.050)");
+  tt->SetAlias("NnE25","Sum$(nE>0.025)");
+  tt->SetAlias("Ngbarrel","Sum$( abs(cos(ntheta))<0.8 && nE>0.025)");
+  tt->SetAlias("Ngendcup","Sum$( abs(cos(ntheta))<0.92 && abs(cos(ntheta)) >0.86  && nE>0.05)");
+  tt->SetAlias("Ng","Ngbarrel+Ngendcup");
+
 
 
   tt->SetAlias("lum",myfmt("%6.2f*1",L).c_str());
@@ -568,7 +575,7 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("Eb",Eb);
   tt->SetAlias("MPI",(std::to_string(MPI)+"*1").c_str());
   tt->SetAlias("Emis2","(2*Eb-p[0]-p[1])");
-  tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
+  //tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
   tt->SetAlias("cos_theta_mis2","(pz[0]+pz[1])/hypot(hypot(px[0]+px[1], py[0]+py[1]), pz[0]+pz[1])");
   tt->SetAlias("acol2","(px[0]*px[1]+py[0]*py[1]+pz[0]*pz[1])/(p[0]*p[1])");
   tt->SetAlias("MM2","Emis**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");

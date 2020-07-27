@@ -64,7 +64,6 @@ struct Tracker
   }
 
 
-
   long GetNtrackCharged(void)  { return  evtRecEvent->totalCharged(); };
   long GetNtrackNeutral(void)  { return  evtRecEvent->totalNeutral(); };
   long GetNtrackTotal(void)    { return  evtRecEvent->totalTracks(); };
@@ -112,6 +111,63 @@ struct Tracker
       }
       return result;
     }
+
+  template<typename Container>
+    Container GetGoodNeutralTracks(void)
+    {
+      Container input = GetNeutralTracks<Container>(0.025); //Get preliminary neutral tracks
+      Container result;
+      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
+        assert((*it)->isEmcShowerValid());
+        RecEmcShower *emcTrk = (*it)->emcShower();
+        double c =  fabs(cos(emcTrk->theta())); //abs cos theta
+        double E  =  emcTrk->energy();
+        double t  =  emcTrk->time();
+        double angle = 180/(CLHEP::pi) * AngleToCloseCharged(emcTrk);
+        bool hit_barrel = (c < 0.8);
+        bool hit_endcup = (0.86 <c) && (c < 0.92);
+        //barrel and endcup calorimeters have different energy threshold
+        bool barrel_good_track = hit_barrel && (E > 0.025);
+        bool endcup_good_track = hit_endcup && (E > 0.050);
+        //bool good_time = 0 < t && t < 14;
+        bool no_close_charged = angle > 20;
+        if(//good_time 
+           // && 
+            (barrel_good_track || endcup_good_track) 
+            && 
+            no_close_charged
+          ) {
+          result.push_back(*it);
+        }
+      }
+      return result;
+    }
+
+  long CountNeutralTracks(double E) {
+    long count=0;
+    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++) {
+      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      if(!(*itTrk)->isEmcShowerValid()) continue;  //keep only valid neutral tracks
+      RecEmcShower *emcTrk = (*itTrk)->emcShower();
+      if (emcTrk->energy() > E) ++count;
+    }
+    return count;
+  }
+
+  //minimum and maximum neutral tracks energy of all reconstructed tracks
+  double MaxNeutralTracksEnergy(void)
+  {
+    double Emax = -1;
+    for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
+    {
+      EvtRecTrackIterator itTrk=evtRecTrkCol->begin() + i;
+      if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
+      RecEmcShower *emcTrk = (*itTrk)->emcShower();
+      double E = emcTrk->energy();
+      if ( E > Emax )  Emax = E;
+    }
+    return Emax;
+  };
 
   //minimum and maximum neutral tracks energy of all reconstructed tracks
   double MaxNeutralTracksEnergy(void)
@@ -170,7 +226,7 @@ struct Tracker
     return Emin;
   };
 
-  double GetTotalNeutralTracksEnergy(void)
+  double GetTotalNeutralTracksEnergy(double Ethreshold=0)
   {
     double Etotal=0;
     for(int i = evtRecEvent->totalCharged(); i<evtRecEvent->totalTracks(); i++)
@@ -179,7 +235,9 @@ struct Tracker
       RecEmcShower *emcTrk = (*itTrk)->emcShower();
       if(!(*itTrk)->isEmcShowerValid()) continue; //keep only valid neutral tracks
       double E = emcTrk->energy();
-      Etotal+=E;
+      if(E>Ethreshold) {
+        Etotal+=E;
+      }
     }
     return Etotal;
   }
@@ -249,16 +307,18 @@ std::vector<HepLorentzVector>  GetEmcLorentzVector(const Container & input)
 {
   std::vector<HepLorentzVector> result;
   result.reserve(input.size());
-  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
-  {
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
     //assert((*it)->isEmcShowerValid(), "ERROR: GetEmcLorentzVector: No EMC information in a track");
     assert((*it)->isEmcShowerValid());
     RecEmcShower *emcTrk = (*it)->emcShower();
     double E = emcTrk->energy();
-    HepLorentzVector p(0,0,E,E);  //px,py,pz, E
-    //correct direction
-    p.setTheta(emcTrk->theta()); 
-    p.setPhi(emcTrk->phi());
+    double theta = emcTrk->theta();
+    double phi   = emcTrk->phi();
+    double pz = E*cos(theta);
+    double pt = E*sin(theta);
+    double px = pt*cos(phi);
+    double py = pt*sin(phi);
+    HepLorentzVector p(px,py,pz,E);  //px,py,pz, E
     result.push_back(p);
   }
   return result;
@@ -312,15 +372,13 @@ Hep3Vector GetTotalTransverseMomentum( const Container  & input )
 };
 
 template<typename Container>
-inline Container FilterMdcTracksByCosTheta(Container  &  input, const double MAX_COS_THETA)
+inline Container FilterMdcTracksByCosTheta(Container  &  input, const double max_cos_theta)
 {
   Container result;
-  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it)
-  {
-    //assert( (*it)->isMdcTrackValid(), "ERROR: FilterMdcTracksByCosTheta:  No MDC information in track");
+  for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
     assert( (*it)->isMdcTrackValid());
     RecMdcTrack * mdcTrk = (*it)->mdcTrack();
-    if(fabs(cos(mdcTrk->theta())) < MAX_COS_THETA) result.push_back(*it); 
+    if(fabs(cos(mdcTrk->theta())) < max_cos_theta) result.push_back(*it); 
   }
   return result;
 }
@@ -374,4 +432,14 @@ Container Zip(const Container & C1, const Container & C2, bool is_add_remains = 
 }
 
 
+  template<typename Container>
+    long CountNeutralTracks(const Container & input, double E) {
+      long count=0;
+      for(typename Container::const_iterator it = input.begin(); it!=input.end(); ++it) {
+        assert((*it)->isEmcShowerValid());
+        RecEmcShower *emcTrk = (*it)->emcShower();
+        if (emcTrk->energy() > E) ++count;
+      }
+      return count;
+    }
 
