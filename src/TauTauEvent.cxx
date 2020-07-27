@@ -320,8 +320,8 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   ptsum = Psum.perp();
   ptsum2 = (Pc[0]+Pc[1]).perp();
 
-  psum = Psum.vect();
-  psum2 = (Pc[0]+Pc[1]).vect();
+  psum = Psum.vect().mag();
+  psum2 = (Pc[0]+Pc[1]).vect().mag();
 
   ptem  = ptsum / Emis;
   ptem10  = ptsum / (cfg.CENTER_MASS_ENERGY - Psum.e() - Entot10);
@@ -385,7 +385,7 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   //Making pi0
   if (Png.size() >= 2) {
     comb_t pi0s = MakePi0List(Png); //make all gamma gamma combinations orderer by close to pi0
-    fillPi0Rho(pi0s); //fill tuple by resuls. In this function we keep only most close to pi0 and rho
+    fillPi0Rho(pi0s,Tq); //fill tuple by resuls. In this function we keep only most close to pi0 and rho
   }
 
   run   = eventHeader->runNumber();
