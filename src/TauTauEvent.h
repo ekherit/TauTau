@@ -131,8 +131,8 @@ class TauTauEvent : public RootTuple
 
     NTuple::Item<long>    ndp; // ndp=2 (Energy and 3d-momentum)
 
-    std::vector< NTuple::Array<double> > d4p; 
-    std::vector< NTuple::Array<double> > d4pg; 
+    std::vector< NTuple::Array<double> *> d4p; 
+    std::vector< NTuple::Array<double> *> d4pg; 
     NTuple::Array<double> P4; //total four momentum of all charged
 
     virtual void bind_tuple(void)
@@ -211,6 +211,14 @@ class TauTauEvent : public RootTuple
 
       d4p.resize(4); //for  0, 1,2,3 photons
       d4pg.resize(4); //for 
+
+      for(size_t i = 0;i< d4p.size(); ++i) {
+        d4p[i] = new NTuple::Array<double>(); 
+      }
+      for(size_t i = 0;i< d4pg.size(); ++i) {
+        d4pg[i] = new NTuple::Array<double>(); 
+      }
+
       tuple->addItem ("ndp", ndp, 0, 6); 
       // 0 - energy
       // 1 - momentum
@@ -222,11 +230,11 @@ class TauTauEvent : public RootTuple
       char buf[1024];
       for(size_t i=0; i< d4p.size(); ++i) {
         sprintf(buf,"d4p%d",i);
-        tuple->addIndexedItem(buf, ndp, d4p[i]);
+        tuple->addIndexedItem(buf, ndp, *(d4p[i]));
       }
       for(size_t i=0; i< d4pg.size(); ++i) {
         sprintf(buf,"d4pg%d",i);
-        tuple->addIndexedItem(buf, ndp, d4pg[i]);
+        tuple->addIndexedItem(buf, ndp, *(d4pg[i]));
       }
     };
     virtual void init(void) {};

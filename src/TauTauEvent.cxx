@@ -34,7 +34,14 @@ TauTauEvent::TauTauEvent(void) :
 {
 }
 
-TauTauEvent::~TauTauEvent(void) { }
+TauTauEvent::~TauTauEvent(void) { 
+  for(size_t i=0; i<d4p.size(); ++i) {
+    delete d4p[i];
+  }
+  for(size_t i=0; i<d4pg.size(); ++i) {
+    delete d4pg[i];
+  }
+}
 
 const int UNSET_VALUE = -999;
 
@@ -324,13 +331,13 @@ bool TauTauEvent::pass(const SelectionConfig & cfg, const Event::EventHeader *  
   ndp = 6;
   HepLorentzVector dP  = Psum - P0;
   for(size_t i=0; i<d4p.size(); ++i) {
-    FillIndexedArrayWithFourMomentum(d4p[i], dP);
+    FillIndexedArrayWithFourMomentum(*(d4p[i]), dP);
     if( i >= Pn.size()) dP += Pn[i];
   }
 
   HepLorentzVector dPg  = Psum - P0;
   for(size_t i=0; i<d4pg.size(); ++i) {
-    FillIndexedArrayWithFourMomentum(d4pg[i], dPg);
+    FillIndexedArrayWithFourMomentum(*(d4pg[i]), dPg);
     if( i >= Png.size()) dP += Png[i];
   }
 
