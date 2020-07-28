@@ -128,35 +128,25 @@ Selection_t SEL11 =
   "sel11", //selection name
   //common cuts
   "Nc==2"
-  "&& Nc==nctrack"
-  "&& abs(vz[0])<10 && abs(vz[1])<10"
+  //"&& Nc==nctrack"
+  //"&& abs(vz[0])<10 && abs(vz[1])<10"
   "&& vxy[0]<1.0 && vxy[1]<1.0"
   "&& E[0]>0.025 && E[1]>0.025"
   "&& q[0]==-1 && q[1]==1"
   "&& p[0] < 1.1 && p[1] < 1.1"
-//  "&& pt[0] > 0.2 && pt[1] > 0.2"
+  //"&& pt[0] > 0.2 && pt[1] > 0.2"
  // "&& pt[0] < 1.2 && pt[1] < 1.2"
   "&& barrel"
   "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] << 5.5"
-  "&& ptem<1.5"
+  //"&& ptem<1.5"
  // "&& (Sum$(nE>0.05)==0 ||  Sum$(nE>0.05)==2)"
  // "&& Sum$(nE>0.05)<=1"
 //  "&& (NnE50<=1  || (Ng==2 && NnE50==2) )"
   , 
   PID,
   { 
-    //{"eX",  "Nn==0 && eX   && ptem>0.25"},
-    //{"eX",  "Nn<=2 && eX   && ptem>0.25"},
-    {"eX",    "NnE50==0 && eX   && ptem>0.25"},
-    {"ee",    "NnE50==0 && ee   && ptem>0.5"},
-    {"XX",    "NnE50==0 && XX   && ptem>0.35"},
-    //{"eX2",   "Ng==2 && NnE25==2 && eX && ptem>0.25"},
-    //{"eρ",  "Nn==2 && Npi0 == 1 && erho "},
-    //{"eXNg1",    "Ng==1 && eX   && ptem>0.25"},
-    //{"eXNg0",    "Ng==0 && eX   && ptem>0.25"},
-    //{"eXNg2",    "Ng==2 && eX   && ptem>0.25"},
-    //{"eXE50_2",    "NnE50<=2 && eX   && ptem>0.3"},
+    {"eX",    "Nc==2 && Nn==0 && eX   && ptem>0.25"},
   },
 };
 

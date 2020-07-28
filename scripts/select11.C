@@ -135,8 +135,8 @@ Selection_t SEL11 =
   "&& q[0]==-1 && q[1]==1"
   "&& p[0] < 1.1 && p[1] < 1.1"
   "&& pt[0] > 0.2 && pt[1] > 0.2"
-  "&& pt[0] < 1.2 && pt[1] < 1.2"
-  "&& barrel"
+ // "&& pt[0] < 1.2 && pt[1] < 1.2"
+//  "&& barrel"
   "&& ( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )"
   "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] << 5.5"
   "&& ptem<1.5"
@@ -148,13 +148,15 @@ Selection_t SEL11 =
   { 
     //{"eX",  "Nn==0 && eX   && ptem>0.25"},
     //{"eX",  "Nn<=2 && eX   && ptem>0.25"},
-    {"eX",    "NnE50<=1 && eX   && ptem>0.25"},
+    {"eX",    "NnE50==0 && eX   && ptem>0.25"},
+    {"ee",    "NnE50==0 && ee   && ptem>0.5"},
+    {"XX",    "NnE50==0 && XX   && ptem>0.35"},
     //{"eX2",   "Ng==2 && NnE25==2 && eX && ptem>0.25"},
     //{"eρ",  "Nn==2 && Npi0 == 1 && erho "},
-    {"eXNg1",    "Ng==1 && eX   && ptem>0.25"},
-    {"eXNg0",    "Ng==0 && eX   && ptem>0.25"},
-    {"eXNg2",    "Ng==2 && eX   && ptem>0.25"},
-    {"eXE50_2",    "NnE50<=2 && eX   && ptem>0.3"},
+    //{"eXNg1",    "Ng==1 && eX   && ptem>0.25"},
+    //{"eXNg0",    "Ng==0 && eX   && ptem>0.25"},
+    //{"eXNg2",    "Ng==2 && eX   && ptem>0.25"},
+    //{"eXE50_2",    "NnE50<=2 && eX   && ptem>0.3"},
   },
 };
 
