@@ -17,7 +17,7 @@ for subdir, dirs, files in os.walk(dir):
             fname_boss = fname+".bosslog"
             base_fname = os.path.splitext(fname)[0]  
             root_fname = base_fname + ".root"
-            print("Checking %s  %s" % (fname, fname_boss))
+            #print("Checking %s  %s" % (fname, fname_boss))
             ok = False
             file_size = 0
             try :
@@ -31,5 +31,7 @@ for subdir, dirs, files in os.walk(dir):
                 file.close()
             except:
                 ok = False
-            okfile.write(fmt % (fname, fname_boss, root_fname, file_size, "OK" if ok else "FAIL"))
+            result = fmt % (fname, fname_boss, root_fname, file_size, "OK" if ok else "FAIL")
+            okfile.write(result)
+            print(result)
 
