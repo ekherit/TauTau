@@ -170,7 +170,15 @@ TChain * get_chain(const char * name, const char * newname, std::string title, i
 }
 
 //substitute in string s by substring according to regexpr
-std::string sub(std::string s, std::string regexpr, std::string substr)
+//inline std::string sub(std::string s, std::string regexpr, std::string substr)
+//{
+//  std::string result;
+//  std::regex re(regexpr);
+//  std::regex_replace(std::back_inserter(result), s.begin(), s.end(), re, substr);
+//  return result;
+//};
+
+inline std::string sub(std::string_view s, std::string regexpr, std::string substr)
 {
   std::string result;
   std::regex re(regexpr);
@@ -332,5 +340,91 @@ void AddPoint(TGraphErrors * g, const ibn::valer<double> & x, const ibn::valer<d
   g->SetPoint(i, x.value, y.value);
   g->SetPointError(i, x.error, y.error);
 }
+
+inline std::string operator&&(const std::string & a, const std::string & b) {
+  if (  a.empty() &&  b.empty() ) return "";
+  if (  a.empty() && !b.empty() ) return b;
+  if ( !a.empty() &&  b.empty() ) return a;
+  return a+"&&"+b;
+}
+
+inline void operator&=(std::string & a, const std::string & b) {
+  if (  a.empty() &&  b.empty() ) return;
+  if (  a.empty() && !b.empty() ) a=b;
+  if ( !a.empty() &&  b.empty() ) return;
+  a = a && b;
+}
+
+inline std::string operator||(const std::string & a, const std::string & b) {
+  if (  a.empty() &&  b.empty() ) return "";
+  if (  a.empty() && !b.empty() ) return b;
+  if ( !a.empty() &&  b.empty() ) return a;
+  return "("+a+")||("+b+")";
+}
+
+
+inline std::string initial_common_part(const std::string & a, const std::string & b) {
+  std::string s;
+  size_t nmax = std::min(a.length(),b.length());
+  for(size_t i=0; i!=nmax && a[i]==b[i] ;++i)  s+=a[i];
+  return s;
+}
+
+std::string and_fold(const std::vector<std::string> & v) {
+  if(v.size()==0) return "";
+  std::string s = v[0];
+  for(size_t i=1;i!=v.size(); ++i) {
+    s&=v[i];
+  }
+  return s;
+};  
+inline std::string common_cut(const std::string & a, const std::string & b) {
+  auto prepare = [](const auto & v ) -> std::vector<std::string> {
+    auto  va = split(v, "&&");
+    std::vector<std::string> sa;
+    //copy from string view to string and remove spaceses
+    for( auto  sv :  va) {
+      sa.push_back(sub(sv,R"(\s)",""));
+    }
+    //std::sort(std::begin(sa),std::end(sa));
+    return sa;
+  };
+  auto sa = prepare(a);
+  auto sb = prepare(b);
+  //size_t nmax = std::min(sa.size(), sa.size());
+  //std::string s;
+  //for(size_t i=0; i!=nmax;++i)  {
+  //  if( sa[i] == sb[i] ) s&=sa[i];
+  //}
+  std::vector<std::string> common_cuts(std::max(sa.size(), sb.size()));
+  auto it = std::set_intersection(sa.begin(),sa.end(),sb.begin(),sb.end(), common_cuts.begin());
+  common_cuts.resize(it-common_cuts.begin());
+  //remove empty cuts
+  common_cuts.erase(std::remove(common_cuts.begin(), common_cuts.end(), ""), common_cuts.end());
+  return and_fold(common_cuts);
+}
+
+
+inline std::string differece_cut(const std::string & a, const std::string & b) {
+  auto prepare = [](const auto & v ) -> std::vector<std::string> {
+    auto  va = split(v, "&&");
+    std::vector<std::string> sa;
+    //copy from string view to string and remove spaceses
+    for( auto  sv :  va) {
+      sa.push_back(sub(sv,R"(\s)",""));
+    }
+    std::sort(std::begin(sa),std::end(sa));
+    return sa;
+  };
+  auto sa = prepare(a);
+  auto sb = prepare(b);
+  std::vector<std::string> cuts(std::max(sa.size(), sb.size()));
+  auto it = std::set_difference(sa.begin(),sa.end(),sb.begin(),sb.end(), cuts.begin());
+  cuts.resize(it-cuts.begin());
+  //remove empty cuts
+  cuts.erase(std::remove(cuts.begin(), cuts.end(), ""), cuts.end());
+  return and_fold(cuts);
+}
+
 
 #endif

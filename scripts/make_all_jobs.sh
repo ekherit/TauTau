@@ -21,10 +21,10 @@ $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bk
 $TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/pipi     mc/pipi --W=1 --combine='\d\.\d+'
 mkdir mc/galuga
 #$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEee        mc/galuga/ee   --W=1 --combine='\d\.\d+'
-$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEeenew     mc/galuga/ee   --W=1 --combine='\d\.\d+'
-$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEkk        mc/galuga/KK   --W=1 --combine='\d\.\d+'
-$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEpipinew   mc/galuga/pipi --W=1 --combine='\d\.\d+'
-$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEuu        mc/galuga/uu   --W=1 --combine='\d\.\d+'
+$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEee     mc/galuga/ee   --W=1 --combine='\d\.\d+'
+$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEkk     mc/galuga/KK   --W=1 --combine='\d\.\d+'
+$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEpipi   mc/galuga/pipi --W=1 --combine='\d\.\d+'
+$TAUTAUROOT/scripts/make_job_option.py /besfs/groups/tauqcd/zhangjy/bos704/MC/bkgd/galuga/EEuu     mc/galuga/uu   --W=1 --combine='\d\.\d+'
 
 find -name "submit.sh" -exec echo {} \;  > submit_all.sh
 find -name "submit.csh" -exec echo {} \; > submit_all.csh

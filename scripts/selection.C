@@ -1064,78 +1064,6 @@ struct ChannelSelectionResult_t : public ChannelSelection_t,  public  std::vecto
   }
 
 };
-/*
-struct ChannelSelectionResult_t : public ChannelSelection_t
-{
-  long Ntt=0; //total number of events for all points
-  long Ngg=0; //total number of gg events
-  long Nbb=0; //total number of Bhabha events
-  double L=0; //total luminosity
-  std::vector<PointSelectionResult_t> Points;
-  std::string cut;
-  ChannelSelectionResult_t(void){}
-  ChannelSelectionResult_t(const ChannelSelectionResult_t & ) = default;
-  ChannelSelectionResult_t(const ChannelSelection_t & cs, const std::vector<PointSelectionResult_t> & p) : ChannelSelection_t(cs)
-  {
-    Points = p;
-    for(auto & p : Points)
-    {
-      Ntt+=p.tt.N;
-      Ngg+=p.gg.N;
-      Nbb+=p.bb.N;
-      cut = p.cut;
-    } 
-
-  }
-  ChannelSelection_t & operator=(const std::vector<PointSelectionResult_t> & P)
-  {
-    Ntt=0;
-    Ngg=0;
-    Nbb=0;
-    Points = P;
-    for(auto & p : Points)
-    {
-      Ntt+=p.tt.N;
-      Ngg+=p.gg.N;
-      Nbb+=p.bb.N;
-      cut = p.cut;
-      L += p.L;
-    } 
-    return *this;
-  }
-  ChannelSelection_t & operator=(const ChannelSelection_t & cs )
-  {
-    title      = cs.title;
-    cut        = cs.cut;
-    //root_title = cs.root_title;
-    return *this;
-  }
-};
-*/
-
-
-/*
-
-struct Selection 
-{
-  std::string name;
-  std::string common_cut;
-  std::vector<ParticleID_t> pid;
-  std::vector<ChannelSelection_t> sel;
-  //std::vector<int> skip_list; //channel to skip list
-  ChannelSelection_t       & operator[](int i)         { return sel[i]; }
-  const ChannelSelection_t & operator[](int i) const   { return sel[i]; }
-  //auto begin() { return sel.begin(); }
-  //auto end() { return sel.end(); }
-  //const auto cbegin() const {return sel.cbegin(); }
-  //const auto cend() const { return sel.cend(); }
-  std::vector<ChannelSelection_t>::iterator begin() { return sel.begin(); }
-  std::vector<ChannelSelection_t>::iterator end() { return sel.end(); }
-  std::vector<ChannelSelection_t>::const_iterator cbegin() const { return sel.cbegin(); }
-  std::vector<ChannelSelection_t>::const_iterator cend() const { return sel.cend(); }
-  size_t size() const { return sel.size(); }
-};
-*/
 
 std::string to_string(time_t t, int TZ)
 {
@@ -1544,17 +1472,18 @@ void cmp(const Scan_t & S1, const Scan_t & S2, std::string var, std::string sel=
 void cmp(const Scan_t & S1, const Scan_t & S2, const Selection_t & Sel, int i, std::string var, std::string extracut="", std::string gopt = "", int Nbin=100, double Min=0, double Max=0)
 {
   std::cout << Sel[i].title << std::endl;
-  std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
-  cmp(S1,S2,var,sel,gopt,Nbin,Min,Max);
+  //std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+  //std::string sel = Sel  && Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+  cmp(S1,S2,var,Sel[i] && extracut,gopt,Nbin,Min,Max);
 };
 
 TH1 * fold(const Scan_t & D, const Selection_t & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::string name = "Hlastfold" + std::to_string(HISTO_INDEX);
   TH1 * H = new TH1F(name.c_str(),name.c_str() ,Nbin,Min,Max);
-  for(int i =0;i<Sel.size();++i) {
+  for(size_t i =0;i<Sel.size();++i) {
     std::cout << Sel[i].title << ", " << std::flush;
-    std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
-    auto h = fold(D, var,sel,gopt,Nbin,Min,Max);
+    //std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
+    auto h = fold(D, var,Sel[i]&&extracut,gopt,Nbin,Min,Max);
     H->Add(h);
     delete h;
   }
@@ -1733,9 +1662,9 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
     }
     //rp.eps_error = sqrt(eps_error2);
   }
-  auto & reference_point = * find_best(result, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU); } );
+  auto & reference_point = * find_best(result, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
   //normalize efficiency correction to threshold efficiency
-  for(int i=0;i<result.size();++i)
+  for(size_t i=0;i<result.size();++i)
   {
     auto & rp   = result[i];
     rp.tt.effcor = rp.tt.efficiency / reference_point.tt.efficiency.value;
@@ -2010,7 +1939,7 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
 void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
-  std::string format_str = "%4.3f ± %4.3f";
+  std::string format_str = " %5.4f ± %5.4f ";
   cfg.total_width = format_str.length();
   auto hline = [&SR, &cfg](std::string s="─",std::string title="") { cfg.hline(SR[0].size(),s,title); };
   hline("━","CORRECTION TO EFFICIENCY");
@@ -2024,7 +1953,7 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
             sprintf(buf,format_str.c_str(), p.tt.effcor.value,p.tt.effcor.error);
             if(p.tt.effcor.error == 0 && p.tt.effcor==1) 
             {
-              return std::string("     1     ");
+              return std::string("      1      ");
             }
             return std::string(buf); 
           },
@@ -2044,11 +1973,40 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
           } 
         );
   };
+  auto prn2 = [&](std::string title, auto & sr) {
+    print_smth(sr, cfg, 
+          [&title](){ return title; }, 
+          [&format_str](auto & p) { 
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), (p.tt.effcor.value-1)*100,p.tt.effcor.error*100);
+            if(p.tt.effcor.error == 0 && p.tt.effcor==1) 
+            {
+              return std::string("      0      ");
+            }
+            return std::string(buf); 
+          },
+          [&format_str](auto & P) { 
+            double sum=0;
+            double error2_sum=0;
+            for(auto & p: P)  
+            {
+              sum+=p.tt.effcor.value;  
+              error2_sum+=p.tt.effcor.error*p.tt.effcor.error;
+            }
+            double average = sum/P.size(); 
+            double error = sqrt(error2_sum)/P.size();
+            char buf[1024];
+            sprintf(buf,format_str.c_str(), (average-1.0)*100,error*100);
+            return std::string(buf); 
+          } 
+        );
+  };
   for( auto &  sr : SR) 
      prn(sr.title,sr);
   hline();
   auto f = fold(SR);
   prn("all", f);
+  prn2("(cor-1)x100", f);
   hline("━");
 };
 
@@ -2303,37 +2261,6 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
       os << R"(\\)" << "\n";
     };
 
-    //os << std::setw(20) << "channel";
-    //for( auto & p : SR[0].Points) {
-    //  std::string name = R"(\myCF{)" + p.name + R"(})";
-    //  os << " & " << std::setw(col_width) << name;
-    //}
-    //os << std::setw(col_width) << " & " << "total"  << R"(\\ \hline)";
-    //os << "\n";
-
-    //os << std::setw(20) << R"($\int L$, $pb^{-1}$)";
-    //for( auto & p : SR[0].Points) {
-    //  os << " & ";
-    //  char buf[1024];
-    //  sprintf(buf,"%5.1f", p.L);
-    //  os << std::setw(col_width) << buf;
-    //}
-    //os << " & ";
-    //{
-    //  char buf[1024];
-    //  sprintf(buf,"%5.1f", (SR[0].L));
-    //  os << std::setw(col_width) << buf;
-    //}
-    //os<< R"(\\ \hline)" <<  "\n";
-
-    //os << std::setw(20) << R"($E-M_{\tau}^{\text{PDG}}$, MeV)";
-    //for( auto & p : SR[0].Points) {
-    //  os << " & ";
-    //  char buf[1024];
-    //  sprintf(buf,"%3.2f", (p.W*0.5 - MTAU)*1000);
-    //  os << std::setw(col_width) << R"(\myR{)" <<  buf << "}";
-    //}
-    //os << " & " << R"(\\ \hline)" <<  "\n";
 
     make_row(os, total, 
         R"(point)", 
@@ -2385,12 +2312,16 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print epsilon
     make_row(os, total, 
         R"($\varepsilon$, \%)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.2f\pm%4.2f$)", p.tt.efficiency.value*100, p.tt.efficiency.error*100); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%5.3f\pm%5.3f$)", p.tt.efficiency.value*100, p.tt.efficiency.error*100); });
 
     //print epsilon correction
     make_row(os, total, 
         R"($\epsilon^{cor}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.tt.effcor.value, p.tt.effcor.error); });
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%6.4f\pm%6.4f$)", p.tt.effcor.value, p.tt.effcor.error); });
+
+    make_row(os, total, 
+        R"($(\epsilon^{cor}-1)\cdot100\%$)", 
+        [](const PointSelectionResult_t & p) { return myfmt(R"($%5.3f\pm%5.3f$)", (p.tt.effcor.value-1)*100.0, p.tt.effcor.error*100.0); });
 
     //os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
     os << R"(\hline)" << "\n";
@@ -2454,25 +2385,24 @@ std::vector<ChannelSelectionResult_t> select(const Scan_t & P, const Selection_t
 //  return select(DATA, SEL[channel], extracut);
 //};
 
-std::vector<ChannelSelectionResult_t> select(const Scan_t & DATA, const Selection_t & SEL, std::vector<int> channels, std::string extracut="")
-{
+std::vector<ChannelSelectionResult_t> select(const Scan_t & DATA, const Selection_t & SEL, std::vector<int> channels, std::string extracut="") {
   std::vector<ChannelSelectionResult_t> R(channels.size());
+  /*
   std::string cut = SEL.common_cut();
-  if(extracut != "")
-  {
+  if(extracut != "") {
     if(SEL.common_cut() !="") cut = SEL.common_cut() +"&&"+extracut;
     else cut = extracut;
   }
   if(cut!="") cut = "&&"+cut;
+  */
 
   int j=0;
-  for(auto i : channels)
-  {
+  for(auto i : channels) {
     auto & s = SEL[i];
     auto & r = R[i];
     r = s;
-    r.cut = SEL[i].cut +  cut;
-    r = select(DATA, SEL[i].cut +  cut);
+    r.cut = SEL[i] && extracut;
+    r = select(DATA, r.cut);
     print(r,j++);
   }
   print(fold(R,"all"),-1);
@@ -2482,6 +2412,8 @@ std::vector<ChannelSelectionResult_t> select(const Scan_t & DATA, const Selectio
 
 std::vector<PointSelectionResult_t> measure_efficiency(const std::vector<ScanPoint_t> & P, std::string cut)
 {
+  cut=sub(cut,R"(\s)","");
+  std::cout << cut << std::endl;
   auto s = select(P,cut);
   for(auto & sp : s ) {
     auto & eps = sp.tt.efficiency;
@@ -2497,14 +2429,14 @@ std::vector<PointSelectionResult_t> measure_efficiency(const std::vector<ScanPoi
 
 std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionResult_t>  & psr,  const std::vector<PointSelectionResult_t>  & eff, long N0)
 {
-  int i0=0;
+  size_t i0=0;
   const double UNSET = std::numeric_limits<double>::max();
   double chi2_thr = UNSET;
-  for(int i = 0; i< psr.size(); ++i) {
+  for(size_t i = 0; i< psr.size(); ++i) {
     auto & r = psr[i];
     int jc; //correspoinding point
     double chi2 = UNSET;
-    for( int j = 0;j<eff.size(); ++j) {
+    for( size_t j = 0;j<eff.size(); ++j) {
       if (  std::abs(eff[j].energy-r.energy) < chi2 ) {
         jc = j;
         chi2 = std::abs(eff[j].energy-r.energy); 
@@ -2515,13 +2447,13 @@ std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionR
     eps.value = (double(eff[jc].tt.N)/N0);
     eps.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
     //std::cout << i << " " << r.name << " " << "  W=" << r.W << "  eps = " << eps << " +- " << eps_error << std::endl;
-    if( std::abs(r.energy*0.5 - MTAU) <  chi2_thr )  {
-      chi2_thr = std::abs(r.energy*0.5 - MTAU);
+    if( std::abs(r.energy*0.5 - MTAU - 0.5) <  chi2_thr )  {
+      chi2_thr = std::abs(r.energy*0.5 - MTAU-0.5);
       i0 = i;
     }
     r.tt.efficiency = eps;
   }
-  auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU); } );
+  auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
   //normalize efficiency correction to threshold efficiency
   for(auto & rp : psr) {
     rp.tt.effcor = rp.tt.efficiency / reference_point.tt.efficiency.value;
@@ -2700,18 +2632,19 @@ TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::str
   return compare2(P1.tt.tree.get(), P2.tt.tree.get(), var, sel,gopt, H, bin,title, xtitle);
 }
 
-TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
-{
-  std::string global_cut = SEL.common_cut();
-  std::string or_cut="(";
-  for(auto  it=SEL.begin();it!=SEL.end();++it)
-  {
-    if(it==SEL.begin()) or_cut+="("+it->cut +")";
-    else or_cut+= "||("+it->cut+")";
-  }
-  or_cut+=")";
+TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="") {
+  //std::string global_cut = SEL.common_cut();
+  //std::string or_cut="(";
+  //for(auto  it=SEL.begin();it!=SEL.end();++it) {
+  //  if(it==SEL.begin()) or_cut+="("+it->cut +")";
+  //  else or_cut+= "||("+it->cut+")";
+  //}
+  //or_cut+=")";
+  std::string cut;
+  for(auto & sel: SEL) cut=cut||sel;
+  std::cout << "total cut = " << cut << std::endl;
   if(H=="") H=var;
-  return compare2(P1,P2,var,global_cut+"&&"+or_cut,gopt,H,bin,title, xtitle);
+  return compare2(P1,P2,var,cut,gopt,H,bin,title, xtitle);
 }
 
 TCanvas * compare3(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::string subregex, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="")
@@ -5150,21 +5083,26 @@ void check_common_cuts2(const Scan_t & SCAN, const std::vector<std::string> & cu
 void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  std::string file_prefix="sys-") {
   std::vector< std::pair<std::string, std::string > > pars
   {
-    {""                         , "nocut"}             ,
-      {"Nn==0"                    , "N_{n}=0"}           ,
-      {"Nc==2"                    , "N_{c}=2"}           ,
-      {"barrel"                   , "|cos(#theta)|<0.8"}            ,
-      {"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
-      {"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
-      {"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
-      {"missed_photon_angle"      , "cos(#theta_{mis})"} ,
-      {"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5"}       ,
-      {"eX"                       , "eX"}                ,
-      {"ptem>0.25"                , "ptem>0.25"}         ,
-      {"E[0]>0.1 && E[1]>0.1"     , "E>0.1"}             ,
-      {"z[0]<2 && z[1]<2"         , "|z|<2"}             ,
-      {"vxy[0]<0.5 && vxy[1]<0.5" , "#rho<0.5"}          ,
-      {SEL[0].cut                 , "all"}               ,
+      //{""                         , "nocut"}             ,
+      //{"NnE50==0"                 , "N_{n}=0"}           ,
+      //{"Ncg==2"                   , "N_{cg}=2"}           ,
+      //{"Ncc==2"                   , "N_{cc}=2"}           ,
+      //{"barrel"                   , "|cos(#theta)|<0.8"}            ,
+      ////{"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
+      //{"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
+      //{"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
+      //{"missed_photon_angle"      , "cos(#theta_{mis})"} ,
+      //{"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5 ns"}       ,
+      //{"ptem50>0.25"              , "ptem>0.25"}         ,
+      //{"ptem50<1.1"               , "ptem<1.1"}         ,
+      //{"E[0]>0.025 && E[1]>0.025" , "E>0.1"}             ,
+      //{"z[0]<5 && z[1]<5"         , "|z|<5"}             ,
+      //{"vxy[0]<0.5 && vxy[1]<0.5" , "#rho<0.5"}          ,
+      //{"Nng==2"                   , "N^{good}_{#gamma} = 2" },
+      //{"eX"                       , "PID"}                ,
+      //{SEL[0].cut                 , "eX"}               ,
+      //{SEL[1].cut                 , "e#rho"}               ,
+      {SEL[0].cut || SEL[1].cut,  "eX + e#rho"}               ,
   };
   std::vector<std::string> cuts, titles;
   for(auto & [cut, title] : pars) {
@@ -5175,12 +5113,7 @@ void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  
 }
 
 
-inline std::string operator&&(const std::string & a, const std::string & b) {
-  if (  a.empty() &&  b.empty() ) return "";
-  if (  a.empty() && !b.empty() ) return b;
-  if ( !a.empty() &&  b.empty() ) return a;
-  return a+ "&&" + b;
-}
+
 struct Config {
   std::string name = "";
   std::string lum = "gg"; //gg or ee

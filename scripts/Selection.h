@@ -25,7 +25,6 @@ struct ChannelSelection_t
   std::string title; //channel name  (temrinal)
   std::string cut;
   std::vector<ParticleID_t> pid;
-  //std::string root_title; //title for root to print on canvas
   std::string root_title() const { //remove greek letters
     std::string result = title;
     result = sub(result,"μ", "#mu");
@@ -44,6 +43,7 @@ struct ChannelSelection_t
     return result;
   };
   std::string common_cut(void) const {return cut; }
+  operator std::string() const { return cut; }
 };
 
 struct Selection_t :  public ChannelSelection_t,  public std::vector<Selection_t>
