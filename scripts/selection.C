@@ -162,6 +162,10 @@ struct ScanPoint_t : public AcceleratorInfo_t
   std::string root_name;
   std::string tex_name;
 
+  long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
+    return tt.tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
+  }
+
   struct by_regexp
   {
     const Scan_t * scan;
@@ -545,8 +549,14 @@ const char * make_alias(int channel, const char * templ )
 
 void set_alias(TTree * tt, double W, double L=1.0)
 {
+  tt->SetAlias("good_emc_time", "(0<=ntemc[0]&&ntemc[0]<=14&&0<=ntemc[1]&&ntemc[1]<=14)");
+  tt->SetAlias("cgood","(abs(cos(theta[0]))<0.93 && abs(cos(theta[1]))<0.93)");
   tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
-  tt->SetAlias("missed_photon_angle","( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )");
+  tt->SetAlias("missed_photon_angle2","( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )");
+  tt->SetAlias("missed_photon_angle", "( abs(cos_theta_mis) < 0.8 || ( 0.92 > abs(cos_theta_mis) && abs(cos_theta_mis) > 0.86) )");
+  tt->SetAlias("missed_photon_angle3", "( abs(cos(d4p3[3])) < 0.8 || ( 0.92 > abs(cos(d4p3[3])) && abs(cos(d4p3[3])) > 0.86))");
+  tt->SetAlias("missed_photon_angle4", "( 0.92 > abs(cos_theta_mis) )");
+  tt->SetAlias("missed_photon_angle5", "( ( 0.93 > abs(cos_theta_mis) && abs(cos_theta_mis) > 0.84) || (0.83 > abs(cos_theta_mis)) )");
   tt->SetAlias("MM","(p[0]+p[1])**2 - (px[0]+px[1])**2 - (py[0]+py[1])**2 - (pz[0]+pz[1])**2");
   tt->SetAlias("Epi0","sqrt(p[0]**2 + 0.1396**2)");
   tt->SetAlias("Epi1","sqrt(p[1]**2 + 0.1396**2)");
@@ -560,12 +570,12 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("M2emu","(p[0]+Emu1)**2-psum*psum");
   tt->SetAlias("M2mue","(p[1]+Emu0)**2-psum*psum");
   tt->SetAlias("M2KK","(EK0+EK1)**2-psum*psum");
-  tt->SetAlias("NnE100","Sum$(nE>0.1)");
-  tt->SetAlias("NnE50","Sum$(nE>0.050)");
-  tt->SetAlias("NnE25","Sum$(nE>0.025)");
-  tt->SetAlias("Ngbarrel","Sum$( abs(cos(ntheta))<0.8 && nE>0.025)");
-  tt->SetAlias("Ngendcup","Sum$( abs(cos(ntheta))<0.92 && abs(cos(ntheta)) >0.86  && nE>0.05)");
-  tt->SetAlias("Ng","Ngbarrel+Ngendcup");
+  //tt->SetAlias("NnE100","Sum$(nE>0.1)");
+  //tt->SetAlias("NnE50","Sum$(nE>0.050)");
+  //tt->SetAlias("NnE25","Sum$(nE>0.025)");
+  //tt->SetAlias("Ngbarrel","Sum$( abs(cos(ntheta))<0.8 && nE>0.025)");
+  //tt->SetAlias("Ngendcup","Sum$( abs(cos(ntheta))<0.92 && abs(cos(ntheta)) >0.86  && nE>0.05)");
+  //tt->SetAlias("Ng","Ngbarrel+Ngendcup");
 
 
 
@@ -1008,14 +1018,6 @@ TGraphErrors * draw_result2(const std::vector<ScanPoint_t> & Points, const char 
 }
 
 
-//struct SelectionConfig_t {
-//  std::string name;
-//  std::string common_cut;
-//  std::vector<ParticleID_t> pid;
-//};
-
-
-
 
 struct ChannelSelectionResult_t : public ChannelSelection_t,  public  std::vector<PointSelectionResult_t> 
 {
@@ -1023,7 +1025,6 @@ struct ChannelSelectionResult_t : public ChannelSelection_t,  public  std::vecto
   long Ngg=0; //total number of gg events
   long Nbb=0; //total number of Bhabha events
   double L=0; //total luminosity
-  //std::vector<PointSelectionResult_t> Points;
   std::string cut;
   ChannelSelectionResult_t(void){}
   ChannelSelectionResult_t(const ChannelSelectionResult_t & ) = default;
@@ -1274,6 +1275,34 @@ std::vector<PointSelectionResult_t> select(const std::vector<ScanPoint_t> & P, c
     r.luminosity   = p.luminosity;
     //r.cut          = sel.c_str();
   }
+  return R;
+}
+
+ChannelSelectionResult_t select_tmp(const std::vector<ScanPoint_t> & P, const std::string  sel)
+{
+  //std::vector<PointSelectionResult_t> R(P.size());
+  ChannelSelectionResult_t R;
+  R.cut = sel;
+  long sum=0;
+  for(auto & sp : P){
+    R.push_back(sp); //copy ScanPoints
+    auto & r = R.front();
+    //auto & r       = R[i];
+    //auto & p       = P[i];
+    long N         = sp.tt.tree->GetEntries(sel.c_str());
+    r.tt.N         =  N;
+    r.tt.N0mc      = sp.tt.N0mc > 0 ? sp.tt.N0mc : 0;
+    r.bb           = sp.bb;
+    r.gg           = sp.gg;
+    r.name         = sp.title;
+    r.root_name    = sp.title;
+    r.tex_name     = sp.title;
+    r.energy       = sp.energy;
+    r.luminosity   = sp.luminosity;
+    sum+=N;
+    std::cout << N <<  " " ;
+  }
+  std::cout << " sum = " << sum << std::endl;
   return R;
 }
 
@@ -2031,13 +2060,13 @@ void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int f
   print(sr,0);
 }
 
-void print(const  std::vector<ChannelSelectionResult_t> & SR )
-{
-  PrintConfig_t cfg;
-  print_Ntt(SR,cfg);
-  print_Ngg(SR[0],cfg);
-  print_Nbb(SR[0],cfg);
-};
+//void print(const  std::vector<ChannelSelectionResult_t> & SR )
+//{
+//  PrintConfig_t cfg;
+//  print_Ntt(SR,cfg);
+//  print_Ngg(SR[0],cfg);
+//  print_Nbb(SR[0],cfg);
+//};
 
 std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::string ResultTitle="", std::string fit_file="")
 {
@@ -2326,7 +2355,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
 
     //print energy for point
     make_row(os, total, 
-        R"($E-M_{\tau}, MeV)", 
+        R"($E-M_{\tau}$, MeV)", 
         //[](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.energy.value*0.5 - MTAU)*1000.0); }
         [](const PointSelectionResult_t & p) { return myfmt(R"(%3.3f)", (p.energy.value*0.5 - MTAU)*1000.0); }
         );
@@ -2363,7 +2392,8 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
         R"($\epsilon^{cor}$)", 
         [](const PointSelectionResult_t & p) { return myfmt(R"($%4.3f\pm%4.3f$)", p.tt.effcor.value, p.tt.effcor.error); });
 
-    os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    //os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
+    os << R"(\hline)" << "\n";
     os << R"(\end{tabular})" << "\n";
     os << "}\n";
     os << R"(\end{table})" << "\n";
