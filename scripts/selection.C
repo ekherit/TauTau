@@ -87,6 +87,7 @@ constexpr double PIALPHA=ALPHA*TMath::Pi();
 
 //std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
 static std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
+static std::string PSIFIT = "psifit ";
 
 
 void clean_taufit(void) {
@@ -385,6 +386,15 @@ std::list<int> get_run_list(std::string line)
       str = match.suffix();
     }
   }
+  //int count=0;
+  //std::list<int> run_list2;
+  //for(auto r :run_list) {
+  //  if(!(count%3==0)) {
+  //    run_list2.push_back(r);
+  //  }
+  //  ++count;
+  //}
+  //return run_list2;
   return run_list;
 }
 
@@ -467,12 +477,14 @@ Scan_t read_my_runtable(std::string filename)
   double point_spread;
   double point_spread_error;
   std::regex comment_re(R"(^\s*#.*)");
+  std::regex empty_re(R"(^\s*)");
   std::string line;
   std::smatch sm;
   while( std::getline(ifs,line)) 
   { 
-    if ( line.find_first_of('#') != std::string::npos ) continue;
-    //std::cout << line << std::endl;
+    //if ( line.find_first_of('#') != std::string::npos ) continue;
+    if( std::regex_match(line,sm,comment_re)  ) continue;
+    if( std::regex_match(line,sm,empty_re)  ) continue;
     std::istringstream iss(line);
     iss >> point_name >> point_energy.value >> point_energy.error >> point_spread >> point_spread_error >> point_lum.value >> point_lum.error;
     std::getline(iss,point_runs); 
@@ -549,8 +561,8 @@ const char * make_alias(int channel, const char * templ )
 
 void set_alias(TTree * tt, double W, double L=1.0)
 {
-  tt->SetAlias("good_emc_time", "(0<=ntemc[0]&&ntemc[0]<=14&&0<=ntemc[1]&&ntemc[1]<=14)");
-  tt->SetAlias("cgood","(abs(cos(theta[0]))<0.93 && abs(cos(theta[1]))<0.93)");
+  tt->SetAlias("good_emc_time", "0<=ntemc[0]&&ntemc[0]<=14&&0<=ntemc[1]&&ntemc[1]<=14");
+  tt->SetAlias("cgood","abs(cos(theta[0]))<0.93 && abs(cos(theta[1]))<0.93");
   tt->SetAlias("barrel","abs(cos(theta[0]))<0.8 && abs(cos(theta[1]))<0.8");
   tt->SetAlias("missed_photon_angle2","( abs(cos_theta_mis2) < 0.8 || ( 0.92 > abs(cos_theta_mis2) && abs(cos_theta_mis2) > 0.86) )");
   tt->SetAlias("missed_photon_angle", "( abs(cos_theta_mis) < 0.8 || ( 0.92 > abs(cos_theta_mis) && abs(cos_theta_mis) > 0.86) )");
@@ -661,6 +673,66 @@ Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"
     //read tau tau events
     auto tt = new TChain("tt", sp.title.c_str());
     for(auto & file : sp.file_list) tt->AddFile(file.c_str());
+    //read gamma gamma events
+    auto gg = new TChain("gg", sp.title.c_str());
+    for(auto & file : sp.file_list) gg->AddFile(file.c_str());
+
+    auto bb = new TChain("bb", sp.title.c_str());
+    for(auto & file : sp.file_list) bb->AddFile(file.c_str());
+    //change chain names
+    tt->SetName(("tt"+std::to_string(index)).c_str());
+    bb->SetName(("bb"+std::to_string(index)).c_str());
+    set_alias(tt,sp.energy,sp.luminosity);
+    sp.tt.tree.reset(tt);
+    sp.gg.tree.reset(gg);
+    sp.bb.tree.reset(bb);
+    sp.tt.energy = sp.energy;
+    sp.gg.energy = sp.energy;
+    sp.bb.energy = sp.energy;
+    sp.type = data_dir;
+  }
+  print(scan);
+  return scan;
+}
+
+Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+{
+  std::cout << "Reading data directory \"" << data_dir << "\":\n";
+  auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
+  //for(auto & f : fl) std::cout << f << std::endl;
+  auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
+  //for(auto & m : ml) 
+  //{
+  //  std::cout << m.first << ": ";
+  //  for(auto & f: m.second) std::cout << f<<" "; 
+  //  std::cout << std::endl;
+  //}
+  Scan_t scan;
+  scan.reserve(cfg.size());
+  for(auto & point : cfg ) 
+  {
+    ScanPoint_t sp;
+    sp = point;
+    sp.file_list = ml[point.title];
+    if(sp.file_list.empty()) 
+    {
+      std::cout << "WARNING: no data for point: " << point.title << std::endl;
+      continue;
+    }
+    scan.push_back(sp);
+  }
+  //read TChain
+  int index = 0;
+  for(auto & sp : scan)
+  {
+    //create chain
+    //sp.tt= new TChain((, sp.title.c_str());
+    //read tau tau events
+    auto tt = new TChain("data", sp.title.c_str());
+    for(auto & file : sp.file_list) { 
+      std::cout << "Adding file " << file << std::endl;
+      tt->AddFile(file.c_str());
+    }
     //read gamma gamma events
     auto gg = new TChain("gg", sp.title.c_str());
     for(auto & file : sp.file_list) gg->AddFile(file.c_str());
@@ -1188,11 +1260,20 @@ void set_pid_kptem(std::vector<ScanPoint_t> & DATA, const std::vector<ParticleID
 std::vector<PointSelectionResult_t> select(const std::vector<ScanPoint_t> & P, const std::string  sel)
 {
   std::vector<PointSelectionResult_t> R(P.size());
-  for(int i=0;i<P.size();++i)
-  {
+  auto ss = split(sel,"||");
+  //std::cout << "split string = ";
+  //for(auto s : ss) {
+  //  std::cout << s  << "         ";
+  //}
+  std::cout << std::endl;
+  for(size_t i=0;i<P.size();++i) {
     auto & r       = R[i];
     auto & p       = P[i];
-    r.tt.N         = p.tt.tree->GetEntries(sel.c_str());
+    r.tt.N=0;
+    for(auto s : ss) {
+      r.tt.N+=p.tt.tree->GetEntries(std::string(s).c_str());
+    }
+    //r.tt.N         = p.tt.tree->GetEntries(sel.c_str());
     r.tt.N0mc      = p.tt.N0mc > 0 ? p.tt.N0mc : 0;
     r.bb           = p.bb;
     r.gg           = p.gg;
@@ -2011,12 +2092,12 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
 };
 
 
-void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
-{
-  ChannelSelectionResult_t sr;
-  sr = Points;
-  print(sr,0);
-}
+//void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
+//{
+//  ChannelSelectionResult_t sr;
+//  sr = Points;
+//  print(sr,0);
+//}
 
 //void print(const  std::vector<ChannelSelectionResult_t> & SR )
 //{
@@ -2770,7 +2851,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
   for(const auto & p : sr) {
     idx++;
     std::string point_name = p.name == "" ? std::to_string(idx) : p.name;
-    double lum = p.luminosity*1000.0;
+    double lum = p.luminosity*(nb/pb); //conversion pb to nb
     double lum_error = 10;
     if(default_lum == "bb" || default_lum=="ee") {
       std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
@@ -2798,6 +2879,52 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
   ofs << os.str();
 }
 
+void savemh(const std::vector<PointSelectionResult_t> & sr, std::string  filename="scan.txt", std::string default_lum="")
+{
+  //std::cout << "Saving selection: " << sr.title << " to file: " << filename << std::endl;
+  std::stringstream os;
+  char buf[65535];
+  sprintf(buf,"%5s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s",
+      "#","L,nb^-1","dL,nb^-1","W,MeV", "dW,MeV","Sw,MeV","dSw,MeV","Nmh","Nbb","Ngg","effcor");
+  os << buf << '\n';
+  int idx=0;
+  for(const auto & p : sr) {
+    idx++;
+    std::string point_name = p.name == "" ? std::to_string(idx) : p.name;
+    //std::cout << p.luminosity.value << " " << p.luminosity.error << std::endl;
+    //std::cout << (p.luminosity*1e3).value << "  " << (p.luminosity*1e3).error << std::endl;
+    ibn::valer<double> lum;
+    lum=(p.luminosity*1e3);
+    std::cout << lum.value << " " << lum.error << std::endl;
+    //double lum = p.luminosity*1000.0;
+    //double lum_error = p.luminosity.error*1e3;
+    if(default_lum == "bb" || default_lum=="ee") {
+      std::cout << "Use Bhabha + Monte Carlo as default luminosity " << std::endl;
+      lum = p.bb.luminosity;
+      //lum = p.bb.luminosity.value;
+      //lum_error = p.bb.luminosity.error;
+    }
+    if(default_lum == "gg") {
+      std::cout << "Use gamma gamma + Monte Carlo as default luminosity " << std::endl;
+      lum = p.gg.luminosity;
+      //lum = p.gg.luminosity.value;
+      //lum_error = p.gg.luminosity.error;
+    }
+    sprintf(buf,"%5d %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10ld %10ld %10ld %10.5f %10.5f",
+        idx,
+        lum.value,           lum.error,
+        p.energy.value/MeV,        p.energy.error/MeV,
+        .0,           .0,
+        p.tt.N,
+        p.bb.N,        p.gg.N,
+        p.tt.effcor.value, p.tt.effcor.error);
+    os << buf <<'\n';
+  }
+  std::cout << os.str();
+  std::ofstream ofs(filename);
+  ofs << os.str();
+}
+
 
 void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
 {
@@ -2812,6 +2939,17 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
 void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
 {
   fit(fold(sr),filename,title, default_lum, wait);
+}
+
+
+void fitmh(const std::vector<PointSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
+{
+  savemh(sr,filename,default_lum);
+  char command[65536];
+  std::string basename = sub(filename,R"(\..+)", "");
+  std::string output_file = basename + "_fit";
+  sprintf(command, (PSIFIT + " '%s' & ").c_str(), filename.c_str());
+  system(command);
 }
 
 #include <TH1F.h>
@@ -3039,18 +3177,20 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
   std::string tmp; //this is for skip +-
   std::cout << std::setw(10) << "Wmc, GeV" << std::setw(15) << "W in file, GeV" << std::setw(10) << "sigma, nb" << std::setw(10) << "error, nb" << std::endl;
   while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
+    //std::cout << W << " " << sigma <<  " "  << sigma_error << std::endl;
     ScanPoint_t sp;
     sp.energy = W;
     fcx(sp).cross_section.value = sigma;
     fcx(sp).cross_section.error = sigma_error;
     tmpSP.push_back(sp);
   }
-
   for(auto & sp : P) {
     auto & p  = *std::min_element(tmpSP.begin(), tmpSP.end(), [&sp](auto a, auto b){ return fabs(a.energy-sp.energy)<fabs(b.energy-sp.energy); } );
     fcx(sp).cross_section.value = fcx(p).cross_section;
     fcx(sp).cross_section.error = fcx(p).cross_section.error;
-    if(fabs(sp.energy-p.energy)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
+    if(fabs(sp.energy-p.energy)>1*MeV) {
+      std::cerr << "WARNING: To big difference in energy points: " << sp.energy.value/MeV << "  and " << p.energy/MeV << " MeV" << std::endl;
+    }
     std::cout << std::setw(10) << sp.energy << std::setw(15) << p.energy << std::setw(10) << fcx(sp).cross_section.value << std::setw(10) << fcx(sp).cross_section.error << std::endl;
   }
 }
@@ -3058,10 +3198,12 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
 void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   std::cout << "Cross section for bhabha process: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.bb; } );
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
 }
 void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   std::cout << "Cross section for gamma gamma process: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.gg; } );
+  read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
 }
 
 void read_mumu_or_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
@@ -3089,7 +3231,7 @@ void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & 
   }
 }
 void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for hadrons: " << std::endl;
+  std::cout << "Cross section for tau: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
@@ -3150,7 +3292,9 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
   //find close point and select
   for(auto & sp :data) {
     auto & p  = *std::min_element(mc.begin(), mc.end(), [&sp](auto a, auto b){ return fabs(a.energy-sp.energy)<fabs(b.energy-sp.energy); } );
-    if(fabs(sp.energy-p.energy)>1*MeV) std::cerr << "WARNING: To big difference in energy points" << std::endl;
+    if(fabs(sp.energy-p.energy)>1*MeV) {
+      std::cerr << "WARNING: To big difference in energy points: " << sp.energy.value/MeV << "  and " << p.energy/MeV << " MeV" << std::endl;
+    }
     auto & l = proj(sp);
     auto & m = proj(p);
     l.cross_section.value  = m.cross_section.value*pow(m.energy.value/l.energy.value, 2.0);
@@ -3163,9 +3307,10 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
     double vis_cx_error = std::hypot(l.cross_section.error*l.efficiency, l.cross_section*l.efficiency.error);
     //std::cout << vis_cx << "  " << vis_cx_error << std::endl;
-    l.luminosity.value  = l.N / vis_cx;
-    l.luminosity.error = l.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
-    //std::cout << sp.W << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  std::endl;
+    m.luminosity.value  = l.N / vis_cx;
+    m.luminosity.error = l.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
+    l.luminosity = m.luminosity;
+    //std::cout << sp.energy << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  std::endl;
   }
 }
 
@@ -3220,6 +3365,20 @@ void set_luminosity(Scan_t & DATA, Scan_t & MC ) {
 void set_luminosity(Scan_t & DATA, std::map<std::string, Scan_t>  & G ) {
   for(auto & [name, s] : G ) {
     set_luminosity(DATA,s);
+  }
+}
+
+void set_gg_luminosity(Scan_t & DATA, Scan_t & MC ) {
+  for(auto & mc : MC ) {
+    auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
+    mc.gg = p.gg;
+  }
+}
+
+void set_bb_luminosity(Scan_t & DATA, Scan_t & MC ) {
+  for(auto & mc : MC ) {
+    auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
+    mc.bb = p.bb;
   }
 }
 
@@ -3612,6 +3771,7 @@ TH1 * select_histogram(const ScanPoint_t & sp, std::string var, std::string cut,
   //std::cout << buf << std::endl;
   sp.tt.tree->Draw(buf, cut.c_str(),"goff");
   auto h = sp.tt.tree->GetHistogram(); if(is_scale) h->Scale(sp.tt.cross_section.value*sp.gg.luminosity.value/sp.tt.N0mc);
+  std::cout << "select_histogram: "<< sp.name << "  "  << sp.tt.cross_section.value << " " << sp.gg.luminosity.value << " " << sp.tt.N0mc << std::endl;
   return h;
 }
 
@@ -4148,6 +4308,7 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
 
     //select background monte carlo
     for(size_t i=0;i!=SIM.bgs.size();++i) {
+      std::cout << SIM.bgs[i].get()[0].title << std::endl;
       auto hbg = select(SIM.bgs[i],SCALE);
       Hbgs[i].push_back(hbg);
     }
@@ -4168,6 +4329,8 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
   std::vector<TH1*> hbgs(SIM.bgs.size());
   for(size_t i=0;i!=SIM.bgs.size();++i) {
     hbgs[i] = lfold(Hbgs[i]);
+    new TCanvas;
+    hbgs[i]->Draw();
     std::cout << "bg " << i << "  " << hbgs[i]->GetEntries() << "  " << hbgs[i]->Integral() << std::endl;
   };
   TH1 * hbg = lfold(hbgs);
@@ -4356,7 +4519,10 @@ TCanvas * draw_background_vs_energy(const Selection_t & SEL, const std::vector<S
       eps.error = sqrt( eps.value * (1.0 - eps.value) /double(tt.N0mc) );
       cs[pnt] =  tt.cross_section  * eps;
       W[pnt]=SR[pnt].energy;
+      //std::cout << N << "  " << tt.cross_section << " " << std::endl;
+      //std::cout << cs[pnt].error << " " << tt.N0mc << "   " ;
     }
+    std::cout << std::endl;
     CSs.push_back(cs);
     for(size_t pnt=0; pnt!=Npnt; ++pnt) {
       CS[pnt]+=cs[pnt];
@@ -4381,7 +4547,7 @@ TCanvas * draw_background_vs_energy(const Selection_t & SEL, const std::vector<S
 
   //drawing part
   auto c = new TCanvas;
-  gStyle->Reset("Pub");
+  //gStyle->Reset("Pub");
   gStyle->SetOptFit();
 
   /*
@@ -4400,8 +4566,10 @@ TCanvas * draw_background_vs_energy(const Selection_t & SEL, const std::vector<S
   g->SetTitle("Visible background cross section (MC)");
   g->GetYaxis()->SetTitle("pb");
   g->GetXaxis()->SetTitle("E-M_{#tau}^{PDG}, MeV");
-  g->Fit("pol1");
-  g->GetFunction("pol1")->SetLineColor(kRed);
+  auto f = new TF1("fun", "[#sigma_{bg}]*(1+[#delta #sigma/dE]*x)",-12,30);
+  //g->Fit("pol1");
+  g->Fit("fun");
+  f->SetLineColor(kRed);
 
 
   auto c2 = new TCanvas;
@@ -5084,25 +5252,27 @@ void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  
   std::vector< std::pair<std::string, std::string > > pars
   {
       //{""                         , "nocut"}             ,
-      //{"NnE50==0"                 , "N_{n}=0"}           ,
-      //{"Ncg==2"                   , "N_{cg}=2"}           ,
+      {"NnE50==0"                 , "N_{n}=0"}           ,
+      {"Ncg==2 && Ncc==2"          , "N_{c}=2"}           ,
       //{"Ncc==2"                   , "N_{cc}=2"}           ,
       //{"barrel"                   , "|cos(#theta)|<0.8"}            ,
-      ////{"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
-      //{"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
-      //{"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
-      //{"missed_photon_angle"      , "cos(#theta_{mis})"} ,
-      //{"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5 ns"}       ,
-      //{"ptem50>0.25"              , "ptem>0.25"}         ,
-      //{"ptem50<1.1"               , "ptem<1.1"}         ,
-      //{"E[0]>0.025 && E[1]>0.025" , "E>0.1"}             ,
-      //{"z[0]<5 && z[1]<5"         , "|z|<5"}             ,
-      //{"vxy[0]<0.5 && vxy[1]<0.5" , "#rho<0.5"}          ,
-      //{"Nng==2"                   , "N^{good}_{#gamma} = 2" },
-      //{"eX"                       , "PID"}                ,
-      //{SEL[0].cut                 , "eX"}               ,
-      //{SEL[1].cut                 , "e#rho"}               ,
-      {SEL[0].cut || SEL[1].cut,  "eX + e#rho"}               ,
+      {"cgood",                      "|cos(#theta)|<0.93"},
+      //{"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
+      {"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
+      {"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
+      {"missed_photon_angle"      , "cos(#theta_{mis})"} ,
+      {"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5 ns"}       ,
+      {"ptem50>0.25"              , "ptem>0.25"}         ,
+      {"ptem50<1.1"               , "ptem<1.1"}         ,
+      {"E[0]>0.025 && E[1]>0.025" , "E>0.025"}             ,
+      {"abs(z[0]<10) && abs(z[1]<10)"      , "|z|<10"}             ,
+      {"vxy[0]<1 && vxy[1]<1"     , "#rho<1"}          ,
+      {"Nng==2"                   , "N^{good}_{#gamma} = 2" },
+      {"eX"                       , "PID"}                ,
+      {"Nng==2 &&  Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time", "M_{#pi^{0}}" },
+      {SEL[0]                 , "eX"}               ,
+      {SEL[1]                 , "e#rho"}               ,
+      {SEL[0] || SEL[1]       , "eX + e#rho"},
   };
   std::vector<std::string> cuts, titles;
   for(auto & [cut, title] : pars) {
@@ -5115,7 +5285,7 @@ void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  
 
 
 struct Config {
-  std::string name = "";
+  std::string name = "test";
   std::string lum = "gg"; //gg or ee
   std::string energy_version ="ems3";
   std::string gglum_extra_cut = "";
@@ -5584,3 +5754,20 @@ void cmpall(Scan_t DATA, Scan_t SIGNAL, Selection_t &S) {
   cmp({SIGNAL , DATA} , S , "Mpi0"     , "" , "NORM" , 40 , 0.11  , 0.15);
   cmp({SIGNAL , DATA} , S , "Mrho"     , "" , "NORM" , 40 , 0.5  , 1.1);
 }
+
+
+void check_cut(ScanPoint_t & D, std::string cut1, std::string cut2) {
+  long N1 = D.tt.tree->GetEntries(cut1.c_str());
+  long N2 = D.tt.tree->GetEntries(cut2.c_str());
+  long N = D.tt.tree->GetEntries((cut1 || cut2).c_str());
+  std::cout << "OR: " << (cut1 || cut2) << std::endl;
+  std::cout << "N1 = " << N1 << std::endl;
+  std::cout << "N2 = " << N2 << std::endl;
+  //std::cout << "N1+N2 = " << N2+N1 << std::endl;
+  std::cout << "N  = " << N << std::endl; 
+  std::cout << "N-N1 = " << N - N1 << std::endl;
+  std::cout << "N-N2 = " << N - N2 << std::endl;
+}
+
+
+

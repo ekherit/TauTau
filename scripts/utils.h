@@ -345,7 +345,7 @@ inline std::string operator&&(const std::string & a, const std::string & b) {
   if (  a.empty() &&  b.empty() ) return "";
   if (  a.empty() && !b.empty() ) return b;
   if ( !a.empty() &&  b.empty() ) return a;
-  return a+"&&"+b;
+  return "("+a+")&&("+b+")";
 }
 
 inline void operator&=(std::string & a, const std::string & b) {
@@ -359,7 +359,15 @@ inline std::string operator||(const std::string & a, const std::string & b) {
   if (  a.empty() &&  b.empty() ) return "";
   if (  a.empty() && !b.empty() ) return b;
   if ( !a.empty() &&  b.empty() ) return a;
-  return "("+a+")||("+b+")";
+  //return "(("+a+")||("+b+"))";
+  return a+"||"+b;
+}
+
+inline void operator|=(std::string & a, const std::string & b) {
+  if (  a.empty() &&  b.empty() ) return;
+  if (  a.empty() && !b.empty() ) a=b;
+  if ( !a.empty() &&  b.empty() ) return;
+  a = a || b;
 }
 
 
@@ -372,9 +380,9 @@ inline std::string initial_common_part(const std::string & a, const std::string 
 
 std::string and_fold(const std::vector<std::string> & v) {
   if(v.size()==0) return "";
-  std::string s = v[0];
+  std::string s = "("+v[0]+")";
   for(size_t i=1;i!=v.size(); ++i) {
-    s&=v[i];
+    s&="("+v[i]+")";
   }
   return s;
 };  
