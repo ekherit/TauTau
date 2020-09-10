@@ -32,15 +32,26 @@ std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread
 const char * runtable_name = "../TauTau/share/all_scan_points_ems3.txt";
 //const char * runtable_name = "../TauTau/share/scan_points_ems2_privalov_lum.txt";
 
+
 auto RUNTABLE  = read_my_runtable(runtable_name);
+auto JPSI_RUNTABLE =  read_my_runtable("../TauTau/share/jpsi_scan_points_ems3.txt");
+auto PSIP_RUNTABLE =  read_my_runtable("../TauTau/share/psip_scan_points_ems3.txt");
 
 
 constexpr long N0MC  = 1e6;
 
 //read data from directory "data". Runs are combined into points according to runtable 
 auto DATA        = read_data("data", RUNTABLE);
-auto JPSI      = read_mh("mhdata", read_my_runtable("../TauTau/share/jpsi_scan_points_ems3.txt"));
-auto PSIP      = read_mh("mhdata", read_my_runtable("../TauTau/share/psip_scan_points_ems3.txt"));
+auto JPSI      = read_mh("mhdata",JPSI_RUNTABLE);
+auto PSIP      = read_mh("mhdata",PSIP_RUNTABLE);
+
+auto JPSIMC    = read_mc_mh("mcmh", JPSI_RUNTABLE);
+auto PSIPMC    = read_mc_mh("mcmh", PSIP_RUNTABLE);
+
+auto JPSILUM   = read_privalov_lum("mhlum",JPSI_RUNTABLE);
+auto PSIPLUM   = read_privalov_lum("mhlum",PSIP_RUNTABLE);
+auto JPSILUMMC   = read_mc_mhlum("mhlum",JPSI_RUNTABLE,1e5);
+auto PSIPLUMMC  = read_mc_mhlum("mhlum",PSIP_RUNTABLE,1e5);
 
 //Monte Carlo simulation of the signal
 auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
@@ -72,6 +83,8 @@ Simulation_t MC = { SIGNAL, BGs };
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
 std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0";
 std::string LOCAL_GG_SEL = "";
+std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
 
 //particla identification configuration
 std::vector<ParticleID_t> PID = 
@@ -275,6 +288,19 @@ void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, Scan_t & M = SIGNA
 };
 
 
+void dores(void) {
+  auto jpsi = select(JPSI, LOCAL_MH_SEL);
+  auto mcjpsi = measure_efficiency(JPSIMC, LOCAL_MH_SEL);
+  print(jpsi);
+  set_efficiency(jpsi,mcjpsi,1e6);
+  fitmh(jpsi,"jpsi.txt");
+
+  auto psip = select(PSIP, LOCAL_MH_SEL);
+  auto mcpsip = measure_efficiency(PSIPMC, LOCAL_MH_SEL);
+  print(psip);
+  set_efficiency(psip,mcpsip,1e6);
+  fitmh(psip,"psip.txt");
+}
 
 
 void select() 
@@ -300,6 +326,7 @@ void select()
   read_pipi_cross_section("../TauTau/share/pipi_cross_section.txt", PIPI);
   read_hadron_cross_section("../TauTau/share/hadron_cross_section.txt", HADR);
 
+
   set_pid_kptem(DATA       , PID , Kptem);
   set_pid_kptem(SIGNAL         , PID , Kptem);
   for(auto d : BGall_MCs) set_pid_kptem(d,PID,Kptem);
@@ -309,6 +336,14 @@ void select()
   set_luminosity(DATA,SIGNAL);
   for(auto d : BGall_MCs) set_luminosity(DATA,d);
   set_gg_luminosity(DATA,BB);
+
+  read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", JPSILUMMC);
+  read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", PSIPLUMMC);
+  std::cout << "Measuring privalov luminosity" << std::endl;
+  measure_gg_luminosity(JPSILUM, JPSILUMMC, 1e5, PRIVALOV_GG_SEL);
+  measure_gg_luminosity(PSIPLUM, PSIPLUMMC, 1e5, PRIVALOV_GG_SEL);
+  set_res_gg_luminosity(JPSI, JPSILUM);
+  set_res_gg_luminosity(PSIP, PSIPLUM);
 
   /*
   set_pid_kptem(HADR       , PID , Kptem);

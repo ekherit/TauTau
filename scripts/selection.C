@@ -87,7 +87,7 @@ constexpr double PIALPHA=ALPHA*TMath::Pi();
 
 //std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
 static std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
-static std::string PSIFIT = "psifit ";
+static std::string PSIFIT = "psifit --free-lum";
 
 
 void clean_taufit(void) {
@@ -730,7 +730,7 @@ Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\
     //read tau tau events
     auto tt = new TChain("data", sp.title.c_str());
     for(auto & file : sp.file_list) { 
-      std::cout << "Adding file " << file << std::endl;
+      //std::cout << "Adding file " << file << std::endl;
       tt->AddFile(file.c_str());
     }
     //read gamma gamma events
@@ -741,6 +741,67 @@ Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\
     for(auto & file : sp.file_list) bb->AddFile(file.c_str());
     //change chain names
     tt->SetName(("tt"+std::to_string(index)).c_str());
+    bb->SetName(("bb"+std::to_string(index)).c_str());
+    set_alias(tt,sp.energy,sp.luminosity);
+    sp.tt.tree.reset(tt);
+    sp.gg.tree.reset(gg);
+    sp.bb.tree.reset(bb);
+    sp.tt.energy = sp.energy;
+    sp.gg.energy = sp.energy;
+    sp.bb.energy = sp.energy;
+    sp.type = data_dir;
+  }
+  print(scan);
+  return scan;
+}
+
+Scan_t read_privalov_lum(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+{
+  std::cout << "Reading data directory \"" << data_dir << "\":\n";
+  auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
+  //for(auto & f : fl) std::cout << f << std::endl;
+  auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
+  //for(auto & m : ml) 
+  //{
+  //  std::cout << m.first << ": ";
+  //  for(auto & f: m.second) std::cout << f<<" "; 
+  //  std::cout << std::endl;
+  //}
+  Scan_t scan;
+  scan.reserve(cfg.size());
+  for(auto & point : cfg ) 
+  {
+    ScanPoint_t sp;
+    sp = point;
+    sp.file_list = ml[point.title];
+    if(sp.file_list.empty()) 
+    {
+      std::cout << "WARNING: no data for point: " << point.title << std::endl;
+      continue;
+    }
+    scan.push_back(sp);
+  }
+  //read TChain
+  int index = 0;
+  for(auto & sp : scan)
+  {
+    //create chain
+    //sp.tt= new TChain((, sp.title.c_str());
+    //read tau tau events
+    auto tt = new TChain("tt", sp.title.c_str());
+    for(auto & file : sp.file_list) { 
+      //std::cout << "Adding file " << file << std::endl;
+      tt->AddFile(file.c_str());
+    }
+    //read gamma gamma events
+    auto gg = new TChain("event", sp.title.c_str());
+    for(auto & file : sp.file_list) gg->AddFile(file.c_str());
+
+    auto bb = new TChain("bb", sp.title.c_str());
+    for(auto & file : sp.file_list) bb->AddFile(file.c_str());
+    //change chain names
+    tt->SetName(("tt"+std::to_string(index)).c_str());
+    tt->SetName(("gg"+std::to_string(index)).c_str());
     bb->SetName(("bb"+std::to_string(index)).c_str());
     set_alias(tt,sp.energy,sp.luminosity);
     sp.tt.tree.reset(tt);
@@ -879,6 +940,101 @@ std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, long N
 
   return P;
 }
+
+
+std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+{
+  std::vector<ScanPoint_t> P;
+  if(cfg.empty()) return P;
+  TSystemDirectory dir(dirname.c_str(), dirname.c_str());
+  std::regex file_re(regexpr); //regular expression to filter files
+  std::regex take_re(R"(^(\D\d+).+.root$)");
+  std::smatch file_match;
+  std::smatch take_match; 
+  int point=0;
+  for(auto  file: * dir.GetListOfFiles()) { //looop over all files in derectory
+    std::string file_name(file->GetName());
+    if(std::regex_match (file_name,file_match,file_re)) { //take only *.root files
+      if(std::regex_match(file_name,take_match,take_re)) { //take special file
+        auto it = std::find_if(cfg.begin(), cfg.end(), [&take_match](const auto & a) { return take_match[1] == a.title; });
+        if ( it != cfg.end() )  {
+          auto & sp = *it;
+          P.push_back(sp);
+          auto & p = P.back();
+          P.back().type = dirname;
+          p.title = dirname+p.title;
+          p.title = sub(p.title,R"(mc/)","");
+          p.title = sub(p.title,R"(T)","");
+          p.luminosity = -p.luminosity; //this is simulation
+          p.tt.tree.reset(get_chain("data",("data"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str()));
+          //p.gg.tree.reset(get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
+          //p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
+          p.tt.energy = p.energy;
+          p.gg.energy = p.energy;
+          p.bb.energy = p.energy;
+          p.tt.N0mc = N0mc;
+          p.gg.N0mc = N0mc;
+          p.bb.N0mc = N0mc;
+        }
+      }
+    }
+  }
+  //sort by energy
+  std::sort(P.begin(),P.end(),
+      [](auto & sp1, auto &sp2) {
+        return sp1.energy < sp2.energy;
+        });
+
+  return P;
+}
+
+std::vector<ScanPoint_t> read_mc_mhlum(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+{
+  std::vector<ScanPoint_t> P;
+  if(cfg.empty()) return P;
+  TSystemDirectory dir(dirname.c_str(), dirname.c_str());
+  std::regex file_re(regexpr); //regular expression to filter files
+  std::regex take_re(R"(^(\D\d+).+.root$)");
+  std::smatch file_match;
+  std::smatch take_match; 
+  int point=0;
+  for(auto  file: * dir.GetListOfFiles()) { //looop over all files in derectory
+    std::string file_name(file->GetName());
+    if(std::regex_match (file_name,file_match,file_re)) { //take only *.root files
+      if(std::regex_match(file_name,take_match,take_re)) { //take special file
+        auto it = std::find_if(cfg.begin(), cfg.end(), [&take_match](const auto & a) { return take_match[1] == a.title; });
+        if ( it != cfg.end() )  {
+          auto & sp = *it;
+          P.push_back(sp);
+          auto & p = P.back();
+          P.back().type = dirname;
+          //p.title = dirname+p.title;
+          //p.title = sub(p.title,R"(mc/)","");
+          //p.title = sub(p.title,R"(T)","");
+          p.luminosity = -p.luminosity; //this is simulation
+          p.tt.tree.reset(get_chain("data",("data"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str()));
+          p.gg.tree.reset(get_chain("event",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
+          p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
+          p.tt.energy = p.energy;
+          p.gg.energy = p.energy;
+          p.bb.energy = p.energy;
+          p.tt.N0mc = N0mc;
+          p.gg.N0mc = N0mc;
+          p.bb.N0mc = N0mc;
+        }
+      }
+    }
+  }
+  //sort by energy
+  std::sort(P.begin(),P.end(),
+      [](auto & sp1, auto &sp2) {
+        return sp1.energy < sp2.energy;
+        });
+
+  return P;
+}
+
+
 
 
 void draw_lum_per_run2(const std::vector<ScanPoint_t> & SPL)
@@ -2894,7 +3050,7 @@ void savemh(const std::vector<PointSelectionResult_t> & sr, std::string  filenam
     //std::cout << p.luminosity.value << " " << p.luminosity.error << std::endl;
     //std::cout << (p.luminosity*1e3).value << "  " << (p.luminosity*1e3).error << std::endl;
     ibn::valer<double> lum;
-    lum=(p.luminosity*1e3);
+    lum=(p.luminosity);
     std::cout << lum.value << " " << lum.error << std::endl;
     //double lum = p.luminosity*1000.0;
     //double lum_error = p.luminosity.error*1e3;
@@ -3274,6 +3430,22 @@ void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_
   }
 }
 
+void read_privalov_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::ifstream ifs(filename);
+  if(!ifs) {
+    std::cerr << "ERROR: Unable to open file " << filename << "  for reading gg privalov cross section" << std::endl;
+    return;
+  }
+  std::string title;
+  ibn::valer<double> sigma;
+  while(ifs >> title >> sigma.value >> sigma.error) {
+    auto it = find_if(P.begin(),P.end(), [&title](const auto &  sp) { return sp.title == title; } );
+    if(it != P.end() ) {
+      it->gg.cross_section = sigma;
+    }
+  }
+} 
+
 template<typename Projector>
 void me(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="") {
   for(auto & sp : scan) {
@@ -3299,6 +3471,7 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     auto & m = proj(p);
     l.cross_section.value  = m.cross_section.value*pow(m.energy.value/l.energy.value, 2.0);
     l.cross_section.error  = l.cross_section.value*std::hypot( m.cross_section.error/m.cross_section.value, 2.0*l.energy.error/l.energy.value);
+    std::cout << "l.sigma = " << l.cross_section.value << " +- " << l.cross_section.error << std::endl;
     l.efficiency = m.efficiency;
     l.Nmc = m.Nmc;
     l.N0mc = m.N0mc;
@@ -3306,11 +3479,12 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     l.N = l.tree->GetEntries(sel.c_str());
     double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
     double vis_cx_error = std::hypot(l.cross_section.error*l.efficiency, l.cross_section*l.efficiency.error);
-    //std::cout << vis_cx << "  " << vis_cx_error << std::endl;
+    std::cout << "Visible cross section : " << vis_cx << "  " << vis_cx_error << std::endl;
     m.luminosity.value  = l.N / vis_cx;
-    m.luminosity.error = l.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
-    l.luminosity = m.luminosity;
-    //std::cout << sp.energy << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  std::endl;
+    m.luminosity.error = m.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
+    l.luminosity.value = m.luminosity.value;
+    l.luminosity.error = m.luminosity.error;
+    std::cout << sp.energy << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  "mc" << m.luminosity.error << std::endl;
   }
 }
 
@@ -3381,6 +3555,16 @@ void set_bb_luminosity(Scan_t & DATA, Scan_t & MC ) {
     mc.bb = p.bb;
   }
 }
+
+void set_res_gg_luminosity(Scan_t & Data, const Scan_t & Mc) {
+  for(auto & data : Data) {
+    auto it = find_if(Mc.begin(),Mc.end(), [&data] ( const auto & m ) { return m.title == data.title; } );
+    if(it!=Mc.end()) {
+      data.gg = it->gg;
+      data.luminosity = data.gg.luminosity;
+    }
+  }
+};
 
 void print_luminosity(Scan_t & data) {
   //char buf[1024*16];
