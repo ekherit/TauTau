@@ -22,26 +22,35 @@
 #include "Config.h"
 
 //ems3
-std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.258 --energy-correction=+0.011 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
+std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.244 --ems-cmenergy-shift=+0.072 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
 //ems2
 //std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.239      --energy-correction=+0.0391396 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
 
-//const char * runtable_name = "../TauTau/share/scan_points_ems3_privalov_lum.txt";
-//const char * runtable_name = "scan_points_ems3_bhabha_lum.txt";
-//const char * runtable_name = "../TauTau/share/scan_points_ems3_online_lum.txt";
-const char * runtable_name = "../TauTau/share/all_scan_points_ems3.txt";
-//const char * runtable_name = "../TauTau/share/scan_points_ems2_privalov_lum.txt";
 
+//std::string runtable_name = "../TauTau/share/all_scan_points_ems3.txt";
+//std::string runtable_name = "ems31.txt";
+//std::string runtable_name = "ems32.txt";
+//std::string runtable_name = "ems3_with_exp.txt";
+//std::string runtable_name = "../TauTau/share/all_scan_points_ems2.txt";
+std::string runtable_name = "ems20.txt";
+auto ALLRUNTABLE      = read_my_runtable(runtable_name);
 
-auto RUNTABLE  = read_my_runtable(runtable_name);
-auto JPSI_RUNTABLE =  read_my_runtable("../TauTau/share/jpsi_scan_points_ems3.txt");
-auto PSIP_RUNTABLE =  read_my_runtable("../TauTau/share/psip_scan_points_ems3.txt");
+auto RUNTABLE      = read_my_runtable(runtable_name, DATA_TAU);
+//auto RUNTABLE      = read_my_runtable("../TauTau/share/all_scan_points_ems3.txt");
+auto JPSI_RUNTABLE =  read_my_runtable(runtable_name, DATA_JPSI);
+auto PSIP_RUNTABLE =  read_my_runtable(runtable_name, DATA_PSIP);
+
+//#ifdef EMS2
+////auto RUNTABLE      = read_my_runtable("../TauTau/share/tau_scan_points_ems2.txt");
+//auto JPSI_RUNTABLE =  read_my_runtable(rutab, DATA_JPSI);
+//auto PSIP_RUNTABLE =  read_my_runtable("../TauTau/share/psip_scan_points_ems2.txt", DATA_PSIP);
+//#endif
 
 
 constexpr long N0MC  = 1e6;
 
 //read data from directory "data". Runs are combined into points according to runtable 
-auto DATA        = read_data("data", RUNTABLE);
+auto DATA      = read_data("data", RUNTABLE);
 auto JPSI      = read_mh("mhdata",JPSI_RUNTABLE);
 auto PSIP      = read_mh("mhdata",PSIP_RUNTABLE);
 
@@ -287,19 +296,48 @@ void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, Scan_t & M = SIGNA
   make_tex(print_tex(result, file_to_fit, prefix + "_fit.pdf"),prefix + ".tex");
 };
 
-
-void dores(void) {
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/unistd.h>
+void dores(std::string suffix) {
+  //system("rm shift.txt");
+  std::cout << "Proceeding J/psi" << std::endl;
+  std::cout << "Selecting multihadronic events" << std::endl;
   auto jpsi = select(JPSI, LOCAL_MH_SEL);
+  std::cout << "measuring efficiency" << std::endl;
   auto mcjpsi = measure_efficiency(JPSIMC, LOCAL_MH_SEL);
   print(jpsi);
   set_efficiency(jpsi,mcjpsi,1e6);
-  fitmh(jpsi,"jpsi.txt");
+  std::string jpsi_filename = "jpsi"+suffix+".txt";
+  save_and_fitmh(jpsi,jpsi_filename,"default", "");
 
+  std::cout << "Proceeding psi(2S). Selecting multihadronics ... ";
   auto psip = select(PSIP, LOCAL_MH_SEL);
+  std::cout << "measuring efficiency ... ";
   auto mcpsip = measure_efficiency(PSIPMC, LOCAL_MH_SEL);
   print(psip);
   set_efficiency(psip,mcpsip,1e6);
-  fitmh(psip,"psip.txt");
+  std::cout << std::endl;
+  std::string psip_filename = "psip"+suffix+".txt";
+  save_and_fitmh(psip,psip_filename,"default", "");
+  //fitmh(psip,psip_filename);
+  //struct stat st;
+  //stat("shift.txt", &st);
+  //time_t t0;
+  //t0 = st.st_mtim.tv_sec;
+  //do {
+  //  sleep(1);
+  //  stat("shift.txt", &st);
+  //} while( st.st_mtim.tv_sec == t0 );
+  //t0 = st.st_mtim.tv_sec;
+  //do {
+  //  sleep(1);
+  //  stat("shift.txt", &st);
+  //} while( st.st_mtim.tv_sec == t0 );
+
+  std::string res_filename = "res"+suffix+".txt";
+  system(("cat " + jpsi_filename + "  " + psip_filename + " > " + res_filename).c_str());
+  system((PSIFIT + " --both 1 " + res_filename).c_str());
 }
 
 
@@ -327,16 +365,19 @@ void select()
   read_hadron_cross_section("../TauTau/share/hadron_cross_section.txt", HADR);
 
 
+  std::cout << "Setting  PID" << std::endl;
   set_pid_kptem(DATA       , PID , Kptem);
   set_pid_kptem(SIGNAL         , PID , Kptem);
   for(auto d : BGall_MCs) set_pid_kptem(d,PID,Kptem);
   for(auto d : LUM_MCs)   set_pid_kptem(d,PID,Kptem);
 
+  std::cout << "Measuring luminosity" << std::endl;
   measure_luminosity(DATA,BB,GG,1e6);
   set_luminosity(DATA,SIGNAL);
   for(auto d : BGall_MCs) set_luminosity(DATA,d);
   set_gg_luminosity(DATA,BB);
 
+  std::cout << "Add cross section for gg luminosity (Privalov) " << std::endl;
   read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", JPSILUMMC);
   read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", PSIPLUMMC);
   std::cout << "Measuring privalov luminosity" << std::endl;

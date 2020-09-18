@@ -48,6 +48,7 @@
 #include <TLine.h>
 #include <TPaveStats.h>
 #include <TStyle.h>
+#include <TFitResult.h>
 
 #include "Selection.h"
 #include "draw_helper.h"
@@ -61,6 +62,7 @@
 
 constexpr double GeV=1.0;
 constexpr double MeV=1e-3*GeV;
+constexpr double keV=1e-6*GeV;
 constexpr double barn = 1.0;
 constexpr double pb = 1e-12*barn;
 constexpr double nb = 1e-9*barn;
@@ -68,6 +70,11 @@ constexpr double nb = 1e-9*barn;
 constexpr double MTAU=1776.86*MeV;
 constexpr double MPI=0.13957061*GeV; 
 constexpr double MPI0=0.134977*GeV;
+
+constexpr const double MJPSI = 3096.900*MeV;
+constexpr const double MJPSI_ERROR = 6.0*keV;
+constexpr const double MPSIP = 3686.097*MeV; 
+constexpr const double MPSIP_ERROR =10.0*keV;
 
 
 constexpr double ME_PDG2011=0.510998910*MeV; //+-0.000000013 
@@ -87,7 +94,8 @@ constexpr double PIALPHA=ALPHA*TMath::Pi();
 
 //std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
 static std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
-static std::string PSIFIT = "psifit --free-lum";
+//static std::string PSIFIT = "psifit --free-lum --free-effcor --pdg-shift-file=shift.txt ";
+static std::string PSIFIT = "psifit --free-lum --free-effcor --free-mpdg --minos ";
 
 
 void clean_taufit(void) {
@@ -301,25 +309,27 @@ void print(const std::vector<ScanPoint_t> & SPL)
 {
   int point_number = 1;
   printer pr;
-  pr.add("#point",     "%-7d");
-  pr.add("name",       "%8s");
-  pr.add("W,GeV",      "%10.6f");
-  pr.add("dW,GeV",     "%10.6f");
-  pr.add("E-Mtau,MeV", "%15.3f");
-  pr.add("Sw,MeV",     "%10.3f");
-  pr.add("dSw,MeV",    "%10.3f");
-  pr.add("L,pb^-1",    "%10.3f");
+  //pr.add("#point",     "%-7d");
+  pr.add("#name",       "%-10s");
+  pr.add("W,GeV",      "%15.6f");
+  pr.add("dW,GeV",     "%15.6f");
+//  pr.add("E-Mtau,MeV", "%15.3f");
+  pr.add("Sw,GeV",     "%15.6f");
+  pr.add("dSw,GeV",    "%15.6f");
+  pr.add("L,pb^-1",    "%15.6f");
+  pr.add("dL,pb^-1",   "%15.6f");
   pr("  run list", "  %-10s");
   std::cout << pr.head() << std::endl;
   for (const auto & p : SPL) 
     std::cout <<  pr 
-      % point_number++ 
+   //   % point_number++ 
       % p.title.c_str() 
       % p.energy.value % p.energy.error 
-      % ((0.5*p.energy.value-MTAU)/MeV) 
+//      % ((0.5*p.energy.value-MTAU)/MeV) 
       % p.energy_spread.value
       % p.energy_spread.error
       % p.luminosity.value 
+      % p.luminosity.error
       % get_run_formula(p.run_list).c_str() << std::endl;
 }
 
@@ -463,7 +473,14 @@ std::vector<std::string> parse_line(std::string regex)
 //  return is;
 //}
 
-Scan_t read_my_runtable(std::string filename)
+enum {
+  DATA_ALL,
+  DATA_TAU,
+  DATA_JPSI,
+  DATA_PSIP
+};
+
+Scan_t read_my_runtable(std::string filename, int type=DATA_ALL)
 {
   Scan_t theScan;
   std::fstream ifs(filename);
@@ -472,10 +489,11 @@ Scan_t read_my_runtable(std::string filename)
   std::string point_runs;
   ibn::valer<double>point_energy; //GeV
   ibn::valer<double>point_lum; 
+  ibn::valer<double>point_spread;
   //double point_energy; //beam energy in GeV
   //double point_energy_error;
-  double point_spread;
-  double point_spread_error;
+  //double point_spread;
+  //double point_spread_error;
   std::regex comment_re(R"(^\s*#.*)");
   std::regex empty_re(R"(^\s*)");
   std::string line;
@@ -486,7 +504,7 @@ Scan_t read_my_runtable(std::string filename)
     if( std::regex_match(line,sm,comment_re)  ) continue;
     if( std::regex_match(line,sm,empty_re)  ) continue;
     std::istringstream iss(line);
-    iss >> point_name >> point_energy.value >> point_energy.error >> point_spread >> point_spread_error >> point_lum.value >> point_lum.error;
+    iss >> point_name >> point_energy.value >> point_energy.error >> point_spread.value >> point_spread.error >> point_lum.value >> point_lum.error;
     std::getline(iss,point_runs); 
     ScanPoint_t sp;
     sp.run_list = get_run_list(point_runs);
@@ -499,10 +517,28 @@ Scan_t read_my_runtable(std::string filename)
     else for(auto & r : sp.run_list) sp.regexprs.push_back(std::to_string(r));
     sp.title = point_name;
     sp.energy = point_energy;
-    sp.energy_spread = point_spread;
-    //sp.energy_spread.error = point_spread_error;
+    sp.energy_spread = point_spread; 
     sp.luminosity = point_lum;
-    theScan.emplace_back(std::move(sp));
+    bool is_add=false;
+    switch (type) {
+      case DATA_JPSI:
+        if(3000*MeV < sp.energy.value && sp.energy.value < 3200*MeV) is_add=true;
+        break;
+      case DATA_TAU:
+        if(3500*MeV < sp.energy.value && sp.energy.value < 3630*MeV) is_add=true;
+        break;
+      case DATA_PSIP:
+        if(3650*MeV < sp.energy.value && sp.energy.value < 3800*MeV) is_add=true;
+        break;
+      default:
+        is_add=true;
+    };
+    if(is_add) theScan.emplace_back(std::move(sp));
+    //sp.energy_spread.error = point_spread_error;
+  //    std::cout << sp.energy.value << " " << M << std::endl;
+    //if(fabs(sp.energy.value - M) < 60*MeV || type == DATA_ALL) {
+    //  std::cout << sp.energy.value << " " << M << std::endl;
+    //}
   };
   return theScan;
 }
@@ -3098,13 +3134,13 @@ void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename
 }
 
 
-void fitmh(const std::vector<PointSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
+void save_and_fitmh(const std::vector<PointSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", std::string opt = "")
 {
   savemh(sr,filename,default_lum);
   char command[65536];
   std::string basename = sub(filename,R"(\..+)", "");
   std::string output_file = basename + "_fit";
-  sprintf(command, (PSIFIT + " '%s' & ").c_str(), filename.c_str());
+  sprintf(command, (PSIFIT + " '%s' " + opt).c_str(), filename.c_str());
   system(command);
 }
 
@@ -3471,7 +3507,7 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     auto & m = proj(p);
     l.cross_section.value  = m.cross_section.value*pow(m.energy.value/l.energy.value, 2.0);
     l.cross_section.error  = l.cross_section.value*std::hypot( m.cross_section.error/m.cross_section.value, 2.0*l.energy.error/l.energy.value);
-    std::cout << "l.sigma = " << l.cross_section.value << " +- " << l.cross_section.error << std::endl;
+    //std::cout << "l.sigma = " << l.cross_section.value << " +- " << l.cross_section.error << std::endl;
     l.efficiency = m.efficiency;
     l.Nmc = m.Nmc;
     l.N0mc = m.N0mc;
@@ -3479,12 +3515,12 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
     l.N = l.tree->GetEntries(sel.c_str());
     double vis_cx = (l.efficiency*l.cross_section); //visible_cross_section;
     double vis_cx_error = std::hypot(l.cross_section.error*l.efficiency, l.cross_section*l.efficiency.error);
-    std::cout << "Visible cross section : " << vis_cx << "  " << vis_cx_error << std::endl;
+    //std::cout << "Visible cross section : " << vis_cx << "  " << vis_cx_error << std::endl;
     m.luminosity.value  = l.N / vis_cx;
     m.luminosity.error = m.luminosity.value*sqrt(  1./l.N  +  pow(vis_cx_error/vis_cx,2.0) );
     l.luminosity.value = m.luminosity.value;
     l.luminosity.error = m.luminosity.error;
-    std::cout << sp.energy << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  "mc" << m.luminosity.error << std::endl;
+    //std::cout << sp.energy << "  " << l.Nmc << " " << l.N0mc << " " << l.efficiency.value << "  " << l.efficiency.error << "  " << l.luminosity.value << " " << l.luminosity.error <<  "mc" << m.luminosity.error << std::endl;
   }
 }
 
@@ -5952,6 +5988,336 @@ void check_cut(ScanPoint_t & D, std::string cut1, std::string cut2) {
   std::cout << "N-N1 = " << N - N1 << std::endl;
   std::cout << "N-N2 = " << N - N2 << std::endl;
 }
+
+void calculate_energy_scale_shift(std::string filename) {
+  std::ifstream ifs(filename);
+  if(!ifs) {
+    std::cerr << "ERROR: Unable to open file " << filename << "\n";
+    return;
+  }
+  ibn::valer<double> W, dM, S;
+  ifs.ignore(65535,'\n');
+  TGraphErrors * gshift = new TGraphErrors;
+  TGraphErrors * gspread = new TGraphErrors;
+  int idx=0;
+  for( int idx=0; ifs >> W.value >> W.error >> dM.value >> dM.error >> S.value >> S.error; ++idx ) {
+    std::cout  << W.value << "  " << W.error << "   " << dM.value << "   " << dM.error << "    " << S.value << "   " << S.error << std::endl;
+
+    gshift->SetPoint(idx, W.value, dM.value);
+    gshift->SetPointError(idx, W.error, dM.error);
+
+    gspread->SetPoint(idx, W.value, S.value);
+    gspread->SetPointError(idx, W.error, S.error);
+  }
+  new TCanvas;
+  gshift->Draw("a*");
+  gshift->Fit("pol0");
+  ibn::valer<double> shift{gshift->GetFunction("pol0")->GetParameter(0), gshift->GetFunction("pol0")->GetParError(0)};
+  new TCanvas;
+  TF1 * squared_fun = new TF1("squared_fun","[0]*pow(0.5*x/1776.86, 2.0)");
+  gspread->Draw("a*");
+  gspread->Fit("squared_fun");
+  ibn::valer<double> spread{squared_fun->GetParameter(0), squared_fun->GetParError(0)};
+  printf("%20.6f  +- %20.6f\n", shift.value, shift.error);
+  printf("%20.6f  +- %20.6f\n", spread.value, spread.error);
+}
+
+
+void calculate_ems_enegies_from_SCAN_result(std::vector<ScanPoint_t> & cfg, std::string file, double thresold /* in MeV */, int version=1) {
+  std::ifstream ifs(file);
+  if(!ifs) {
+    std::cerr <<  "Unable ot open file " << file << std::endl;
+    return;
+  }
+  long t,dt;
+  double W, dW, S, dS, dummy;
+  std::vector<ScanPoint_t> EMS;
+  std::vector<ScanPoint_t> R; //the result
+  std::regex comment(R"(^\s*#.*)");
+  std::string line;
+  std::smatch sm;
+  while(std::getline(ifs,line)) {
+    if(regex_match(line, sm, comment)) continue;
+    std::istringstream iss(line);
+    if(version==1) {
+      iss >> t >> dt >> W >> dW >> S >> dS;
+    } else {
+      iss >> t >> dt >> W >> dummy >> dW >> dummy >> dummy >> S >> dS;
+    }
+    ScanPoint_t sp;
+    sp.energy.value = W*MeV/GeV;
+    sp.energy.error = dW*MeV/GeV;
+    sp.energy_spread.value = S*MeV/GeV;
+    sp.energy_spread.error = dS*MeV/GeV;
+    EMS.push_back(sp);
+  }
+  print(EMS);
+  for(auto & sp : cfg) {
+    TGraphErrors * g = new TGraphErrors;
+    TGraphErrors * gs = new TGraphErrors;
+    for(auto & ems: EMS) {
+      if(fabs(ems.energy.value - sp.energy.value) < thresold*MeV ) {
+        int n = g->GetN();
+        g->SetPoint(n, n, ems.energy.value);
+        g->SetPointError(n,0, ems.energy.error);
+        gs->SetPoint(n, n, ems.energy_spread.value);
+        gs->SetPointError(n,0, ems.energy_spread.error);
+      }
+    }
+    ScanPoint_t r=sp;
+    if(g->GetN() != 0 ) { 
+      g->Fit("pol0","","goff");
+      auto f = g->GetFunction("pol0");
+      W = f->GetParameter(0);
+      dW = f->GetParError(0);
+      gs->Fit("pol0","","goff");
+      f = gs->GetFunction("pol0");
+      S = f->GetParameter(0);
+      dS = f->GetParError(0);
+      //std::cout << sp.energy.value << "   " << W << "   " << dW << std::endl;
+      r.energy.value = W;
+      r.energy.error = dW;
+      r.energy_spread.value = S;
+      r.energy_spread.error = dS;
+    } else {
+      r.energy.value = 0;
+      r.energy.error = 0;
+      r.energy_spread.value = 0;
+      r.energy_spread.error = 0;
+    }
+    R.push_back(r);
+    delete g;
+  }
+  for(auto & r: R) {
+    printf("%10s  %10.3f  %10.3f  %10.3f %10.3f \n", r.title.c_str(), r.energy.value/MeV, r.energy.error/MeV,  r.energy_spread.value/MeV, r.energy_spread.error/MeV);
+  }
+}
+
+std::vector<ScanPoint_t> read_SCAN_result(std::string file, int version=3) {
+  std::ifstream ifs(file);
+  std::vector<ScanPoint_t> R; //the result
+  if(!ifs) {
+    std::cerr <<  "Unable ot open file " << file << std::endl;
+    return R;
+  }
+  long n,t,dt;
+  double W, dW, S, dS, dummy;
+  std::vector<ScanPoint_t> EMS;
+  std::regex comment(R"(^\s*#.*)");
+  std::string line;
+  std::smatch sm;
+  while(std::getline(ifs,line)) {
+    if(regex_match(line, sm, comment)) continue;
+    std::istringstream iss(line);
+    iss >> n >> t >> dt >> W >> dummy >> dW >> dummy >> dummy >> S >> dS;
+    ScanPoint_t sp;
+    sp.energy.value = W*MeV/GeV;
+    sp.energy.error = dW*MeV/GeV;
+    sp.energy_spread.value = S*MeV/GeV;
+    sp.energy_spread.error = dS*MeV/GeV;
+    sp.run_list.push_back(n);
+    EMS.push_back(sp);
+  }
+  print(EMS);
+  std::map<std::string, std::vector<long> > C;
+  if(version==3) { //with noexp
+    C["J1"]={1};
+    C["J2"]={2};
+    C["J3"]={3};
+    C["J4"]={4};
+    C["J5"]={5};
+    C["J6"]={6};
+    C["J7"]={7};
+    C["J8"]={8};
+    C["T1"]={9,10,11};
+    C["T1p"]={12}; //3550
+    C["T2"]={13,14};  //3552.8
+    C["T3"]={15}; //3553.9
+    C["T4"]={16}; //3560
+    C["T5"]={17}; //3600
+    C["T5p"]={29}; //3601
+    C["P1"]={18}; //3675
+    C["P2"]={19}; //3683
+    C["P3"]={20};//3684.399
+    C["P4"]={21};//3684.900
+    C["P5"]={22};//3685.306
+    C["P6"]={23};//3865.809
+    C["P7"]={24};//3686.302
+    C["P8"]={25};//3687.305
+    C["P9"]={26};//3687.993
+    C["P10"]={27};//3693.773
+    C["P11"]={28};//3694.027
+  }
+
+  for(auto & [name, ids] : C) {
+    TGraphErrors * g = new TGraphErrors;
+    TGraphErrors * gs = new TGraphErrors;
+    for(auto & n : ids) {
+      //std::cout << name << "  " << n <<  " ";
+      for(auto & ems : EMS) {
+        //auto it = std::find_if(EMS.begin(),EMS.end(), [&n](const auto & ems ) { return n==ems.run_list.front(); } );
+        if(ems.run_list.front() == n ) {
+          //std::cout << n << "  " << ems.run_list.front() << "   " << ems.energy.value << "  " << ems.energy.error << std::endl;
+          int i = g->GetN();
+          g->SetPoint(i, i, ems.energy.value);
+          g->SetPointError(i,0, ems.energy.error);
+          gs->SetPoint(i, i, ems.energy_spread.value);
+          gs->SetPointError(i,0, ems.energy_spread.error);
+        }
+      }
+    }
+    ScanPoint_t r;
+    auto get_scale = [](auto & fitres) -> double {
+      double chi2 = fitres->Chi2();
+      int ndf = fitres->Ndf();
+      if(ndf==0) return 1;
+      double scale = sqrt(chi2/ndf);
+      if(scale<1) scale=1;
+      return scale;
+    };
+
+    if(g->GetN() != 0 ) { 
+      auto fitres = g->Fit("pol0","S","goff");
+      double scale = get_scale(fitres);
+      auto f = g->GetFunction("pol0");
+      W = f->GetParameter(0);
+      dW = f->GetParError(0)*scale;
+      fitres = gs->Fit("pol0","S","goff");
+      scale  = get_scale(fitres);
+      f = gs->GetFunction("pol0");
+      S = f->GetParameter(0);
+      dS = f->GetParError(0)*scale;
+      //std::cout << sp.energy.value << "   " << W << "   " << dW << std::endl;
+      r.energy.value = W;
+      r.energy.error = dW;
+      r.energy_spread.value = S;
+      r.energy_spread.error = dS;
+      r.luminosity=0;
+      r.title = name;
+    } else {
+      r.energy.value = 0;
+      r.energy.error = 0;
+      r.energy_spread.value = 0;
+      r.energy_spread.error = 0;
+      r.luminosity=0;
+      r.title = name;
+    }
+    R.push_back(r);
+    delete g;
+    delete gs;
+  }
+  std::sort(R.begin(),R.end(), [](const auto &p1, const auto & p2) { return p1.energy < p2.energy; } );
+  double unit = GeV;
+  for(auto & r: R) {
+    printf("%10s  %10.3f  %10.3f  %10.3f %10.3f \n", r.title.c_str(), r.energy.value/unit, r.energy.error/unit,  r.energy_spread.value/unit, r.energy_spread.error/unit);
+  }
+  return R;
+}
+
+std::vector<ScanPoint_t> read_SCAN_result2(std::string file, int version=3) {
+  std::ifstream ifs(file);
+  std::vector<ScanPoint_t> R; //the result
+  if(!ifs) {
+    std::cerr <<  "Unable ot open file " << file << std::endl;
+    return R;
+  }
+  long n,t,dt;
+  double W, dW, S, dS, dummy;
+  //std::vector<ScanPoint_t> EMS;
+  std::map<std::string, std::vector<ScanPoint_t> > EMS;
+  std::regex comment(R"(^\s*#.*)");
+  std::string line;
+  std::smatch sm;
+  std::string name;
+  while(std::getline(ifs,line)) {
+    if(regex_match(line, sm, comment)) continue;
+    std::istringstream iss(line);
+    iss >> name >> t >> dt >> W >> dW >> S >> dS;
+    ScanPoint_t sp;
+    sp.energy.value = W*MeV/GeV;
+    sp.energy.error = dW*MeV/GeV;
+    sp.energy_spread.value = S*MeV/GeV;
+    sp.energy_spread.error = dS*MeV/GeV;
+    //sp.run_list.push_back(n);
+    sp.name = name;
+    EMS[name].push_back(sp);
+  }
+  for( auto & [name, Point ] : EMS ) {
+    TGraphErrors * g = new TGraphErrors;
+    TGraphErrors * gs = new TGraphErrors;
+    for(auto & ems : Point) {
+          //std::cout << n << "  " << ems.run_list.front() << "   " << ems.energy.value << "  " << ems.energy.error << std::endl;
+          int i = g->GetN();
+          g->SetPoint(i, i, ems.energy.value);
+          g->SetPointError(i,0, ems.energy.error);
+          gs->SetPoint(i, i, ems.energy_spread.value);
+          gs->SetPointError(i,0, ems.energy_spread.error);
+    }
+    ScanPoint_t r;
+    auto get_scale = [](auto & fitres) -> double {
+      double chi2 = fitres->Chi2();
+      int ndf = fitres->Ndf();
+      if(ndf==0) return 1;
+      double scale = sqrt(chi2/ndf);
+      if(scale<1) scale=1;
+      return scale;
+    };
+
+    if(g->GetN() != 0 ) { 
+      auto fitres = g->Fit("pol0","S","goff");
+      double scale = get_scale(fitres);
+      auto f = g->GetFunction("pol0");
+      W = f->GetParameter(0);
+      dW = f->GetParError(0)*scale;
+      fitres = gs->Fit("pol0","S","goff");
+      scale  = get_scale(fitres);
+      f = gs->GetFunction("pol0");
+      S = f->GetParameter(0);
+      dS = f->GetParError(0)*scale;
+      //std::cout << sp.energy.value << "   " << W << "   " << dW << std::endl;
+      r.energy.value = W;
+      r.energy.error = dW;
+      r.energy_spread.value = S;
+      r.energy_spread.error = dS;
+      r.luminosity=0;
+      r.title = name;
+    } else {
+      r.energy.value = 0;
+      r.energy.error = 0;
+      r.energy_spread.value = 0;
+      r.energy_spread.error = 0;
+      r.luminosity=0;
+      r.title = name;
+    }
+    R.push_back(r);
+    delete g;
+    delete gs;
+  }
+  std::sort(R.begin(),R.end(), [](const auto &p1, const auto & p2) { return p1.energy < p2.energy; } );
+  double unit = GeV;
+  for(auto & r: R) {
+    printf("%10s  %10.3f  %10.3f  %10.3f %10.3f \n", r.title.c_str(), r.energy.value/unit, r.energy.error/unit,  r.energy_spread.value/unit, r.energy_spread.error/unit);
+  }
+  return R;
+}
+
+std::vector<ScanPoint_t> stick(const std::vector<ScanPoint_t> & Cfg, const std::vector<ScanPoint_t> & Rt) {
+  std::vector<ScanPoint_t> R;
+  for(auto  & rt : Rt) {
+    auto it = std::find_if(Cfg.begin(), Cfg.end(), [&rt](const auto & sp) { return sp.title == rt.title; } );
+    if(it!=Cfg.end()) {
+      ScanPoint_t sp=*it; //*it from cfg
+      //sp.run_list = rt.run_list;
+      //sp.luminosity = rt.luminosity;
+      sp.energy = rt.energy;
+      sp.energy_spread = rt.energy_spread;
+      R.push_back(sp);
+    }
+  }
+  return R;
+}
+
+
 
 
 
