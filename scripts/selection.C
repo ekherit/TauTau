@@ -477,7 +477,8 @@ enum {
   DATA_ALL,
   DATA_TAU,
   DATA_JPSI,
-  DATA_PSIP
+  DATA_PSIP,
+  DATA_RES
 };
 
 Scan_t read_my_runtable(std::string filename, int type=DATA_ALL)
@@ -528,6 +529,10 @@ Scan_t read_my_runtable(std::string filename, int type=DATA_ALL)
         if(3500*MeV < sp.energy.value && sp.energy.value < 3630*MeV) is_add=true;
         break;
       case DATA_PSIP:
+        if(3650*MeV < sp.energy.value && sp.energy.value < 3800*MeV) is_add=true;
+        break;
+      case DATA_RES:
+        if(3000*MeV < sp.energy.value && sp.energy.value < 3200*MeV) is_add=true;
         if(3650*MeV < sp.energy.value && sp.energy.value < 3800*MeV) is_add=true;
         break;
       default:
@@ -3073,7 +3078,7 @@ void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt",
 
 void savemh(const std::vector<PointSelectionResult_t> & sr, std::string  filename="scan.txt", std::string default_lum="")
 {
-  //std::cout << "Saving selection: " << sr.title << " to file: " << filename << std::endl;
+  std::cout << "Saving selection: to file: " << filename << std::endl;
   std::stringstream os;
   char buf[65535];
   sprintf(buf,"%5s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s",
@@ -3490,7 +3495,7 @@ void me(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="") {
     ds.Nmc = ds.tree->GetEntries(sel.c_str());
     ds.efficiency.value = double(ds.Nmc)/ds.N0mc;
     ds.efficiency.error = sqrt( ds.efficiency.value * ( 1.0 - ds.efficiency.value )/ds.N0mc );
-    //std::cout <<  sp.W << "  " << ds.Nmc << " " << ds.N0mc << " " << ds.efficiency.value << "  " << ds.efficiency.error  <<   "   "  << ds.cross_section.value  <<  std::endl;
+    //std::cout <<  sp.energy << "  " << ds.Nmc << " " << ds.N0mc << " " << ds.efficiency.value << "  " << ds.efficiency.error  <<   "   "  << ds.cross_section.value  <<  std::endl;
   }
 }
 
@@ -3501,7 +3506,7 @@ void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel,
   for(auto & sp :data) {
     auto & p  = *std::min_element(mc.begin(), mc.end(), [&sp](auto a, auto b){ return fabs(a.energy-sp.energy)<fabs(b.energy-sp.energy); } );
     if(fabs(sp.energy-p.energy)>1*MeV) {
-      std::cerr << "WARNING: To big difference in energy points: " << sp.energy.value/MeV << "  and " << p.energy/MeV << " MeV" << std::endl;
+      std::cerr << "WARNING: Luminosity measurement:  To big difference in energy points: " << sp.energy.value/MeV << "(data)  and " << p.energy/MeV << " MeV (MC)" << std::endl;
     }
     auto & l = proj(sp);
     auto & m = proj(p);

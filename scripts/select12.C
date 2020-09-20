@@ -21,46 +21,62 @@
 #include <map>
 #include "Config.h"
 
+//ems3 mh noemc mylum2
+std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2299 --ems-cmenergy-shift=-0.0201182 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
+//ems2
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2266 --ems-cmenergy-shift=0.0613 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base_shift=1.19568e-01 ";
+//ems32 base
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.238 --ems-cmenergy-shift=-0.0128 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
+
+//ems2
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.235 --ems-cmenergy-shift=0.0687 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base_shift=1.19056e-01 ";
+
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.21898e-01 --draw-diff";
 //ems3
-std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.244 --ems-cmenergy-shift=+0.072 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
 //ems2
 //std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.239      --energy-correction=+0.0391396 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
 
 
-//std::string runtable_name = "../TauTau/share/all_scan_points_ems3.txt";
-//std::string runtable_name = "ems31.txt";
-//std::string runtable_name = "ems32.txt";
-//std::string runtable_name = "ems3_with_exp.txt";
 //std::string runtable_name = "../TauTau/share/all_scan_points_ems2.txt";
-std::string runtable_name = "ems20.txt";
+std::string runtable_name = "../TauTau/share/all_scan_points_ems32.txt";
 auto ALLRUNTABLE      = read_my_runtable(runtable_name);
 
 auto RUNTABLE      = read_my_runtable(runtable_name, DATA_TAU);
-//auto RUNTABLE      = read_my_runtable("../TauTau/share/all_scan_points_ems3.txt");
 auto JPSI_RUNTABLE =  read_my_runtable(runtable_name, DATA_JPSI);
 auto PSIP_RUNTABLE =  read_my_runtable(runtable_name, DATA_PSIP);
+//auto RES_RUNTABLE  =  read_my_runtable(runtable_name, DATA_RES);
 
-//#ifdef EMS2
-////auto RUNTABLE      = read_my_runtable("../TauTau/share/tau_scan_points_ems2.txt");
-//auto JPSI_RUNTABLE =  read_my_runtable(rutab, DATA_JPSI);
-//auto PSIP_RUNTABLE =  read_my_runtable("../TauTau/share/psip_scan_points_ems2.txt", DATA_PSIP);
-//#endif
 
 
 constexpr long N0MC  = 1e6;
 
 //read data from directory "data". Runs are combined into points according to runtable 
 auto DATA      = read_data("data", RUNTABLE);
+
+
+//auto RES      = read_mh("mhdata", RES_RUNTABLE);
+//auto RESMC    = read_mc_mh("mcmh", RES_RUNTABLE, N0MC);
+//auto RESGG    = read_data("data", RES_RUNTABLE);
+//auto RESGGMC  = read_mc("mc/gg", RES_RUNTABLE,1e5);
+
+
 auto JPSI      = read_mh("mhdata",JPSI_RUNTABLE);
 auto PSIP      = read_mh("mhdata",PSIP_RUNTABLE);
-
 auto JPSIMC    = read_mc_mh("mcmh", JPSI_RUNTABLE);
 auto PSIPMC    = read_mc_mh("mcmh", PSIP_RUNTABLE);
 
-auto JPSILUM   = read_privalov_lum("mhlum",JPSI_RUNTABLE);
-auto PSIPLUM   = read_privalov_lum("mhlum",PSIP_RUNTABLE);
-auto JPSILUMMC   = read_mc_mhlum("mhlum",JPSI_RUNTABLE,1e5);
-auto PSIPLUMMC  = read_mc_mhlum("mhlum",PSIP_RUNTABLE,1e5);
+auto JPSIGG  = read_data("data", JPSI_RUNTABLE);
+auto JPSIGGMC  = read_mc("mc/gg", JPSI_RUNTABLE,1e5);
+
+auto PSIGG  = read_data("data", PSIP_RUNTABLE);
+auto PSIGGMC  = read_mc("mc/gg", PSIP_RUNTABLE,1e5);
+
+//
+//auto JPSILUM   = read_privalov_lum("mhlum",JPSI_RUNTABLE);
+//auto PSIPLUM   = read_privalov_lum("mhlum",PSIP_RUNTABLE);
+//auto JPSILUMMC   = read_mc_mhlum("mhlum",JPSI_RUNTABLE,1e5);
+//auto PSIPLUMMC  = read_mc_mhlum("mhlum",PSIP_RUNTABLE,1e5);
 
 //Monte Carlo simulation of the signal
 auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
@@ -92,7 +108,23 @@ Simulation_t MC = { SIGNAL, BGs };
 //std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.03";
 std::string LOCAL_BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0";
 std::string LOCAL_GG_SEL = "";
-std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//studi systematic in GG luminosity
+//std::string LOCAL_GG_SEL = "fabs(cos(theta[0]))<0.7 && fabs(cos(theta[1]))<0.7 && abs(dtheta)<0.03 && E_Eb<1.025 && 0.85 < E_Eb && -0.04 < dphi && dphi< 0.0 && N0==2";
+//std::string LOCAL_GG_SEL = "N0==2";
+
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.1 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.25 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string local_mh_sel = "echmin>0.05 && nchc==nchgcemc && ptmin>0.2 && s>0.1 && maxctheta<0.8 && minctheta>-0.8 && nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.7 && minctheta>-0.7 && Nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>3";
+//теперь это новый отбор многоадронных
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+std::string LOCAL_MH_SEL = "ptmin>0.25 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+
+//std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
+//std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.7 && fabs(cos(theta[1]))<0.7 && theta[0]+theta[1]-TMath::Pi()<0.04 && theta[0]+theta[1]-TMath::Pi()>-0.04 && fabs(phi[0]-phi[1])-TMath::Pi()<0.01 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.05";
 std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
 
 //particla identification configuration
@@ -340,6 +372,32 @@ void dores(std::string suffix) {
   system((PSIFIT + " --both 1 " + res_filename).c_str());
 }
 
+void reslum(Scan_t & data, Scan_t & lum, Scan_t mclum) {
+  read_gg_cross_section("../TauTau/share/gg_cross_section.txt", mclum);
+  cout << "Measuring res luminosity " << std::endl;
+  measure_gg_luminosity(lum, mclum,1e5,LOCAL_GG_SEL);
+  set_res_gg_luminosity(data, lum);
+  print(data);
+}
+void res(std::string fname, Scan_t & data, Scan_t &mcdata, Scan_t & lum, Scan_t mclum) {
+  reslum(data,lum, mclum);
+  std::cout << "Selecting multihadronic events" << std::endl;
+  auto res = select(data, LOCAL_MH_SEL);
+  auto mcres = measure_efficiency(mcdata, LOCAL_MH_SEL);
+  set_efficiency(res,mcres,1e6);
+  print(res);
+  savemh(res,fname);
+};
+
+void res(std::string suffix="_test") {
+  std::string jpsiname = "jpsi"+suffix+".txt";
+  std::string psiname = "psip"+suffix+".txt";
+  std::string resname = "res"+suffix+".txt";
+  res(jpsiname, JPSI, JPSIMC, JPSIGG, JPSIGGMC);
+  res(psiname, PSIP, PSIPMC, PSIGG, PSIGGMC);
+  system(("cat "+jpsiname + " " + psiname + " > " +  resname).c_str());
+}
+
 
 void select() 
 {
@@ -377,14 +435,14 @@ void select()
   for(auto d : BGall_MCs) set_luminosity(DATA,d);
   set_gg_luminosity(DATA,BB);
 
-  std::cout << "Add cross section for gg luminosity (Privalov) " << std::endl;
-  read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", JPSILUMMC);
-  read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", PSIPLUMMC);
-  std::cout << "Measuring privalov luminosity" << std::endl;
-  measure_gg_luminosity(JPSILUM, JPSILUMMC, 1e5, PRIVALOV_GG_SEL);
-  measure_gg_luminosity(PSIPLUM, PSIPLUMMC, 1e5, PRIVALOV_GG_SEL);
-  set_res_gg_luminosity(JPSI, JPSILUM);
-  set_res_gg_luminosity(PSIP, PSIPLUM);
+  //std::cout << "Add cross section for gg luminosity (Privalov) " << std::endl;
+  //read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", JPSILUMMC);
+  //read_privalov_gg_cross_section("../TauTau/share/privalov_gg_cross_section.txt", PSIPLUMMC);
+  //std::cout << "Measuring privalov luminosity" << std::endl;
+  //measure_gg_luminosity(JPSILUM, JPSILUMMC, 1e6, PRIVALOV_GG_SEL);
+  //measure_gg_luminosity(PSIPLUM, PSIPLUMMC, 1e6, PRIVALOV_GG_SEL);
+  //set_res_gg_luminosity(JPSI, JPSILUM);
+  //set_res_gg_luminosity(PSIP, PSIPLUM);
 
   /*
   set_pid_kptem(HADR       , PID , Kptem);
@@ -395,6 +453,7 @@ void select()
   */
  //doall(SEL,1,DATA,SIGNAL,"sel","gg"); 
  //sys("cos_theta_mis3.sys","cos_theta_mis2, GeV");
+  //set_luminosity(JPSILUM
 }
 
 
