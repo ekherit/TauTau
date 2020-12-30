@@ -53,6 +53,7 @@
 #include "Selection.h"
 #include "draw_helper.h"
 #include "fold.h"
+#include "ScanPoint.h"
 
 #include "../ibn/valer.h"
 #include "../ibn/indexer.h"
@@ -68,7 +69,7 @@ constexpr double pb = 1e-12*barn;
 constexpr double nb = 1e-9*barn;
 
 constexpr double MTAU=1776.86*MeV;
-constexpr double MPI=0.13957061*GeV; 
+constexpr double MPION=0.13957061*GeV; 
 constexpr double MPI0=0.134977*GeV;
 
 constexpr const double MJPSI = 3096.900*MeV;
@@ -106,40 +107,6 @@ static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8
 static std::string GG_SEL = "";
 
 
-
-
-
-
-struct AcceleratorInfo_t {
-  ibn::valer<double> energy;     //beam c.m. energy
-  ibn::valer<double> energy_spread; //beam energy spread
-  ibn::valer<double> luminosity; 
-};
-
-struct DataSample_t  : public AcceleratorInfo_t
-{
-  std::string title;
-  std::shared_ptr<TTree> tree;
-  ibn::valer<double> cross_section;
-  //ibn::valer<double> energy;     //beam c.m. energy
-  //ibn::valer<double> luminosity;
-  ibn::valer<double> efficiency; //registration efficiency
-  ibn::valer<double> effcor; //correction to efficiency
-  long N; //number of selected events in data
-  long Nmc; //number of selected events in MC
-  long N0mc; //initial number of MC events
-  long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
-    return tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
-  }
-};
-
-struct ScanPoint_t; 
-typedef std::reference_wrapper<ScanPoint_t> ScanPointRef_t;
-
-typedef std::vector<ScanPoint_t>  Scan_t;
-typedef std::reference_wrapper<Scan_t> ScanRef_t;
-typedef std::shared_ptr<Scan_t> ScanPtr_t;
-
 std::map<std::string, std::string > SelMap;
 
 
@@ -147,83 +114,6 @@ struct Simulation_t {
   ScanRef_t signal;
   std::vector<ScanRef_t> bgs;
 };
-
-struct ScanPoint_t : public AcceleratorInfo_t
-{
-  std::string title;
-  std::list<int> run_list; //list of runs
-
-  DataSample_t tt; //tau tau events. This is the signal or background
-  DataSample_t bb; //Bhabha  luminosity
-  DataSample_t gg; //Digamma luminosity
-
-  std::list<std::pair<int,double> > runs; //for drawing luminosity per runs
-
-  //std::string selection;
-  //std::map<std::string, int> NttMap;
-  std::list<std::string> file_list;
-  std::list<std::string> regexprs; //regular expessions to match files
-  std::string scan_title;
-
-
-  //std::string cut;
-  std::string name;
-  std::string root_name;
-  std::string tex_name;
-
-  long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
-    return tt.tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
-  }
-
-  struct by_regexp
-  {
-    const Scan_t * scan;
-    by_regexp(const Scan_t * scan) : scan(scan) {}
-    std::string operator()(std::string file)
-    {
-      for ( auto & s : *scan )
-      {
-      }
-      std::regex re(R"(\D+(\d+)\.root)");
-      std::smatch match;
-      std::string result;
-      int run=0;
-      if(std::regex_match(file, match,re))
-      {
-        if(match.size()>1)
-        {
-          run = std::stoi(match[1]);
-          for( auto & s : *scan)
-          {
-            if(std::count(std::begin(s.run_list),std::end(s.run_list), run) > 0)
-            {
-              result=s.title;
-            }
-          }
-        }
-      }
-      return result;
-    }
-  };
-  std::string type;
-};
-
-using PointSelectionResult_t = ScanPoint_t;
-
-//struct PointSelectionResult_t
-//{
-//  std::string name;
-//  std::string root_name;
-//  std::string tex_name;
-//  std::string cut;
-//  long Ntt=0; //number of tau tau events;
-//  ibn::valer<double> W;
-//  ibn::valer<double> L;
-//  ibn::valer<double> eps = {1.0,0};
-//  ibn::valer<double> effcor = {1.0,0};
-//  DataSample_t bb, gg;
-//};
-
 
 class printer
 {
@@ -396,15 +286,6 @@ std::list<int> get_run_list(std::string line)
       str = match.suffix();
     }
   }
-  //int count=0;
-  //std::list<int> run_list2;
-  //for(auto r :run_list) {
-  //  if(!(count%3==0)) {
-  //    run_list2.push_back(r);
-  //  }
-  //  ++count;
-  //}
-  //return run_list2;
   return run_list;
 }
 
@@ -446,32 +327,6 @@ std::vector<std::string> parse_line(std::string regex)
   return result;
 }
 
-///* eat comment line */
-//struct cline
-//{
-//  std::string comments="#";
-//  cline(std::string s) : comments(s) {}
-//};
-//
-///* eat comment line */
-//struct eat
-//{
-//  std::string eat_list=" \t";
-//  cline(std::string s) : eat_list(s) {}
-//};
-//
-//std::istream & oprator>>(std::istream & is, eat e)
-//{
-//  do
-//  {
-//    bool is_eat = e.eat_list
-//
-//    for(int i=0;i<e.eat_list.size();++i) es_eat &
-//
-//
-//  } while(is_eat)
-//  return is;
-//}
 
 enum {
   DATA_ALL,
@@ -636,7 +491,7 @@ void set_alias(TTree * tt, double W, double L=1.0)
   char Eb[1024];
   sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);
-  tt->SetAlias("MPI",(std::to_string(MPI)+"*1").c_str());
+  tt->SetAlias("MPI",(std::to_string(MPION)+"*1").c_str());
   tt->SetAlias("Emis2","(2*Eb-p[0]-p[1])");
   //tt->SetAlias("cos_theta_mis","(pz[0]+pz[1])/Emis");
   tt->SetAlias("cos_theta_mis2","(pz[0]+pz[1])/hypot(hypot(px[0]+px[1], py[0]+py[1]), pz[0]+pz[1])");
@@ -2175,6 +2030,7 @@ void print_Nbb(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg
 
 void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
+  std::cout << "In print_efficiency " << std::endl;
   if(SR.empty()) return;
   std::string format_str = "%4.3f ± %4.3f";
   cfg.total_width = format_str.length();
@@ -2748,6 +2604,7 @@ std::vector<ChannelSelectionResult_t> & set_efficiency( std::vector<ChannelSelec
     auto eff = measure_efficiency(MC,sr.cut);
     set_efficiency(sr, eff, N0);
   };
+  std::cout << "In set_efficiency " << std::endl;
   print_efficiency(SR);
   print_effcor(SR);
   return SR;
@@ -2866,6 +2723,96 @@ void compare(std::vector<ScanPoint_t*> SP, const char * varexp_str, const char *
   compare(SP,std::vector<std::string>{varexp_str}, selection, gopt);
 }
 
+
+struct compare_cfg {
+  std::string gopt="NORM";
+  std::string gopt1="HIS";
+  std::string gopt2="";
+  std::string name="h";
+  std::string name1="mc";
+  std::string name2="data";
+  int Nbin=100;
+  double xmin=-std::numeric_limits<double>::max();
+  double xmax=std::numeric_limits<double>::max();
+  std::string title="";
+  std::string xaxis_title="";
+  int color1=0;
+  int color2=0;
+  int line_width=2;
+  int line_width1=0;
+  int line_width2=0;
+  int marker_style=21;
+  int marker_style1=1;
+  int marker_style2=0;
+  int marker_size=1;
+  int marker_size1=0;
+  int marker_size2=0;
+  double scale1=1;
+  double scale2=1;
+  std::string file_name="test.pdf";
+  long Nmax{0};
+};
+
+
+TCanvas*  compare(TTree * t1, TTree * t2, std::string var, std::string sel, compare_cfg cfg={})
+{
+  //auto c = new TCanvas;
+  if(cfg.title=="") cfg.title = var + " " + sel;
+  auto c  = get_new_tailed_canvas(cfg.title);
+  cfg.gopt1=cfg.gopt1+cfg.gopt+"SAME";
+  cfg.gopt2=cfg.gopt2+cfg.gopt;
+  if(cfg.color1==0) cfg.color1=kRed;
+  if(cfg.color2==0) cfg.color2=kBlue;
+  if(cfg.xaxis_title=="") cfg.xaxis_title=var;
+  if(cfg.line_width1==0) cfg.line_width1=cfg.line_width;
+  if(cfg.line_width2==0) cfg.line_width2=cfg.line_width;
+  if(cfg.marker_style1==0) cfg.marker_style1 = cfg.marker_style;
+  if(cfg.marker_style2==0) cfg.marker_style2 = cfg.marker_style;
+  if(cfg.marker_size1==0) cfg.marker_size1 = cfg.marker_size;
+  if(cfg.marker_size2==0) cfg.marker_size2 = cfg.marker_size;
+  auto make_his = [&](TTree * t, std::string gopt, int color, int width, int mstyle, int msize) {
+    t->SetLineColor(color);
+    t->SetLineWidth(width);
+    t->SetMarkerColor(color);
+    t->SetMarkerStyle(mstyle);
+    std::string name = cfg.name+std::to_string(++HISTO_INDEX);
+    if(cfg.xmin > -std::numeric_limits<double>::max() && cfg.xmax < std::numeric_limits<double>::max()) {
+      name+="("+std::to_string(cfg.Nbin)+","+std::to_string(cfg.xmin) + ", "+ std::to_string(cfg.xmax)+")";
+      sel+="&&" + var + " < " + std::to_string(cfg.xmax);
+      sel+="&&" + var + " > " + std::to_string(cfg.xmin);
+    } else {
+      name+="("+std::to_string(cfg.Nbin)+")";
+    }
+    if(cfg.Nmax>0) {
+      t->Draw((var+">>"+name).c_str(), sel.c_str(),gopt.c_str(), cfg.Nmax);
+    } else {
+      t->Draw((var+">>"+name).c_str(), sel.c_str(),gopt.c_str());
+    }
+    TH1 * h = (TH1*)t->GetHistogram();
+    return h;
+  };
+  auto h2 = make_his(t2,cfg.gopt2, cfg.color2, cfg.line_width2, cfg.marker_style2, cfg.marker_size2);
+  auto h1 = make_his(t1,cfg.gopt1, cfg.color1, cfg.line_width1, cfg.marker_style1, cfg.marker_size1);
+  h1->Scale(cfg.scale1);
+  h2->Scale(cfg.scale2);
+  h1->SetTitle(cfg.title.c_str());
+  h2->SetTitle(cfg.title.c_str());
+  h1->GetXaxis()->SetTitle(cfg.xaxis_title.c_str());
+  h2->GetXaxis()->SetTitle(cfg.xaxis_title.c_str());
+  auto l = new TLegend(0.75,0.75,1.0,1.0);
+  l->AddEntry(h1,cfg.name1.c_str(), "lp");
+  l->AddEntry(h2,cfg.name2.c_str(), "lp");
+  l->Draw();
+  c->SaveAs(cfg.file_name.c_str());
+  return c;
+};
+
+TCanvas*  compare(ScanPoint_t & sp1, ScanPoint_t & sp2, DataSample_t ScanPoint_t::*sample ,  std::string var, std::string sel, compare_cfg cfg={}) {
+  TTree * t1 = (sp1.*sample).tree.get();
+  TTree * t2 = (sp2.*sample).tree.get();
+  return compare(t1, t2, var,sel,cfg);
+}
+
 TCanvas*  compare2(TTree * t1, TTree * t2, std::string var, std::string sel, std::string gopt="", std::string H="", int bin=0,std::string title="", std::string xaxis_title="")
 {
   //std::cout << sel << std::endl;
@@ -2879,7 +2826,8 @@ TCanvas*  compare2(TTree * t1, TTree * t2, std::string var, std::string sel, std
     if(bin==0) name =">>"+H+"1";
     else name = ">>H1("+std::to_string(bin)+")";
   }
-  t1->Draw((var+name).c_str(), sel.c_str(),gopt.c_str());
+  //t1->Draw((var+name).c_str(), sel.c_str(),gopt.c_str());
+  t1->Draw((var+name).c_str(), sel.c_str(),("HIST"+gopt).c_str());
   h1 = (TH1*)t1->GetHistogram()->Clone(sub(name, R"([()\*])","_").c_str());
   bin = h1->GetNbinsX();
   double I1 =h1->Integral(); 
@@ -4047,6 +3995,7 @@ std::tuple<double,double> my_chi2_histogram_test ( TH1 * h1, TH1 *h2) {
 
 TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGNAL, const std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
   auto  c = new TCanvas;
+  gStyle->Reset("Pub");
   gStyle->SetPalette(kOcean);
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
   std::vector<TH1*> Hsig; //signal histogram for different selection channels
@@ -5474,27 +5423,28 @@ void check_common_cuts2(const Scan_t & SCAN, const std::vector<std::string> & cu
 }
 
 void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  std::string file_prefix="sys-") {
+  gStyle->Reset("Pub");
   std::vector< std::pair<std::string, std::string > > pars
   {
       //{""                         , "nocut"}             ,
-      {"NnE50==0"                 , "N_{n}=0"}           ,
-      {"Ncg==2 && Ncc==2"          , "N_{c}=2"}           ,
-      //{"Ncc==2"                   , "N_{cc}=2"}           ,
-      //{"barrel"                   , "|cos(#theta)|<0.8"}            ,
-      {"cgood",                      "|cos(#theta)|<0.93"},
-      //{"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
-      {"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
-      {"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
-      {"missed_photon_angle"      , "cos(#theta_{mis})"} ,
-      {"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5 ns"}       ,
-      {"ptem50>0.25"              , "ptem>0.25"}         ,
-      {"ptem50<1.1"               , "ptem<1.1"}         ,
-      {"E[0]>0.025 && E[1]>0.025" , "E>0.025"}             ,
-      {"abs(z[0]<10) && abs(z[1]<10)"      , "|z|<10"}             ,
-      {"vxy[0]<1 && vxy[1]<1"     , "#rho<1"}          ,
-      {"Nng==2"                   , "N^{good}_{#gamma} = 2" },
-      {"eX"                       , "PID"}                ,
-      {"Nng==2 &&  Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time", "M_{#pi^{0}}" },
+      //{"NnE50==0"                 , "N_{n}=0"}           ,
+      //{"Ncg==2 && Ncc==2"          , "N_{c}=2"}           ,
+      ////{"Ncc==2"                   , "N_{cc}=2"}           ,
+      ////{"barrel"                   , "|cos(#theta)|<0.8"}            ,
+      //{"cgood",                      "|cos(#theta)|<0.93"},
+      ////{"q[0]==-1 && q[1]==1"      , "opposite charge"}   ,
+      //{"pt[0]>0.2 && pt[1]>0.2"   , "p_{t}>0.2"}            ,
+      //{"p[0]<1.1 && p[1]<1.1"     , "p<1.1"}             ,
+      //{"missed_photon_angle"      , "cos(#theta_{mis})"} ,
+      //{"2.5 < tof && tof< 5.5"    , "2.5<tof<5.5 ns"}       ,
+      //{"ptem50>0.25"              , "ptem>0.25"}         ,
+      //{"ptem50<1.1"               , "ptem<1.1"}         ,
+      //{"E[0]>0.025 && E[1]>0.025" , "E>0.025"}             ,
+      //{"abs(z[0]<10) && abs(z[1]<10)"      , "|z|<10"}             ,
+      //{"vxy[0]<1 && vxy[1]<1"     , "#rho<1"}          ,
+      //{"Nng==2"                   , "N^{good}_{#gamma} = 2" },
+      //{"eX"                       , "PID"}                ,
+      //{"Nng==2 &&  Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time", "M_{#pi^{0}}" },
       {SEL[0]                 , "eX"}               ,
       {SEL[1]                 , "e#rho"}               ,
       {SEL[0] || SEL[1]       , "eX + e#rho"},
@@ -5730,6 +5680,8 @@ struct event_t{
   int q1;
   double c0;
   double c1;
+  long flag1;
+  long flag2;
 };
 
 inline  bool operator<(const event_t & e1, const event_t & e2) {
@@ -5782,6 +5734,8 @@ std::map<std::string, std::vector<double> >  make_vectors(Scan_t & D, std::strin
   std::vector<double> q0;
   std::vector<double> q1;
   std::map<std::string, std::vector<double> > v;
+  std::vector<double> flag1;
+  std::vector<double> flag2;
   for(const auto &  d : D) {
     auto & t  = d.tt.tree;
     long N = t->Draw("pid[0]:pid[1]:mother_pid[0]:mother_pid[1]", cut.c_str(),"goff");
@@ -5798,10 +5752,14 @@ std::map<std::string, std::vector<double> >  make_vectors(Scan_t & D, std::strin
       v["c0"].push_back(t->GetV3()[i]);
       v["c1"].push_back(t->GetV4()[i]);
     }
+    N = t->Draw("flag1:flag2", cut.c_str(),"goff");
+    for(long i =0;i<N;++i) {
+      v["flag1"].push_back(t->GetV1()[i]-1e9);
+      v["flag2"].push_back(t->GetV2()[i]);
+    }
   }
   return v;
 }
-
 void count2(Scan_t & D, std::string cut="", std::string filter="") {
   /*
   auto & t  = D.tt.tree;
@@ -5966,6 +5924,53 @@ void count2(Scan_t & D, std::string cut="", std::string filter="") {
   print(rm_tt_not_eX,total,total_identified,"τ⁻τ⁺ → xx");
   print(rm_not_tt, total,total_identified, "not τ⁻τ⁺");
   print(rm_unknown, total, total_identified, "unknown");
+}
+
+
+void count3(Scan_t & D, std::string cut="", std::string filter="") {
+  auto V = make_vectors(D,cut);
+  auto & flag1 = V["flag1"];
+  auto & flag2 = V["flag2"];
+  auto &pid0 = V["pid0"]; 
+  auto &pid1 = V["pid1"]; 
+  auto &mpid0 = V["mpid0"]; 
+  auto &mpid1 = V["mpid1"]; 
+  auto &q0 = V["q0"]; 
+  auto &q1 = V["q1"]; 
+  auto &c0 = V["c0"]; 
+  auto &c1 = V["c1"]; 
+
+  std::map<long, std::string> flag_tbl = {
+    {20000007,  "ee"},
+    {2000007,   "μμ"},
+    {2000005,   "ππ"},
+    { 10100006,  "eπ"},
+    {110100006,  "eπ(γ)"},
+    {11000007,  "eμ"},
+    {111000007, "eμ(γ)"},
+    //{10210006,  "eK"},
+    {10010006,  "eK"},
+    {1100006,  "μπ"},
+    {1010006,  "μK"},
+    {110005,  "πK"},
+    {210100006, "eρ"}
+  };
+
+
+  std::map<long, long>  M;
+  std::multimap<long, long>  rM;
+  long N  = pid0.size();
+  for(long i =0; i!=N; ++i) {
+    M[flag2[i]]++;
+  }
+  for(auto & [id, count] : M ) {
+    rM.insert({count,id});
+    //std::cout << id << "  " << count << std::endl;
+  };
+
+  for(auto & [count, id] : rM ) {
+    std::cout << id << "  " << flag_tbl[id] <<  "  " << count << std::endl;
+  }
 }
 
 void cmpall(Scan_t DATA, Scan_t SIGNAL, Selection_t &S) {

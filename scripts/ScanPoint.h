@@ -51,6 +51,11 @@ struct DataSample_t  : public AcceleratorInfo_t
   }
 };
 
+struct ScanPoint_t; 
+typedef std::reference_wrapper<ScanPoint_t> ScanPointRef_t;
+typedef std::vector<ScanPoint_t>  Scan_t;
+typedef std::reference_wrapper<Scan_t> ScanRef_t;
+typedef std::shared_ptr<Scan_t> ScanPtr_t;
 
 struct ScanPoint_t : public AcceleratorInfo_t
 {
@@ -111,10 +116,7 @@ struct ScanPoint_t : public AcceleratorInfo_t
   };
   std::string type;
 };
-typedef std::reference_wrapper<ScanPoint_t> ScanPointRef_t;
-typedef std::vector<ScanPoint_t>  Scan_t;
-typedef std::reference_wrapper<Scan_t> ScanRef_t;
-typedef std::shared_ptr<Scan_t> ScanPtr_t;
+
 using PointSelectionResult_t = ScanPoint_t;
 
 #endif
