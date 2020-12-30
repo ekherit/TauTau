@@ -296,7 +296,9 @@ std::string  remove_single_cuts(std::string var, std::string cut) {
   {
     result = cuts[0];
     for(size_t i=1; i!=cuts.size(); ++i) {
-      result += "&&" + cuts[i];
+      //result += "&&" + cuts[i];
+      result += "&&";
+      result += cuts[i];
       //result +=cuts[i];
       //if(cuts[i].find(var) !=  std::string::npos)  continue;
       //rcuts.push_back(
