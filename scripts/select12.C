@@ -24,18 +24,18 @@
 //ems3 mh noemc mylum2
 std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2299 --ems-cmenergy-shift=-0.0201182 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
 //ems2
-//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2266 --ems-cmenergy-shift=0.0613 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base_shift=1.19568e-01 ";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2266 --ems-cmenergy-shift=0.0613 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base-shift=1.19568e-01 ";
 //ems32 base
 //std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.238 --ems-cmenergy-shift=-0.0128 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
 
 //ems2
-//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.235 --ems-cmenergy-shift=0.0687 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base_shift=1.19056e-01 ";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.235 --ems-cmenergy-shift=0.0687 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff --base-shift=1.19056e-01 ";
 
-//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.21898e-01 --draw-diff";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base-shift=1.21898e-01 --draw-diff";
 //ems3
-//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.248 --ems-cmenergy-shift=-0.0107 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base-shift=1.23091e-01 --draw-diff";
 //ems2
-//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.239      --energy-correction=+0.0391396 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base_shift=1.23091e-01 --draw-diff";
+//std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.239      --energy-correction=+0.0391396 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4 --base-shift=1.23091e-01 --draw-diff";
 
 
 //std::string runtable_name = "../TauTau/share/all_scan_points_ems2.txt";
@@ -82,14 +82,27 @@ auto PSIGGMC  = read_mc("mc/gg", PSIP_RUNTABLE,1e5);
 auto SIGNAL          = read_mc("mc/signal", RUNTABLE, N0MC);
 //auto SIGNAL          = read_mc("mc/signal_sys", RUNTABLE, N0MC);
 
-//background GALUGA
+//two-gamma background
+Scan_t EEEE       = read_mc("mc/galuga/ee"   , RUNTABLE, 1e6);
+Scan_t EEUU       = read_mc("mc/galuga/uu"   , RUNTABLE, 1e6);
+Scan_t EEPIPI     = read_mc("mc/galuga/pipi"   , RUNTABLE, 1e6);
+Scan_t EEKK       = read_mc("mc/galuga/KK"   , RUNTABLE, 1e6);
+
+std::map<std::string, ScanRef_t> GALUGA = {
+  {"ee", EEEE},
+  {"uu",  EEUU},
+  {"pipi", EEPIPI},
+  {"KK", EEKK},
+};
+/*
 std::map<std::string, Scan_t> GALUGA =
 {
   {"ee"   , read_mc("mc/galuga/ee"   , RUNTABLE, N0MC)} ,
   {"uu"   , read_mc("mc/galuga/uu"   , RUNTABLE, N0MC)} ,
   {"pipi" , read_mc("mc/galuga/pipi" , RUNTABLE, N0MC)} ,
   {"KK"   , read_mc("mc/galuga/KK"   , RUNTABLE, N0MC)}
-};
+}; 
+*/
 
 //hadronic background
 auto HADR       = read_mc("mc/hadrons", RUNTABLE, N0MC);
@@ -101,7 +114,7 @@ auto PIPI         = read_mc("mc/pipi", RUNTABLE, N0MC);
 // for luminocity measurement
 auto GG         = read_mc("mc/gg", RUNTABLE, N0MC);
 
-std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, GALUGA["ee"], GALUGA["uu"],GALUGA["pipi"], GALUGA["KK"]};
+std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, EEEE, EEUU, EEPIPI, EEKK};
 
 Simulation_t MC = { SIGNAL, BGs }; 
 
@@ -119,9 +132,15 @@ std::string LOCAL_GG_SEL = "";
 //std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.7 && minctheta>-0.7 && Nchc>2";
 //std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>3";
 //теперь это новый отбор многоадронных
-//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
 //std::string LOCAL_MH_SEL = "S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
-std::string LOCAL_MH_SEL = "ptmin>0.25 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.19 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.15 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.0 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.75 && minctheta>-0.75 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.85 && minctheta>-0.85 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>3";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2 && zmax < 5 && zmin>-5 && rhomax<0.5 && pmax < 1.9";
 
 //std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
 //std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.7 && fabs(cos(theta[1]))<0.7 && theta[0]+theta[1]-TMath::Pi()<0.04 && theta[0]+theta[1]-TMath::Pi()>-0.04 && fabs(phi[0]-phi[1])-TMath::Pi()<0.01 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.05";
@@ -196,11 +215,12 @@ Selection_t SEL12 =
   "&& pt[0] > 0.2 && pt[1] > 0.2"
   "&& cgood"
   "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
-  "&& ptem50>0.25 && ptem50<1.1"
+ "&& ptem50>0.25 && ptem50<1.1"
   , 
 
   PID,
   { 
+//    {"μμ",      "NnE50==0 && uu "},
     {"eX",      "NnE50==0 && eX && missed_photon_angle"},
     {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
   },
@@ -379,7 +399,8 @@ void reslum(Scan_t & data, Scan_t & lum, Scan_t mclum) {
   set_res_gg_luminosity(data, lum);
   print(data);
 }
-void res(std::string fname, Scan_t & data, Scan_t &mcdata, Scan_t & lum, Scan_t mclum) {
+
+Scan_t  res(std::string fname, Scan_t & data, Scan_t &mcdata, Scan_t & lum, Scan_t mclum) {
   reslum(data,lum, mclum);
   std::cout << "Selecting multihadronic events" << std::endl;
   auto res = select(data, LOCAL_MH_SEL);
@@ -387,6 +408,7 @@ void res(std::string fname, Scan_t & data, Scan_t &mcdata, Scan_t & lum, Scan_t 
   set_efficiency(res,mcres,1e6);
   print(res);
   savemh(res,fname);
+  return res;
 };
 
 void res(std::string suffix="_test") {
@@ -417,7 +439,8 @@ void select()
   read_tau_cross_section("../TauTau/share/tau_cross_section.txt", SIGNAL);
   read_bhabha_cross_section("../TauTau/share/bhabha_cross_section.txt", BB);
   read_gg_cross_section("../TauTau/share/gg_cross_section.txt", GG);
-  read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", GALUGA);
+  //read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", GALUGA);
+  read_galuga_cross_section("../TauTau/share/galuga_cross_section.txt", EEEE, EEUU,EEPIPI,EEKK);
   read_mumu_or_pipi_cross_section("../TauTau/share/mumu_cross_section.txt", UU);
   read_pipi_cross_section("../TauTau/share/pipi_cross_section.txt", PIPI);
   read_hadron_cross_section("../TauTau/share/hadron_cross_section.txt", HADR);
@@ -456,5 +479,86 @@ void select()
   //set_luminosity(JPSILUM
 }
 
+void calc_online_lum(const Scan_t & SP, std::string run_info_filename) {
+  std::ifstream ifs(run_info_filename);
+  if(!ifs) {
+    std::cerr << "Unalbe to open file: " << run_info_filename << "\n" << std::endl;
+  }
+  std::regex comment_re(R"(^\s*#.*)"); //for extract energy
+  std::smatch match;
+  std::string line;
+  std::map<int, double> mL;
+  while( std::getline(ifs, line) ) {
+    if(std::regex_match(line, match, comment_re) ) continue;
+    std::istringstream iss(line);
+    int run;
+    double L;
+    iss >> run >> L;
+    mL[run]=L;
+    //std::cout << run << " " << L << std::endl;
+  };
+
+  double Ltot{0};
+  for(auto & sp : SP) {
+    double Lsum{0};
+    for(auto run : sp.run_list) {
+      auto it = mL.find(run);
+      if(it!=mL.end()) {
+        //std::cout << sp.name << "   " <<  run << "  " <<  it->first << "  " << it->second << std::endl;
+        Lsum+=it->second;
+      }
+    }
+    printf("%20s %20.3f MeV %20.5f pb^-1\n", sp.title.c_str(), sp.energy/MeV, Lsum*1e-3);
+    //std::cout << sp.title << "  " << sp.energy/MeV << "          " <<  Lsum*1e-3 << " pb^-1"  << std::endl;
+    Ltot+=Lsum;
+  }
+    printf("%20s %20s     %20.5f pb^-1\n", "Total", "", Ltot*1e-3);
+
+};
 
 
+void lum_mc_data_compare(Scan_t & data = DATA, Scan_t & G = GG, Scan_t &  B = BB, int Nbin=100, int Nmax=0) {
+  int point = 5;
+  auto & b = B[point];
+  auto & g = G[point];
+  auto & d = data[point];
+  compare(b , d , &ScanPoint_t::bb , "E_Eb"       , LOCAL_BB_SEL && "Nc==2" , {.file_name="lum_bb_data_mc_cmp_Eeb.pdf", .title="E/E_{beam}"    , .xaxis_title="E/E_{beam}, rad"    ,        .Nbin=Nbin, .Nmax=Nmax});
+  compare(b , d , &ScanPoint_t::bb , "dtheta"     , LOCAL_BB_SEL            , {.file_name="lum_bb_data_mc_cmp_dtheta.pdf", .title="#Delta #theta" , .xaxis_title="#Delta #theta, rad" ,     .Nbin=Nbin, .Nmax=Nmax});
+  compare(b , d , &ScanPoint_t::bb , "dphi"       , LOCAL_BB_SEL            , {.file_name="lum_bb_data_mc_cmp_dphi.pdf", .title="#Delta #phi"   , .xaxis_title="#Delta #phi, rad"   ,       .Nbin=Nbin, .Nmax=Nmax});
+  compare(b , d , &ScanPoint_t::bb , "cos(theta)" , LOCAL_BB_SEL && "Nc==2" , {.file_name="lum_bb_data_mc_cmp_cos_theta.pdf", .title="cos(#theta)"   , .xaxis_title="cos #theta"    ,       .Nbin=Nbin, .Nmax=Nmax});
+
+  compare(g , d , &ScanPoint_t::gg , "E_Eb"       , LOCAL_GG_SEL && "N0==2" , {.file_name="lum_gg_data_mc_cmp_Eeb.pdf"       , .title="E/E_{beam}"    , .xaxis_title="E/E_{beam}"    ,      .Nbin=Nbin, .Nmax=Nmax});
+  compare(g , d , &ScanPoint_t::gg , "dtheta"     , LOCAL_GG_SEL && "N0==2" , {.file_name="lum_gg_data_mc_cmp_dtheta.pdf"    , .title="#Delta #theta" , .xaxis_title="#Delta #theta, rad" , .Nbin=Nbin, .Nmax=Nmax});
+  compare(g , d , &ScanPoint_t::gg , "dphi"       , LOCAL_GG_SEL && "N0==2" , {.file_name="lum_gg_data_mc_cmp_dphi.pdf"      , .title="#Delta #phi"   , .xaxis_title="#Delta #phi, rad"   , .Nbin=Nbin, .Nmax=Nmax});
+  compare(g , d , &ScanPoint_t::gg , "cos(theta)" , LOCAL_GG_SEL && "N0==2" , {.file_name="lum_gg_data_mc_cmp_cos_theta.pdf" , .title="cos(#theta)"   , .xaxis_title="cos #theta"    ,      .Nbin=Nbin, .Nmax=Nmax});
+}
+void mh_mc_data_compare(int Nbin=100) {
+  auto & mc = JPSIMC[0];
+  auto & data = JPSI[0];
+  compare(mc, data, &ScanPoint_t::tt , "S", LOCAL_MH_SEL , {.file_name="mh_S_mc_data_cmp.pdf", .title="Sphericity"    , .xaxis_title="S", .Nbin=Nbin});
+  compare(mc, data, &ScanPoint_t::tt , "Nchc", LOCAL_MH_SEL , {.file_name="mh_Nq_mc_data_cmp.pdf", .title="Multiplicity"    , .xaxis_title="N_{q}", .Nbin=Nbin});
+  compare(mc, data, &ScanPoint_t::tt , "cos(rtheta)", LOCAL_MH_SEL , {.file_name="mh_cos_theta_mc_data_cmp.pdf", .title="cos(theta)"    , .xaxis_title="cos #theta", .Nbin=Nbin});
+  compare(mc, data, &ScanPoint_t::tt , "rp", LOCAL_MH_SEL , {.file_name="mh_p_mc_data_cmp.pdf", .title="p"    , .xaxis_title="p", .Nbin=Nbin});
+}
+
+#include "/home/nikolaev/work/ibn/averager.h"
+void calc_cbs_spread(const Scan_t & S) {
+  new TCanvas;
+  ibn::phys_averager A;
+  double sum{0};
+  TGraphErrors * g = new TGraphErrors;
+  int i=0;
+  for(const auto & sp : S) {
+    std::cout << sp.energy << " " << sp.energy_spread*1e6 << " " << sp.energy_spread.error*1e6 << std::endl;
+    sum+=sp.energy_spread*1e6;
+    A.add(sp.energy_spread*1e6, sp.energy_spread.error*1e6);
+    g->SetPoint(i, sp.energy, sp.energy_spread*1e3);
+    g->SetPointError(i, 0, sp.energy_spread.error*1e3);
+    ++i;
+  }
+  std::cout << sum/S.size() << std::endl;
+  std::cout << "chi2=" << A.chi2() << std::endl;
+  std::cout << "Average spread: " << A.average() << " +-  " << A.sigma_average() << std::endl;
+  g->Draw("a*");
+  g->Fit("pol0");
+}

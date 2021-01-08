@@ -28,6 +28,7 @@
 #include <TTree.h>
 
 #include "../ibn/valer.h"
+#include "utils.h"
 
 
 struct AcceleratorInfo_t 
@@ -50,6 +51,16 @@ struct DataSample_t  : public AcceleratorInfo_t
   long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
     return tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
   }
+
+  long GetEntries(std::string sel) const {
+    auto ss = split(sel,"||");
+    long N{0};
+    for(auto s : split(sel, "||") ) {
+      N+=tree->GetEntries(std::string(s).c_str());
+    }
+    return N;
+  };
+
 };
 
 struct ScanPoint_t; 
@@ -116,6 +127,23 @@ struct ScanPoint_t : public AcceleratorInfo_t
     }
   };
   std::string type;
+
+  template<typename Projector>
+  auto select(Projector  proj, std::string  sel) const ->  ScanPoint_t{
+    ScanPoint_t result = *this; //copy data
+    DataSample_t & ds = std::invoke(proj,result);
+    ds.N = ds.GetEntries(sel);
+    return result;
+  };
+
+  /*
+  auto select(std::string  sel) const ->  ScanPoint_t {
+    ScanPoint_t result = *this; //copy data
+    result.tt.N = result.tt.GetEntries(sel);
+    return result;
+  };
+  */
+
 };
 
 using PointSelectionResult_t = ScanPoint_t;

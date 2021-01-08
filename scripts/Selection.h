@@ -1,7 +1,10 @@
+#ifndef IBN_TAUTAU_SELECTION_H
+#define IBN_TAUTAU_SELECTION_H
 #pragma once
 #include <string>
 #include <vector>
 #include "utils.h"
+#include "ScanPoint.h"
 
 struct Restriction_t
 {
@@ -98,4 +101,52 @@ struct Selection_t :  public ChannelSelection_t,  public std::vector<Selection_t
   }
 };
 
+struct ChannelSelectionResult_t : public ChannelSelection_t,  public  Scan_t
+{
+  long Ntt=0; //total number of events for all points
+  long Ngg=0; //total number of gg events
+  long Nbb=0; //total number of Bhabha events
+  double L=0; //total luminosity
+  std::string cut;
+  ChannelSelectionResult_t(void){}
+  ChannelSelectionResult_t(const ChannelSelectionResult_t & ) = default;
+  ChannelSelectionResult_t(const ChannelSelection_t & cs, const Scan_t & p) : 
+    ChannelSelection_t(cs), 
+    std::vector<ScanPoint_t>(p) {
+      accumulate();
+  }
+
+  ChannelSelection_t & operator=(const Scan_t & P)
+  {
+    Ntt=0;
+    Ngg=0;
+    Nbb=0;
+    //*this = P;
+    clear();
+    for(auto & p : P) push_back(p);
+    accumulate();
+    return *this;
+  }
+  ChannelSelection_t & operator=(const ChannelSelection_t & cs )
+  {
+    title      = cs.title;
+    cut        = cs.cut;
+    //root_title = cs.root_title;
+    return *this;
+  }
+  private:
+  void accumulate(void) {
+    for(auto & p : *this) {
+      Ntt+=p.tt.N;
+      Ngg+=p.gg.N;
+      Nbb+=p.bb.N;
+      L+=p.luminosity;
+      //cut = p.cut;
+    } 
+  }
+
+};
+
 typedef std::reference_wrapper<Selection_t> SelRef_t;
+
+#endif

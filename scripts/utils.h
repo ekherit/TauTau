@@ -436,5 +436,29 @@ inline std::string differece_cut(const std::string & a, const std::string & b) {
   return and_fold(cuts);
 }
 
+template<typename Iterator, typename Func>
+Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
+{
+  using ItemType = typename Iterator::value_type;
+  using Type = typename std::result_of<Func(ItemType)>::type;
+  Type chi2  = std::numeric_limits<Type>::max();
+  Iterator result=it_end;
+  for(auto it = it_begin; it!=it_end; ++it)
+  {
+    auto x = F(*it);
+    if( x < chi2 ) 
+    {
+      result = it;
+      chi2 = x;
+    }
+  }
+  return result;
+};
+
+template<typename Container, typename Func>
+typename Container::iterator find_best(Container & c, Func F)
+{
+  return find_best(std::begin(c), std::end(c), F);
+}
 
 #endif
