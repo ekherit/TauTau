@@ -53,7 +53,8 @@
 #include "../ibn/valer.h"
 #include "../ibn/indexer.h"
 
-#include "Units.h"
+#include "PhysConst.h"
+//#include "Units.h"
 
 #include "Selection.h"
 #include "draw_helper.h"
@@ -66,6 +67,7 @@
 #include "utils.h"
 
 #include "pdg_table.h"
+
 
 
 
@@ -92,162 +94,6 @@ struct Simulation_t {
 };
 
 
-
-
-
-
-
-/*
-std::vector<std::string> parse_line(std::string regex)
-{
-  std::vector<std::string> result;
-  return result;
-}
-*/
-
-
-/*
-const char * make_alias(int channel, const char * templ )
-{
-  return templ;
-}
-*/
-
-
-
-
-
-void draw_lum_per_run2(const std::vector<ScanPoint_t> & SPL)
-{
-  TMultiGraph * mg = new TMultiGraph;
-  int i=0;
-  std::vector<TGraphErrors*> g(SPL.size());
-  int point=0;
-  for (const auto & p : SPL)
-  {
-    g[point] = new TGraphErrors;
-    g[point]->SetMarkerStyle(21);
-    g[point]->SetMarkerColor(point+1);
-    for(auto & ri : p.runs)
-    {
-      auto run = ri.first;
-      auto lum = ri.second;
-      auto chain = get_chain("gg", "gg","g", run, run);
-      double Ngg = chain->GetEntries();
-      double dNgg = sqrt(Ngg);
-      int n = g[point]->GetN();
-      g[point]->SetPoint(n,run, Ngg/lum);
-      g[point]->SetPointError(n, 0, dNgg/lum);
-      i++;
-    }
-    mg->Add(g[point],"p");
-    point++;
-  }
-  mg->Draw("a");
-  mg->GetXaxis()->SetTitle("run");
-  mg->GetYaxis()->SetTitle("N_{e^{+}e^{-1} #rightarrow #gamma #gamma} / L_{online}, nb");
-}
-
-void  draw_lum_per_run(const char * dir, int begin_run, int end_run)
-{
-  auto * g = new TGraphErrors;
-  for ( int run = begin_run; run<=end_run; ++run)
-  {
-    auto chain = get_chain("gg", "gg","g", run, run);
-    double Ngg = chain->GetEntries();
-    double dNgg = sqrt(Ngg);
-    int n = g->GetN();
-    g->SetPoint(n,run, Ngg);
-    g->SetPointError(n, 0, dNgg);
-  }
-  g->Draw("a*");
-}
-
-void draw_tau_per_run(const std::vector<ScanPoint_t> & SPL, const char * selection = "")
-{
-  TMultiGraph * mg = new TMultiGraph;
-  int i=0;
-  std::vector<TGraphErrors*> g(SPL.size());
-  int point=0;
-  for (const auto & p : SPL)
-  {
-    g[point] = new TGraphErrors;
-    g[point]->SetMarkerStyle(21);
-    g[point]->SetMarkerColor(point+1);
-    for(auto & ri : p.runs)
-    {
-      auto run = ri.first;
-      auto lum = ri.second;
-      auto chain = get_chain("gg", "gg","g", run, run);
-      auto tt = get_chain("tt","tt","t",run,run);
-      double Ngg = chain->GetEntries();
-      double dNgg = sqrt(Ngg);
-      double L = Ngg/10*pow(p.energy/MTAU*0.5,2);
-      double dL = dNgg/10*pow(p.energy/MTAU*0.5,2);
-      double Ntt = tt->GetEntries(selection);
-      double dNtt = sqrt(Ntt);
-      double sigma = Ntt/L;
-      double dsigma = Ntt/L* sqrt(1./Ntt + 1.0/Ngg); 
-      int n = g[point]->GetN();
-      g[point]->SetPoint(n,run, sigma);
-      g[point]->SetPointError(n, 0, dsigma);
-      i++;
-    }
-    mg->Add(g[point],"p");
-    point++;
-  }
-  mg->Draw("a");
-  mg->GetXaxis()->SetTitle("run");
-  mg->GetYaxis()->SetTitle("N_{#tau #tau} / L_{online}, nb");
-}
-
-TGraphErrors * draw_result(const char * selection, const std::vector<ScanPoint_t> & Points)
-{
-  TGraphErrors * g = new TGraphErrors;
-  long totalNtt=0;
-  for(int i=0; i<Points.size();++i)
-  {
-    double Ntt = Points[i].tt.tree->GetEntries(selection);
-    double Ngg = Points[i].gg.tree->GetEntries(selection);
-    double xs  = 0;
-    double dxs = 0;
-    totalNtt += Ntt;
-    if(Ngg != 0 )
-    {
-      xs = Ntt/Ngg;
-      dxs = sqrt( Ntt/(Ngg*Ngg) + pow(Ntt/(Ngg*Ngg), 2.0)*Ngg );
-    }
-    g->SetPoint(i, 0.5*Points[i].energy-MTAU, xs);
-    g->SetPointError(i, 0.5*Points[i].energy.error, dxs);
-    std::cout << i << " " << 0.5*Points[i].energy-MTAU << "  " << Ngg << "  " << Ntt << "   " <<  xs << std::endl;
-  }
-  std::cout << "Total number of tau-tau candidates:" << totalNtt << std::endl;
-  g->SetMarkerStyle(21);
-  g->Draw("ap");
-
-  TCanvas * cacop = new TCanvas("acop","acop");
-  cacop->Divide(2,3);
-  for( int i=0;i<Points.size();++i) 
-  { 
-    cacop->cd(i+1);
-    Points[i].tt.Draw("acop",selection);
-  }
-  TCanvas * cptem = new TCanvas("ptem","ptem");
-  cptem->Divide(2,3);
-  for( int i=0;i<Points.size();++i) 
-  { 
-    cptem->cd(i+1);
-    Points[i].tt.Draw("ptem",selection);
-  }
-  TCanvas * cp = new TCanvas("p","p");
-  cp->Divide(2,3);
-  for( int i=0;i<Points.size();++i) 
-  { 
-    cp->cd(i+1);
-    Points[i].tt.tree->Draw("p",selection);
-  }
-  return g;
-}
 
 void mccmp(const std::vector<ScanPoint_t> & P, const char * selection, const char * cut, const char * his="")
 {
@@ -692,7 +538,7 @@ TH1 *  fold(const std::vector<ScanPoint_t> & P, std::string  var, std::string  S
 
 TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, std::string  var, std::string  sel, std::string gopt="")
 {
-  auto c = get_new_tailed_canvas(var + " " + sel);
+  auto c = make_canvas(var + " " + sel);
   auto H = fold(P,var,sel);
   if(gopt == "NORM") H->DrawNormalized();
   else H->Draw();
@@ -701,7 +547,7 @@ TH1 *  fold_and_draw(const std::vector<ScanPoint_t> & P, std::string  var, std::
 
 void cmp(const Scan_t & S1, const Scan_t & S2, std::string var, std::string sel="", std::string gopt="", int Nbin=100, double Min=0, double Max=0)
 {
-  auto c  = get_new_tailed_canvas(var + " " + sel);
+  auto c  = make_canvas(var + " " + sel);
   auto h1 = fold(S1,var,sel,gopt,Nbin,Min,Max);
   auto h2 = fold(S2,var,sel,gopt,Nbin,Min,Max);
   h1->SetLineColor(kRed);
@@ -742,7 +588,7 @@ TH1 * fold(const Scan_t & D, const Selection_t & Sel,  std::string var, std::str
 
 void cmp(const Scan_t & D1, const Scan_t & D2, const Selection_t & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::string title = (var + ":" + extracut);
-  auto c  = get_new_tailed_canvas(title.c_str());
+  auto c  = make_canvas(title.c_str());
   auto h1 = fold(D1,SEL,var,extracut,gopt, Nbin,Min,Max);
   auto h2 = fold(D2,SEL,var,extracut,gopt, Nbin,Min,Max);
   h1->SetLineColor(kRed);
@@ -761,7 +607,7 @@ void cmp(const Scan_t & D1, const Scan_t & D2, const Selection_t & SEL,  std::st
 std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const Selection_t & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::vector<TH1*> H;
   std::string title = (var + ":" + extracut);
-  auto c  = get_new_tailed_canvas(title.c_str());
+  auto c  = make_canvas(title.c_str());
   gStyle->SetOptStat(0);
   std::vector<int> color={kRed, kBlue, kBlack, kGreen+2};
   std::vector<int> line = {1,2,3};
@@ -822,7 +668,7 @@ std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const 
 TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::vector<TH1*> H;
   std::string title = (var + ":" + extracut);
-  auto c  = get_new_tailed_canvas(title.c_str());
+  auto c  = make_canvas(title.c_str());
   gStyle->SetOptStat(0);
   std::vector<int> color={kRed, kBlack, kBlue, kGreen+2, kYellow,kCyan};
   std::vector<int> line = {1,2,3};
@@ -1121,8 +967,8 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     make_row(os, total, 
         R"(point)", 
         [](const PointSelectionResult_t & p) { 
-        //return myfmt(R"(\myCF{%s})", p.name.c_str()); },
-        return myfmt(R"(%s)", p.name.c_str()); },
+        //return ibn::format(R"(\myCF{%s})", p.name.c_str()); },
+        return ibn::format(R"(%s)", p.name.c_str()); },
         [&total]() { return "Total"; }
         );
     os<< R"(\hline)" <<  "\n";
@@ -1131,16 +977,16 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print luminosity
     make_row(os, total, 
         R"($\int L, pb^{-1}$)", 
-        //[](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%4.1f})", p.luminosity.value); },
-        [](const PointSelectionResult_t & p) { return myfmt(R"(%4.1f)", p.luminosity.value); },
-        [&total]() { return myfmt(R"(%4.1f)", total.L); }
+        //[](const PointSelectionResult_t & p) { return ibn::format(R"(\myR{%4.1f})", p.luminosity.value); },
+        [](const PointSelectionResult_t & p) { return ibn::format(R"(%4.1f)", p.luminosity.value); },
+        [&total]() { return ibn::format(R"(%4.1f)", total.L); }
         );
 
     //print energy for point
     make_row(os, total, 
         R"($E-M_{\tau}$, MeV)", 
-        //[](const PointSelectionResult_t & p) { return myfmt(R"(\myR{%3.3f})", (p.energy.value*0.5 - MTAU)*1000.0); }
-        [](const PointSelectionResult_t & p) { return myfmt(R"(%3.3f)", (p.energy.value*0.5 - MTAU)*1000.0); }
+        //[](const PointSelectionResult_t & p) { return ibn::format(R"(\myR{%3.3f})", (p.energy.value*0.5 - MTAU)*1000.0); }
+        [](const PointSelectionResult_t & p) { return ibn::format(R"(%3.3f)", (p.energy.value*0.5 - MTAU)*1000.0); }
         );
     os<< R"(\hline)" <<  "\n";
 
@@ -1152,7 +998,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
       title = sub(title,"ρ",R"(\rho)");
       title = "$ " + title + " $";
       make_row(os, sr, title,  
-        [](const PointSelectionResult_t & p) { return myfmt(R"(%d)", p.tt.N); },
+        [](const PointSelectionResult_t & p) { return ibn::format(R"(%d)", p.tt.N); },
         [&sr]() { return R"(\textit{)"+std::to_string(sr.Ntt)+"}"; });
     }
     os << R"(\hline)" << "\n";
@@ -1160,7 +1006,7 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print total event number
     make_row(os, total, 
         "all", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"(\textbf{%d})", p.tt.N); },
+        [](const PointSelectionResult_t & p) { return ibn::format(R"(\textbf{%d})", p.tt.N); },
         [&total]() { return R"(\textbf{)"+std::to_string(total.Ntt)+"}"; }
         );
     os<< R"(\hline)" <<  "\n";
@@ -1168,16 +1014,16 @@ std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::stri
     //print epsilon
     make_row(os, total, 
         R"($\varepsilon$, \%)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%5.3f\pm%5.3f$)", p.tt.efficiency.value*100, p.tt.efficiency.error*100); });
+        [](const PointSelectionResult_t & p) { return ibn::format(R"($%5.3f\pm%5.3f$)", p.tt.efficiency.value*100, p.tt.efficiency.error*100); });
 
     //print epsilon correction
     make_row(os, total, 
         R"($\epsilon^{cor}$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%6.4f\pm%6.4f$)", p.tt.effcor.value, p.tt.effcor.error); });
+        [](const PointSelectionResult_t & p) { return ibn::format(R"($%6.4f\pm%6.4f$)", p.tt.effcor.value, p.tt.effcor.error); });
 
     make_row(os, total, 
         R"($(\epsilon^{cor}-1)\cdot100\%$)", 
-        [](const PointSelectionResult_t & p) { return myfmt(R"($%5.3f\pm%5.3f$)", (p.tt.effcor.value-1)*100.0, p.tt.effcor.error*100.0); });
+        [](const PointSelectionResult_t & p) { return ibn::format(R"($%5.3f\pm%5.3f$)", (p.tt.effcor.value-1)*100.0, p.tt.effcor.error*100.0); });
 
     //os << R"(\specialrule{.1em}{.05em}{.05em})" << "\n";
     os << R"(\hline)" << "\n";
@@ -1480,7 +1326,7 @@ TCanvas*  compare(TTree * t1, TTree * t2, std::string var, std::string sel, comp
 {
   //auto c = new TCanvas;
   if(cfg.title=="") cfg.title = var + " " + sel;
-  auto c  = get_new_tailed_canvas(cfg.title);
+  auto c  = make_canvas(cfg.title);
   cfg.gopt1=cfg.gopt1+cfg.gopt+"SAME";
   cfg.gopt2=cfg.gopt2+cfg.gopt;
   if(cfg.color1==0) cfg.color1=kRed;
@@ -1569,7 +1415,7 @@ TCanvas*  compare2(TTree * t1, TTree * t2, std::string var, std::string sel, std
   h1->SetTitle(title.c_str());
   h1->GetXaxis()->SetTitle(xaxis_title.c_str());
   h2->Draw("same");
-  TLatex *  l = new TLatex(0.6,0.95,("prob_{Kolmg} = "+ myfmt("%4.2f",prob)).c_str());
+  TLatex *  l = new TLatex(0.6,0.95,("prob_{Kolmg} = "+ ibn::format("%4.2f",prob)).c_str());
   l->SetNDC(kTRUE);
   l->Draw();
   return c;
@@ -2873,7 +2719,7 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t 
 //  auto pars = split(vars,"&&");
 //  std::string var(pars[0]);
 //  //cout << var << endl;
-//  auto c = get_new_tailed_canvas(sel.root_title2() + ":" + var);
+//  auto c = make_canvas(sel.root_title2() + ":" + var);
 //  gStyle->SetPalette(kOcean);
 //  gStyle->SetOptStat(kFALSE);
 //  auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
@@ -3034,7 +2880,7 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
   gStyle->Reset("Pub");
   //auto  c = new TCanvas;
   const std::string var= std::string(split(vars,"&&")[0]);
-  auto  c = get_new_tailed_canvas(var);
+  auto  c = make_canvas(var);
   gStyle->SetPalette(kOcean);
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
   std::vector<TH1*> Hsig; //signal histogram for different selection channels
@@ -3588,19 +3434,6 @@ TCanvas * unconstrain_par_and_draw2d(const Selection_t & SEL, const std::vector<
 }
 
 
-TCanvas * draw_efficiency(const std::vector<PointSelectionResult_t> & SR) {
-  auto * c = get_new_tailed_canvas("efficiency");
-  TGraphErrors * g = new TGraphErrors;
-  int i=0;
-  for(auto & sp : SR ) {
-    std::cout << sp.energy.value << " " << sp.tt.efficiency.value << std::endl;
-    g->SetPoint(i, sp.energy.value, sp.tt.efficiency.value);
-    g->SetPointError(i, sp.energy.error, sp.tt.efficiency.error);
-    ++i;
-  }
-  g->Draw("a*");
-  return c;
-}
 
 
 void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
@@ -3648,11 +3481,11 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
     mg->Add(g,"lp");
     mg0->Add(g0,"lp");
   }
-  auto c_eff = get_new_tailed_canvas("efficiency");
+  auto c_eff = make_canvas("efficiency");
   mg0->Draw("a");
-  auto c_cor = get_new_tailed_canvas("effcor");
+  auto c_cor = make_canvas("effcor");
   mg->Draw("a");
-  auto c_dif = get_new_tailed_canvas("effcor variation");
+  auto c_dif = make_canvas("effcor variation");
   TMultiGraph * mg2 = new TMultiGraph;
   auto & base = R["base"];
   color=0;
@@ -3691,7 +3524,7 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
 }
 
 TCanvas * draw_ee_efficiency(const std::vector<ScanPoint_t> & SR) {
-  auto * c = get_new_tailed_canvas("efficiency");
+  auto * c = make_canvas("efficiency");
   TGraphErrors * g = new TGraphErrors;
   int i=0;
   for(auto & sp : SR ) {
@@ -3709,7 +3542,7 @@ TCanvas * draw_ee_efficiency(const std::vector<ScanPoint_t> & SR) {
 TCanvas * draw_gg_efficiency(const std::vector<ScanPoint_t> & SR, std::string gopt="") {
   TCanvas * c = nullptr;
   if(gopt!="same") {
-    c = get_new_tailed_canvas("#gamma#gamma efficiency");
+    c = make_canvas("#gamma#gamma efficiency");
   }
   TGraphErrors * g = new TGraphErrors;
   int i=0;
@@ -3755,7 +3588,7 @@ TGraphErrors * efficiency_compare(std::vector<ScanPoint_t> & MC1, std::vector<Sc
 
 TCanvas * draw_tt_ee_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoint_t> & BB, std::string sig_cut, std::string bb_cut) {
   auto g = efficiency_compare(SIG,BB,&ScanPoint_t::tt, &ScanPoint_t::bb, sig_cut, bb_cut);
-  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{ee}");
+  auto c = make_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{ee}");
   g->Draw("a*");
   g->GetXaxis()->SetTitle("W, GeV");
   g->GetYaxis()->SetTitle("#varepsilon_{#tau#tau} / #varepsilon_{ee}");
@@ -3766,7 +3599,7 @@ TCanvas * draw_tt_ee_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoi
 
 TCanvas * draw_tt_gg_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoint_t> & GG, std::string sig_cut, std::string bb_cut) {
   auto g = efficiency_compare(SIG,GG,&ScanPoint_t::tt, &ScanPoint_t::gg, sig_cut, bb_cut);
-  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{#gamma #gamma}");
+  auto c = make_canvas("Efficiency compare: #varepsilon_{#tau#tau} / #varepsilon_{#gamma #gamma}");
   g->Draw("a*");
   g->GetXaxis()->SetTitle("W, GeV");
   g->GetYaxis()->SetTitle("#varepsilon_{#tau#tau} / #varepsilon_{#gamma#gamma}");
@@ -3777,7 +3610,7 @@ TCanvas * draw_tt_gg_compare(std::vector<ScanPoint_t> & SIG, std::vector<ScanPoi
 
 TCanvas * draw_ee_gg_compare(std::vector<ScanPoint_t> & BB, std::vector<ScanPoint_t> & GG, std::string sig_cut, std::string bb_cut) {
   auto g = efficiency_compare(BB,GG,&ScanPoint_t::bb, &ScanPoint_t::gg, sig_cut, bb_cut);
-  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{ee} / #varepsilon_{#gamma #gamma}");
+  auto c = make_canvas("Efficiency compare: #varepsilon_{ee} / #varepsilon_{#gamma #gamma}");
   g->Draw("a*");
   g->GetXaxis()->SetTitle("W, GeV");
   g->GetYaxis()->SetTitle("#varepsilon_{ee} / #varepsilon_{#gamma#gamma}");
@@ -3788,7 +3621,7 @@ TCanvas * draw_ee_gg_compare(std::vector<ScanPoint_t> & BB, std::vector<ScanPoin
 
 TCanvas * draw_gg_ee_compare(std::vector<ScanPoint_t> & GG, std::vector<ScanPoint_t> & BB, std::string gg_cut, std::string ee_cut) {
   auto g = efficiency_compare(GG,BB,&ScanPoint_t::gg,&ScanPoint_t::bb, gg_cut,  ee_cut);
-  auto c = get_new_tailed_canvas("Efficiency compare: #varepsilon_{gg} / #varepsilon_{ee}");
+  auto c = make_canvas("Efficiency compare: #varepsilon_{gg} / #varepsilon_{ee}");
   g->Draw("a*");
   g->GetXaxis()->SetTitle("W, GeV");
   g->GetYaxis()->SetTitle("#varepsilon_{gg} / #varepsilon_{ee}");
@@ -3801,7 +3634,7 @@ TCanvas * draw_gg_ee_compare(std::vector<ScanPoint_t> & GG, std::vector<ScanPoin
 //  auto S = measure_efficiency(SIG,sig_cut);
 //  measure_ee_luminosity(BB,bb_cut);
 //  TCanvas * c = nullptr;
-//  c = get_new_tailed_canvas("#gamma#gamma efficiency");
+//  c = make_canvas("#gamma#gamma efficiency");
 //  TGraphErrors * g = new TGraphErrors;
 //  int i=0;
 //  for(auto & sig : S ) {
@@ -3976,21 +3809,21 @@ void check_common_cuts2(const Scan_t & SCAN, const std::vector<std::string> & cu
     mg2->Add(g,"lp");
     ++idx;
   }
-  auto c_eff = get_new_tailed_canvas("efficiency");
+  auto c_eff = make_canvas("efficiency");
   mg0->Draw("a");
   mg0->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
   mg0->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}, %");
   mg0->GetYaxis()->SetDecimals();
   l->Draw();
 
-  auto c_cor = get_new_tailed_canvas("effcor");
+  auto c_cor = make_canvas("effcor");
   mg->Draw("a");
   mg->GetXaxis()->SetTitle("E-M_{#tau}, MeV");
   mg->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}/#varepsilon^{cut}_{M#tau}-1, %");
   mg->GetYaxis()->SetDecimals();
   l->Draw();
 
-  auto c_dif = get_new_tailed_canvas("effcor variation");
+  auto c_dif = make_canvas("effcor variation");
   mg2->Draw("a");
   mg2->GetYaxis()->SetTitle("#varepsilon^{cut}_{i}/#varepsilon^{cut}_{M#tau} / #varepsilon^{0}_{i}/#varepsilon^{0}_{M#tau}  - 1, %");
   mg2->GetYaxis()->SetDecimals();
@@ -4218,35 +4051,35 @@ void count(Scan_t & D, std::string cut) {
   };
   /*
   print_double_line();
-  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
   print_double_line();
   for(auto  & [channel, count] : m) {
-    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+    std::cout << ibn::format("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
   }
   print_double_line();
-  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
-  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
   //std::cout << "Other channels:  " << nother << std::endl;
   print_double_line();
   for(auto & [p, count] : om) {
-    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+    std::cout << ibn::format("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
   }
   */
 
 
   print_double_line();
-  std::cout << myfmt("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Total number", N, 100.0) << std::endl;
   print_double_line();
   for(auto  & [count,channel] : sm) {
-    std::cout << myfmt("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
+    std::cout << ibn::format("%16s %20d %20.3f%%", channel.c_str(), count, 100*double(count)/N) << std::endl;
   }
   print_double_line();
-  std::cout << myfmt("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
-  std::cout << myfmt("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Channels above", n, 100*double(n)/N) << std::endl;
+  std::cout << ibn::format("%16s %20d %20.3f%%", "Other channels", nother, 100*double(nother)/N) << std::endl;
   //std::cout << "Other channels:  " << nother << std::endl;
   print_double_line();
   for(auto & [count, p] : som) {
-    std::cout << myfmt("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
+    std::cout << ibn::format("%7d,%7d %20d %20.3f%%", p.first, p.second, count, 100*double(count)/N) << std::endl;
   }
   print_double_line();
 
@@ -4907,6 +4740,93 @@ std::vector<ScanPoint_t> stick(const std::vector<ScanPoint_t> & Cfg, const std::
   }
   return R;
 }
+
+#include <future>
+#include <thread>
+
+Scan_t substract_cosm(const Scan_t & SP, std::string sel) {
+  Scan_t R;
+  R=SP;
+  TCanvas * c =new TCanvas("cosm_sub","cosm_sub");
+  gStyle->SetOptStat(kTRUE);
+  //auto f = new TF1("f","[0]+[1]*TMath::Gaus(x,[2],[3],1)*(1+[4]*(x-[2])*(x-[2]))");
+  auto f = new TF1("f","[0]+[1]*TMath::Gaus(x,[2],[3],1)+[4]/(1+[5]*(x-[2])*(x-[2]))");
+  f->SetParameter(0,0);
+  f->SetParLimits(0,0, 1e8);
+  f->SetParLimits(1,0, 1e8);
+  f->SetParameter(2,0);
+  f->SetParameter(3,1);
+  f->SetParLimits(3,0,10);
+  f->SetParLimits(4,0,1e8);
+  f->SetParLimits(5,0,1e8);
+  f->SetParameter(4,1);
+  f->SetParameter(5,0.001);
+  double range = 20;
+  double fit_range = 20;
+  double zmin{-range/2};
+  double zmax{+range/2};
+  f->SetRange(-fit_range/2,+fit_range/2);
+  f->SetNpx(1000);
+  int Nbin{500};
+  std::cout << ibn::mformat("20.6", "N0","Nmh", "N0-Nmh", "par0*Nbin", "chi2", "ndf", "chi2/ndf", "prob");
+  std::cout << "\n";
+  int idx{0};
+  for(auto & sp : R) {
+    auto tree = sp.tt.tree;
+    long N0  = tree->GetEntries(sel.c_str()); //total number of events
+    f->SetParameter(1,N0*range/Nbin);
+    char varbuf[1024];
+    sprintf(varbuf, "rz>>h(%d,%f,%f)", Nbin, zmin,zmax);
+    if(idx!=0) {
+      while(!kbhit()) {
+        gSystem->ProcessEvents();
+      }
+    }
+    tree->Draw(varbuf, sel.c_str());
+    auto h = tree->GetHistogram();
+    h->Fit("f","RQ");
+    double Nmh = f->GetParameter(1)*Nbin/range;
+    c->Modified();
+    c->Update();
+    auto chi2 = f->GetChisquare();
+    double Ncosm =  f->GetParameter(0)*Nbin;
+    int ndf = f->GetNDF();
+    std::cout << ibn::mformat("20.6", N0, Nmh, N0-Nmh, Ncosm, chi2, ndf, chi2/ndf, TMath::Prob(chi2,ndf));
+    std::cout << "\n";
+    f->SetParameter(0,0);
+    sp.tt.N=N0-Ncosm;
+    ++idx;
+  };
+  return R;
+}
+
+
+Scan_t substract_cosm_effcor(const Scan_t & SP, std::string sel) {
+  Scan_t R = substract_cosm(SP,sel);
+  for(auto & sp : R) {
+    auto & d = sp.tt;
+    d.efficiency.value = double(d.N)/d.N0mc;
+    d.efficiency.error = sqrt(double(d.N))/d.N0mc;
+  }
+  for(auto &sp : R) {
+    auto & d = sp.tt;
+    auto & d0 = R.front().tt;
+    d.effcor = d.efficiency/d0.efficiency;
+  }
+  print(R, 
+      [](auto sp) { return sp.tt.N; },
+      [](auto sp) { return sp.tt.efficiency.value; },
+      [](auto sp) { return sp.tt.efficiency.error; },
+      [](auto sp) { return sp.tt.effcor.value; },
+      [](auto sp) { return sp.tt.effcor.error; }
+      );
+
+  return R;
+}
+
+
+
+
 
 
 

@@ -16,8 +16,8 @@
  * =====================================================================================
  */
 
-#ifndef IBN_TAU_UNITS_H
-#define IBN_TAU_UNITS_H
+#ifndef IBN_TAU_PHYS_CONST_H
+#define IBN_TAU_PHYS_CONST_H
 
 #include <TMath.h>
 
