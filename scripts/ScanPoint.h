@@ -24,6 +24,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #include <TTree.h>
 
@@ -33,21 +34,22 @@
 
 struct AcceleratorInfo_t 
 {
-  ibn::valer<double> energy;        //beam c.m. energy
-  ibn::valer<double> energy_spread; //beam energy spread
-  ibn::valer<double> luminosity;    //accelerator luminosity
+  ibn::valer<double> energy{0,0};        //beam c.m. energy
+  ibn::valer<double> energy_spread{0,0}; //beam energy spread
+  ibn::valer<double> luminosity{0,0};    //accelerator luminosity
 };
 
 struct DataSample_t  : public AcceleratorInfo_t
 {
   std::string title;
   std::shared_ptr<TTree> tree;
-  ibn::valer<double> cross_section;
-  ibn::valer<double> efficiency; //registration efficiency
-  ibn::valer<double> effcor; //correction to efficiency
-  long N; //number of selected events in data
-  long Nmc; //number of selected events in MC
-  long N0mc; //initial number of MC events
+  ibn::valer<double> cross_section{0,0};
+  ibn::valer<double> efficiency{0,0}; //registration efficiency
+  ibn::valer<double> effcor{0,0}; //correction to efficiency
+  long N{0}; //number of selected events in data
+  long Nmc{0}; //number of selected events in MC
+  long N0mc{0}; //initial number of MC events
+
   long Draw(std::string varexp, std::string selection="", std::string option="", long nentries = std::numeric_limits<long>::max(), long firstentry=0) const {
     return tree->Draw(varexp.c_str(), selection.c_str(), option.c_str(), nentries, firstentry);
   }
@@ -60,8 +62,45 @@ struct DataSample_t  : public AcceleratorInfo_t
     }
     return N;
   };
+  
+  DataSample_t operator+=(const DataSample_t & d) {
+    energy += d.energy;
+    energy_spread += d.energy_spread;
+    luminosity += luminosity;
+    N += d.N ;
+    Nmc += d.Nmc;
+    N0mc += d.N0mc;
+    //d.cross_section = d1.cross_section
+    efficiency += d.efficiency;
+    effcor += d.effcor; 
+    if(!tree)  tree.reset( new TChain ( d.tree->GetName(), d.tree->GetTitle()));
 
+    if(std::string(tree->GetName()) != std::string(tree->GetName())) {
+      throw std::runtime_error("Unable to add different chains");
+    };
+    dynamic_pointer_cast<TChain>(tree)->Add( dynamic_cast<TChain*>(d.tree.get()) );
+    return d;
+  };
 };
+
+inline DataSample_t operator+(const DataSample_t & d1, const DataSample_t & d2) {
+  DataSample_t d;
+  d+=d1;
+  d+=d2;
+  //d.N = d1.N + d2.N;
+  //d.Nmc = d1.Nmc + d2.Nmc;
+  //d.N0mc = d1.N0mc + d2.N0mc;
+  ////d.cross_section = d1.cross_section
+  //d.efficiency = d1.efficiency + d2.efficiency;
+  //d.effcor = d1.effcor + d2.effcor;
+  //if(std::string(d1.tree->GetName()) != std::string(d2.tree->GetName())) {
+  //  throw std::runtime_error("Unable to add different chains");
+  //};
+  //d.tree.reset( new TChain ( d1.tree->GetName(), d1.tree->GetTitle()));
+  //dynamic_pointer_cast<TChain>(d.tree)->Add( dynamic_cast<TChain*>(d1.tree.get()) );
+  return d;
+};
+
 
 struct ScanPoint_t; 
 typedef std::reference_wrapper<ScanPoint_t> ScanPointRef_t;
@@ -168,7 +207,44 @@ struct ScanPoint_t : public AcceleratorInfo_t
       if constexpr (Ns>0) print_column(ps...);
     }
 
+  ScanPoint_t & operator+=(const ScanPoint_t & sp) {
+    std::copy(sp.run_list.begin(), sp.run_list.end(), std::back_inserter(run_list));
+    std::copy(sp.file_list.begin(), sp.file_list.end(), std::back_inserter(file_list));
+    tt += sp.tt;
+    gg += sp.gg;
+    bb += sp.bb;
+    return *this;
+  };
+
 };
+
+inline ScanPoint_t operator+(const ScanPoint_t & sp1, const ScanPoint_t & sp2) {
+  ScanPoint_t sp;
+  std::merge( sp1.run_list.begin(), sp1.run_list.end(), 
+              sp2.run_list.begin(), sp2.run_list.end(),
+              std::back_inserter(sp.run_list)
+      );
+
+  std::merge( sp1.file_list.begin(), sp1.file_list.end(), 
+              sp2.file_list.begin(), sp2.file_list.end(),
+              std::back_inserter(sp.file_list)
+      );
+  sp.tt = sp1.tt + sp2.tt;
+  sp.gg = sp1.gg + sp2.gg;
+  sp.bb = sp1.bb + sp2.bb;
+  return sp;
+};
+
+template <typename Container >
+inline ScanPoint_t fold(const Container & cont) {
+  static_assert(  std::is_same_v< typename Container::value_type,  ScanPoint_t > );
+  ScanPoint_t result;
+  for ( const auto & sp:  cont ){
+    result += sp;
+  };
+  return result;
+};
+
 
 using PointSelectionResult_t = ScanPoint_t;
 

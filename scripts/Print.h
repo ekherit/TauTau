@@ -183,14 +183,14 @@ inline void print(const std::vector<ScanPoint_t> & SPL, Projs... ps)
         sp.luminosity.error
         );
     sp.print_column(ps...);
-    std::cout << ibn::format("%15s", get_run_formula(sp.run_list).c_str());
+    std::cout << ibn::format(" %20s", get_run_formula(sp.run_list).c_str());
     std::cout << "\n";
   }
 }
 
-ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR, std::string name = "all")
+SelectionResult_t  fold(const std::vector<SelectionResult_t>  & SR, std::string name = "all")
 {
-  ChannelSelectionResult_t result;
+  SelectionResult_t result;
   result.title = name;
   if(SR.empty()) return result;
   result.resize(SR[0].size());
@@ -228,21 +228,21 @@ ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & SR
   return result;
 };
 
-ChannelSelectionResult_t  fold(std::vector<std::vector<ChannelSelectionResult_t>> & SR, std::string name = "all")
+SelectionResult_t  fold(std::vector<std::vector<SelectionResult_t>> & SR, std::string name = "all")
 {
-  std::vector<ChannelSelectionResult_t> VSR;
+  std::vector<SelectionResult_t> VSR;
   for(const auto & vsr : SR) VSR.push_back(fold(vsr));
   return fold(VSR);
 };
 
-ChannelSelectionResult_t  fold(const std::vector<ChannelSelectionResult_t>  & s1, const std::vector<ChannelSelectionResult_t>  & s2)
+SelectionResult_t  fold(const std::vector<SelectionResult_t>  & s1, const std::vector<SelectionResult_t>  & s2)
 {
-  std::vector<ChannelSelectionResult_t> VSR;
+  std::vector<SelectionResult_t> VSR;
   VSR.push_back(fold(s1));
   VSR.push_back(fold(s2));
   return fold(VSR);
 };
-void print(const ChannelSelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
+void print(const SelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 {
   int N = sr.size(); //number of points
   int hline_width = first_column_width + last_column_width + vline_width + N*column_width+3;
@@ -358,7 +358,7 @@ void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg
 //};
 
 template<typename Fdata, typename Ftotal>
-void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
+void print_smth(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
 {
   if(SR.empty()) return;
   auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].size(),s); };
@@ -380,7 +380,7 @@ void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cf
   hline("━");
 };
 
-//void print_Ntt(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+//void print_Ntt(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 //{
 //  print_smth(SR,cfg, 
 //      [](auto & p) { 
@@ -394,7 +394,7 @@ void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cf
 //  );
 //};
 //
-//void print_Ngg(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+//void print_Ngg(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 //{
 //  print_smth(SR,cfg, 
 //      [](auto & p) { 
@@ -408,7 +408,7 @@ void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cf
 //  );
 //};
 //
-//void print_Nbb(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+//void print_Nbb(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 //{
 //  print_smth(SR,cfg, 
 //      [](auto & p) { 
@@ -423,7 +423,7 @@ void print_smth(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cf
 //};
 
 
-void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   std::cout << "In print_efficiency " << std::endl;
   if(SR.empty()) return;
@@ -465,7 +465,7 @@ void print_efficiency(const std::vector<ChannelSelectionResult_t> SR, PrintConfi
   hline("━");
 };
 
-void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+void print_effcor(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
   std::string format_str = " %5.4f ± %5.4f ";
@@ -542,19 +542,19 @@ void print_effcor(const std::vector<ChannelSelectionResult_t> SR, PrintConfig_t 
 
 //void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 //{
-//  ChannelSelectionResult_t sr;
+//  SelectionResult_t sr;
 //  sr = Points;
 //  print(sr,0);
 //}
 
-//void print(const  std::vector<ChannelSelectionResult_t> & SR )
+//void print(const  std::vector<SelectionResult_t> & SR )
 //{
 //  PrintConfig_t cfg;
 //  print_Ntt(SR,cfg);
 //  print_Ngg(SR[0],cfg);
 //  print_Nbb(SR[0],cfg);
 //};
-inline std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,std::string ResultTitle="", std::string fit_file="")
+inline std::string print_tex(const std::vector<SelectionResult_t> & SR,std::string ResultTitle="", std::string fit_file="")
 {
   std::ostringstream os;
   os << R"(
@@ -774,7 +774,7 @@ inline std::string print_tex(const std::vector<ChannelSelectionResult_t> & SR,st
 
     auto make_row = [&col_width](
         std::ostream & os, 
-        const ChannelSelectionResult_t & sr, 
+        const SelectionResult_t & sr, 
         std::string title, 
         std::function<std::string(const PointSelectionResult_t & p)> Data,
         std::function<std::string(void)> LastColumn = [](){ return ""; })

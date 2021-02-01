@@ -1,5 +1,6 @@
-#pragma once
 #ifndef IBN_TAUSELECTION_UTILS_H
+#define IBN_TAUSELECTION_UTILS_H
+
 
 #include <string>
 #include <algorithm>
@@ -11,30 +12,30 @@
 
 
 template <class String > 
-size_t count_utf8_symbols( String s )
+inline size_t count_utf8_symbols( String s )
 {
   return std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
 }
 template <class String > 
-size_t count_utf8_extra_byte( String s )
+inline size_t count_utf8_extra_byte( String s )
 {
   return s.size() - std::count_if(begin(s),end(s),[](char c) { return (c & 0xc0) != 0x80; } );
 }
 template< typename D>
-void print_utf(int width, D d)
+inline void print_utf(int width, D d)
 {
   std::cout << std::setw(width) << d;
 };
 
 template<>
-void print_utf(int width, std::string s)
+inline void print_utf(int width, std::string s)
 {
 
   std::cout << std::setw(width+count_utf8_extra_byte(std::string(s))) << s;
 };
 
 template<>
-void print_utf(int width, const char * s)
+inline void print_utf(int width, const char * s)
 {
   print_utf(width, std::string(s));
 };
@@ -84,7 +85,7 @@ namespace ibn {
 #include <TChain.h>
 /* =========================== WORKING WITH ROOT FILES IN DIRECTORY ================================*/
 //Get recursive file list
-std::list<std::string> get_recursive_file_list(std::string dirname)
+inline std::list<std::string> get_recursive_file_list(std::string dirname)
 {
   std::list<std::string> flst;
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
@@ -107,7 +108,7 @@ std::list<std::string> get_recursive_file_list(std::string dirname)
   return flst;
 }
 
-std::list<std::string> filter_file_list(const std::list<std::string> LST, std::string regexpr=R"(.+\.root)")
+inline std::list<std::string> filter_file_list(const std::list<std::string> LST, std::string regexpr=R"(.+\.root)")
 {
   std::list<std::string> flst;
   std::regex file_re(regexpr); //regular expression to filter files
@@ -124,7 +125,7 @@ std::list<std::string> filter_file_list(const std::list<std::string> LST, std::s
 
 
 template<class Discriminator>
-std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, Discriminator D)
+inline std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, Discriminator D)
 {
   std::map<std::string, std::list<std::string> > fmap;
   for(const std::string & file : LST)
@@ -134,7 +135,7 @@ std::map<std::string, std::list<std::string> > combine(const std::list<std::stri
   return fmap;
 }
 
-std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, std::string regexpr=R"(^\D*(\d+\.?\d+).root$)")
+inline std::map<std::string, std::list<std::string> > combine(const std::list<std::string> LST, std::string regexpr=R"(^\D*(\d+\.?\d+).root$)")
 {
   std::regex re(regexpr);
   return combine(LST, [&re](const std::string & file)
@@ -156,7 +157,7 @@ std::map<std::string, std::list<std::string> > combine(const std::list<std::stri
 
 //template < typename Map>
 //void print(const Map & fmap)
-void print(const std::map<std::string, std::list<std::string> > & fmap)
+inline void print(const std::map<std::string, std::list<std::string> > & fmap)
 {
   for(const auto & point :  fmap)
   {
@@ -168,7 +169,7 @@ void print(const std::map<std::string, std::list<std::string> > & fmap)
   }
 }
 
-TChain * get_chain(std::string name, std::string newname, std::string title, std::string filename)
+inline TChain * get_chain(std::string name, std::string newname, std::string title, std::string filename)
 {
   TChain * chain = new TChain(name.c_str(), title.c_str());
   chain->AddFile(filename.c_str());
@@ -176,7 +177,7 @@ TChain * get_chain(std::string name, std::string newname, std::string title, std
   return chain;
 }
 
-TChain * get_chain(const char * name, const char * newname, std::string title, const char * file_name)
+inline TChain * get_chain(const char * name, const char * newname, std::string title, const char * file_name)
 {
   TChain * chain = new TChain(name, title.c_str());
   chain->AddFile(file_name);
@@ -184,7 +185,7 @@ TChain * get_chain(const char * name, const char * newname, std::string title, c
   return chain;
 }
 
-TChain * get_chain(const char * name, const char * newname, std::string title, int run_begin, int run_end, std::string dir="")
+inline TChain * get_chain(const char * name, const char * newname, std::string title, int run_begin, int run_end, std::string dir="")
 {
   TChain * chain = new TChain(name, title.c_str());
   for(int run = run_begin; run<=run_end; ++run)
@@ -260,7 +261,7 @@ std::vector<std::string> split(std::string s) {
 //};
 
 
-std::tuple<const std::string_view, const std::string_view> head_tail2(const std::string_view s, const std::string_view delim) {
+inline std::tuple<const std::string_view, const std::string_view> head_tail2(const std::string_view s, const std::string_view delim) {
   size_t open_brase{0}; 
   size_t delim_idx{0};
   const size_t delim_size{delim.size()};
@@ -289,7 +290,7 @@ std::tuple<const std::string_view, const std::string_view> head_tail2(const std:
   };
 }
 
-std::vector<std::string_view> split(const std::string & str,const char * delim = "&&") {
+inline std::vector<std::string_view> split(const std::string & str,const char * delim = "&&") {
   std::vector<std::string_view> result;
   std::string_view tail(str);
   do {
@@ -301,7 +302,7 @@ std::vector<std::string_view> split(const std::string & str,const char * delim =
 };
 
 /* Remove cuts connected with specified var */
-std::string  remove_single_cuts(std::string var, std::string cut) {
+inline std::string  remove_single_cuts(std::string var, std::string cut) {
   auto cuts = split(cut);
   //delete cuts which has 
   //std::string var_re = ;
@@ -340,7 +341,7 @@ std::string  remove_single_cuts(std::string var, std::string cut) {
 }
 /* Remove cuts connected with specified var */
 
-std::string  remove_some_cuts(std::string vars, std::string cut) {
+inline std::string  remove_some_cuts(std::string vars, std::string cut) {
   auto v = split(vars,"&&"); //split what cuts to remove
   std::string result = cut;
   for( auto & var : v ) {
@@ -352,7 +353,7 @@ std::string  remove_some_cuts(std::string vars, std::string cut) {
 
 #include <TGraph.h>
 //find point with maximum y. Return corresponding <x,y>
-std::pair<double, double> get_maximum(const TGraph & g) {
+inline std::pair<double, double> get_maximum(const TGraph & g) {
   //double max = std::numeric_limits<double>::lowest();
   auto ptr = std::max_element(g.GetY(), g.GetY()+g.GetN());
   size_t n = std::distance(g.GetY(), ptr);
@@ -361,12 +362,12 @@ std::pair<double, double> get_maximum(const TGraph & g) {
 
 #include "../ibn/valer.h"
 #include <TGraphErrors.h>
-void SetPoint(TGraphErrors * g, size_t i, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
+inline void SetPoint(TGraphErrors * g, size_t i, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
   g->SetPoint(i, x.value, y.value);
   g->SetPointError(i, x.error, y.error);
 }
 
-void AddPoint(TGraphErrors * g, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
+inline void AddPoint(TGraphErrors * g, const ibn::valer<double> & x, const ibn::valer<double> & y ) {
   size_t i = g->GetN();
   g->SetPoint(i, x.value, y.value);
   g->SetPointError(i, x.error, y.error);

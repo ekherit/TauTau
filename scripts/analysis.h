@@ -86,6 +86,10 @@ static std::string GG_SEL = "";
 std::map<std::string, std::string > SelMap;
 
 
+void set_pid(Scan_t D, const ParticleID_t & pid) {
+
+};
+
 struct Analysis {
   const std::string WORKDIR="./";
   const std::string SHAREDIR="/home/nikolaev/tauscan/TauTau/share/";
@@ -141,85 +145,7 @@ struct Analysis {
   std::string GG_SEL = "";
   std::string MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
   std::vector<ParticleID_t> PID;
-  /*
-  = 
-  {
-    {
-      {"e", {"Ep[#]>0.80"}, 
-        { 
-          //restrict("Ep",         0.8,  1.1), 
-          restrict("chi2_dedx",   0 ,  3.0),  
-          restrict("delta_tof", -0.3,  0.3) 
-        }}, 
-      {"u", { "!e#" 
-              ,"depth[#]-p[#]*58.61 > -35"
-                ,"Nmuhit[#]>=2"
-            },
-      { 
-        {"depth",        0, 100},
-        restrict("E",          0.1, 0.3), 
-        restrict("Ep",           0, 0.7), 
-        restrict("chi2_dedx",    0, 3.0),  
-        restrict("delta_tof", -0.3, 0.3) 
-      }},
-      {"pi", { "!(e#||u#)" },
-        {
-          restrict("Ep",           0, 0.7), 
-          restrict("chi2_dedx",    0, 3.0),  
-          restrict("delta_tof", -0.3, 0.3)
-            ,restrict("p", 0.73, 1.1) 
-        }}, 
-      {"PI", { "!(e#||u#)" }, 
-        {
-          restrict("Ep",           0, 0.7), 
-          restrict("chi2_dedx",    0, 3.0),  
-          restrict("delta_tof", -0.3, 0.3)
-        }}, 
-      {"K", { "!(e#||u#||pi#)" },
-        { 
-          restrict("Ep",           0, 0.6), 
-          restrict("chi2_dedx",    0, 3.0),  
-          restrict("delta_tof", -0.3, 0.3)
-        }},
-      {"rho", {" PI# && 0.12 < Mpi0[0] && Mpi0[0] < 0.14"},
-        { 
-          restrict("Mrho", 0.6,1.0),
-        }}, 
-
-      {"X", { "chi2_dedx_e[#]>3" 
-            },
-      { 
-        restrict("Ep",           0, 0.8), 
-      }},
-    }
-  };
-  */
-
-  Selection_t SEL;
-  /*
-  =
-  {
-    "sel12", //selection name
-    "Ncg==2"
-      "&& Ncg==Ncc"
-      "&& abs(vz[0])<10 && abs(vz[1])<10"
-      "&& vxy[0]<1.0 && vxy[1]<1.0"
-      "&& E[0]>0.025 && E[1]>0.025"
-      "&& q[0]==-1 && q[1]==1"
-      "&& p[0] < 1.1 && p[1] < 1.1"
-      "&& pt[0] > 0.2 && pt[1] > 0.2"
-      "&& cgood"
-      "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
-      "&& ptem50>0.25 && ptem50<1.1"
-      , 
-    PID,
-    { 
-      {"eX",      "NnE50==0 && eX && missed_photon_angle"},
-      {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
-    },
-  };
-  */
-
+  std::vector<Selection_t> SEL;
   Analysis(void) {
     std::cout << "In default constructor\n";
     Init();
@@ -233,14 +159,29 @@ struct Analysis {
     Init();
   };
 
-  Analysis(std::string workdir, std::string rtname, const  Selection_t & sel) : 
+  Analysis(
+      std::string workdir, 
+      std::string rtname,  
+      const std::vector<ParticleID_t> & pid, 
+      std::string common_cut,
+      const  std::vector< std::tuple<std::string, std::string > > & sel
+      ) : 
     WORKDIR{workdir},
-    runtable_name{SHAREDIR+rtname}, 
-    SEL(sel) 
+    runtable_name{SHAREDIR+rtname},
+    PID(pid),
+    SEL(make_selections(pid,common_cut, sel) ) 
   {
-    std::cout << "In rtname\n";
     Init();
   };
+
+  //Analysis(std::string workdir, std::string rtname, const  Selection_t & sel) : 
+  //  WORKDIR{workdir},
+  //  runtable_name{SHAREDIR+rtname}, 
+  //  SEL(sel) 
+  //{
+  //  std::cout << "In rtname\n";
+  //  Init();
+  //};
 
 
   /*
@@ -253,7 +194,7 @@ struct Analysis {
 
   void Init(void) {
     std::cout << "Apply common cuts to SEL\n";
-    SEL.apply_common_cut();
+    //SEL.apply_common_cut();
     std::vector<ScanRef_t> LUM_MCs = {BB,GG};
     //std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
     //std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
@@ -330,32 +271,34 @@ struct Analysis {
   auto select(const Scan_t & P, const std::string & sel,  ProjSample sample) const ->  Scan_t;
 
   template<typename ProjSample> 
-  auto select(const Scan_t & P, const ChannelSelection_t & S, ProjSample sample, std::string extra_cut="") const -> ChannelSelectionResult_t;
+  auto select(const Scan_t & P, const Selection_t & S, ProjSample sample, std::string extra_cut="") const -> SelectionResult_t;
 
   template<typename ProjSample> 
-  auto select(const Scan_t & P, const Selection_t & S, ProjSample sample, std::string extra_cut="") const -> std::vector<ChannelSelectionResult_t>;
+  auto select(const Scan_t & P, const std::vector<Selection_t> & S, ProjSample sample, std::string extra_cut="") const -> std::vector<SelectionResult_t>;
 
   auto select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t;
   auto select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t;
   auto select_gg(const Scan_t & P, const std::string & sel) const ->  Scan_t;
 
 
-  auto select_tt(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")const  -> ChannelSelectionResult_t;
-  auto select_bb(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")const  -> ChannelSelectionResult_t;
-  auto select_gg(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")const  -> ChannelSelectionResult_t;
+  auto select_tt(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
+  auto select_bb(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
+  auto select_gg(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
 
-  auto select_tt(const Scan_t & P,        const Selection_t & S, std::string extra_cut="")const  -> std::vector<ChannelSelectionResult_t>;
-  auto select_bb(const Scan_t & P,        const Selection_t & S, std::string extra_cut="")const  -> std::vector<ChannelSelectionResult_t>;
-  auto select_gg(const Scan_t & P,        const Selection_t & S, std::string extra_cut="")const  -> std::vector<ChannelSelectionResult_t>;
+  auto select_tt(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
+  auto select_bb(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
+  auto select_gg(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
 
+  /*
   auto select_tt(std::string extra_cut="") const -> std::vector<ChannelSelectionResult_t> {
     return select_tt(DATA, SEL, extra_cut);
   }
+  */
 
 };
 
 
-void Analysis::set_pid(std::vector<ScanPoint_t> & D, const std::vector<ParticleID_t> & Pid) 
+inline void Analysis::set_pid(std::vector<ScanPoint_t> & D, const std::vector<ParticleID_t> & Pid) 
 {
   for( auto & data : D) {
     for(int track=0;track<2;++track) {
@@ -408,7 +351,7 @@ void Analysis::set_pid(std::vector<ScanPoint_t> & D, const std::vector<ParticleI
 };
 
 template<typename Projector>
-void Analysis::measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, Projector proj) {
+inline void Analysis::measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, Projector proj) {
   me(mc, N0_MC, proj, sel);
   //find close point and select
   for(auto & sp :data) {
@@ -437,57 +380,63 @@ void Analysis::measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::s
   }
 }
 
-void Analysis::measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
+inline void Analysis::measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
   measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.bb; } );
 }
 
-void Analysis::measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
+inline void Analysis::measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel) {
   measure_luminosity(data,mc,N0_MC,sel, [](ScanPoint_t &sp) -> DataSample_t & { return sp.gg; } );
 }
 
 
 template<typename Sample>
-auto Analysis::select(const Scan_t & P, const std::string & sel, Sample sample) const ->  Scan_t {
+inline auto Analysis::select(const Scan_t & P, const std::string & sel, Sample sample) const ->  Scan_t {
   std::vector<ScanPoint_t> R;
   for(const auto & p : P) {
+    //std::cout << "point : " << p.title  << "  sel = " << sel  << std::endl;
     R.push_back(p.select(sample, sel));
   };
+  //std::cout << "After points" << std::endl;
   return R;
 }
 
-auto Analysis::select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t {
+inline auto Analysis::select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t {
   return select(P, sel, &ScanPoint_t::tt);
 }
 
-auto Analysis::select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t {
+inline auto Analysis::select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t {
   return select(P, sel, &ScanPoint_t::tt);
 }
 
-auto Analysis::select_gg(const Scan_t & P, const std::string & sel) const ->  Scan_t {
+inline auto Analysis::select_gg(const Scan_t & P, const std::string & sel) const ->  Scan_t {
   return select(P, sel, &ScanPoint_t::tt);
 }
 
 template<typename Proj>
-auto Analysis::select(const Scan_t & P, const ChannelSelection_t & S, Proj sample, std::string extra_cut) const -> ChannelSelectionResult_t 
+auto Analysis::select(const Scan_t & P, const Selection_t & S, Proj sample, std::string extra_cut) const -> SelectionResult_t 
 {
-  ChannelSelectionResult_t r;
+  //std::cout << "Analysis::select_tt(Scan_t, Selection_t, Proj, std::string)" << std::endl;
+  SelectionResult_t r;
   r = S; //copy selection config
-  r  = select(P, S.cut + extra_cut, sample);
+  //Scan_t sps   //std::cout << "after sps" << std::endl;
+  r = select(P, S.cut + extra_cut, sample);
+  //std::cout << "after r = sps" << std::endl;
   return r;
 };
 
 
-auto Analysis::select_tt(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut) const -> ChannelSelectionResult_t 
+inline auto Analysis::select_tt(const Scan_t & P, const Selection_t & S, std::string extra_cut) const -> SelectionResult_t 
 {
+  //std::cout << "Analysis::select_tt(Scan_t, Selection_t, std::string)" << std::endl;
   return select(P,S,&ScanPoint_t::tt);
 };
 
 template<typename Proj>
-std::vector<ChannelSelectionResult_t> Analysis::select(const Scan_t & P, const Selection_t & S, Proj sample, std::string extra_cut) const {
-  std::vector<ChannelSelectionResult_t> R;
+inline std::vector<SelectionResult_t> Analysis::select(const Scan_t & P, const std::vector<Selection_t> & S, Proj sample, std::string extra_cut) const {
+  std::vector<SelectionResult_t> R;
   int i=0;
-  for(const ChannelSelection_t & s : S) {
-    ChannelSelectionResult_t r = select(P, s, sample, extra_cut);
+  for(const Selection_t & s : S) {
+    SelectionResult_t r = select(P, s, sample, extra_cut);
     print(r,i);
     R.push_back(r);
     ++i;
@@ -496,7 +445,7 @@ std::vector<ChannelSelectionResult_t> Analysis::select(const Scan_t & P, const S
   return R;
 };
 
-auto Analysis::select_tt(const Scan_t & P,        const Selection_t & S, std::string extra_cut)const  -> std::vector<ChannelSelectionResult_t> {
+inline auto Analysis::select_tt(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut)const  -> std::vector<SelectionResult_t> {
   return select(P,S,&ScanPoint_t::tt,extra_cut);
 }
 

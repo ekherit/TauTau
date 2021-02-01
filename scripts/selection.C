@@ -41,6 +41,7 @@
 #include <TMultiGraph.h>
 #include <TAxis.h>
 #include <TH1.h>
+#include <TF1.h>
 #include <TH2F.h>
 #include <THStack.h>
 #include <TLegend.h>
@@ -207,7 +208,7 @@ void print_event_info(std::vector<ScanPoint_t> & P, const char * selection, cons
   }
 };
 
-void print_event_info(std::vector<ScanPoint_t> & P, std::vector<ChannelSelection_t> & SEL)
+void print_event_info(std::vector<ScanPoint_t> & P, std::vector<Selection_t> & SEL)
 {
   for( auto & s : SEL)
   {
@@ -323,10 +324,10 @@ std::vector<PointSelectionResult_t> select(const std::vector<ScanPoint_t> & P, c
   return R;
 }
 
-ChannelSelectionResult_t select_tmp(const std::vector<ScanPoint_t> & P, const std::string  sel)
+SelectionResult_t select_tmp(const std::vector<ScanPoint_t> & P, const std::string  sel)
 {
   //std::vector<PointSelectionResult_t> R(P.size());
-  ChannelSelectionResult_t R;
+  SelectionResult_t R;
   R.cut = sel;
   long sum=0;
   for(auto & sp : P){
@@ -474,7 +475,7 @@ void cmp(const Scan_t & S1, const Scan_t & S2, std::string var, std::string sel=
 };
 
 
-void cmp(const Scan_t & S1, const Scan_t & S2, const Selection_t & Sel, int i, std::string var, std::string extracut="", std::string gopt = "", int Nbin=100, double Min=0, double Max=0)
+void cmp(const Scan_t & S1, const Scan_t & S2, const std::vector<Selection_t> & Sel, int i, std::string var, std::string extracut="", std::string gopt = "", int Nbin=100, double Min=0, double Max=0)
 {
   std::cout << Sel[i].title << std::endl;
   //std::string sel = Sel.common_cut()  + "&&" + Sel[i].cut + (extracut == "" ? "" : ("&&" + extracut));
@@ -482,7 +483,9 @@ void cmp(const Scan_t & S1, const Scan_t & S2, const Selection_t & Sel, int i, s
   cmp(S1,S2,var,Sel[i] && extracut,gopt,Nbin,Min,Max);
 };
 
-TH1 * fold(const Scan_t & D, const Selection_t & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+
+
+TH1 * fold(const Scan_t & D, const std::vector<Selection_t> & Sel,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::string name = "Hlastfold" + std::to_string(HISTO_INDEX);
   TH1 * H = new TH1F(name.c_str(),name.c_str() ,Nbin,Min,Max);
   for(size_t i =0;i<Sel.size();++i) {
@@ -498,7 +501,7 @@ TH1 * fold(const Scan_t & D, const Selection_t & Sel,  std::string var, std::str
 
 
 
-void cmp(const Scan_t & D1, const Scan_t & D2, const Selection_t & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+void cmp(const Scan_t & D1, const Scan_t & D2, const std::vector<Selection_t> & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::string title = (var + ":" + extracut);
   auto c  = make_canvas(title.c_str());
   auto h1 = fold(D1,SEL,var,extracut,gopt, Nbin,Min,Max);
@@ -516,7 +519,7 @@ void cmp(const Scan_t & D1, const Scan_t & D2, const Selection_t & SEL,  std::st
   }
 }
 
-std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const Selection_t & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
+std::vector<TH1*> cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, const std::vector<Selection_t> & SEL,  std::string var, std::string extracut, std::string gopt, int Nbin, double Min, double Max) {
   std::vector<TH1*> H;
   std::string title = (var + ":" + extracut);
   auto c  = make_canvas(title.c_str());
@@ -642,18 +645,22 @@ TCanvas* cmp(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::string var
 
 
 
-ChannelSelectionResult_t select(const Scan_t & P, const ChannelSelection_t & S, std::string extra_cut="")
-{
-  if(extra_cut!="") extra_cut = " && " + extra_cut;
-  ChannelSelectionResult_t r;
-  r = S; //copy selection config
-  r  = select(P, S.cut + extra_cut);
-  print(r,0);
-  return r;
-};
+//SelectionResult_t select(const Scan_t & P, const Selection_t & S, std::string extra_cut="")
+//{
+//  if( S.size() > 0) {
+//
+//  }
+//  SelectionResult_t r(S);
+//  r = select(P, r.cut + extra_cut);
+//  //if(extra_cut!="") extra_cut = " && " + extra_cut;
+//  //r = S; //copy selection config
+//  //r  = select(P, S.cut + extra_cut);
+//  //print(r,0);
+//  return r;
+//};
 
-std::vector<ChannelSelectionResult_t> select(const Scan_t & P, const Selection_t & S, std::string extra_cut="") {
-  std::vector<ChannelSelectionResult_t> R(S.size());
+std::vector<SelectionResult_t> select(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="") {
+  std::vector<SelectionResult_t> R(S.size());
   if(extra_cut!="") extra_cut = " && " + extra_cut;
   for(int i=0; i<S.size(); ++i) {
     //std::cout << i << " " << S.name << " " << S.common_cut << std::endl;
@@ -669,13 +676,13 @@ std::vector<ChannelSelectionResult_t> select(const Scan_t & P, const Selection_t
 };
 
 
-//ChannelSelectionResult_t select(const std::vector<ScanPoint_t> & DATA, const Selection_t & SEL, int channel, std::string extracut="")
+//SelectionResult_t select(const std::vector<ScanPoint_t> & DATA, const Selection_t & SEL, int channel, std::string extracut="")
 //{
 //  return select(DATA, SEL[channel], extracut);
 //};
 
-std::vector<ChannelSelectionResult_t> select(const Scan_t & DATA, const Selection_t & SEL, std::vector<int> channels, std::string extracut="") {
-  std::vector<ChannelSelectionResult_t> R(channels.size());
+std::vector<SelectionResult_t> select(const Scan_t & DATA, const std::vector<Selection_t> & SEL, std::vector<int> channels, std::string extracut="") {
+  std::vector<SelectionResult_t> R(channels.size());
   /*
   std::string cut = SEL.common_cut();
   if(extracut != "") {
@@ -752,7 +759,7 @@ std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionR
   return psr;
 }
 
-std::vector<ChannelSelectionResult_t> & set_efficiency( std::vector<ChannelSelectionResult_t> & SR, const Scan_t & MC, long N0)
+std::vector<SelectionResult_t> & set_efficiency( std::vector<SelectionResult_t> & SR, const Scan_t & MC, long N0)
 {
   for(auto & sr : SR)
   {
@@ -1013,6 +1020,7 @@ TCanvas*  compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, std::str
   return compare2(P1.tt.tree.get(), P2.tt.tree.get(), var, sel,gopt, H, bin,title, xtitle);
 }
 
+/*
 TCanvas * compare2(ScanPoint_t & P1, ScanPoint_t & P2, std::string var, const Selection_t & SEL, std::string gopt="", std::string H="", int bin=0, std::string title="", std::string xtitle="") {
   //std::string global_cut = SEL.common_cut();
   //std::string or_cut="(";
@@ -1083,6 +1091,7 @@ TCanvas*  compare2(Scan_t & S1, Scan_t & S2, std::string var, const Selection_t 
   fill_tree(tree2,S2,cut);
   return compare2(tree1, tree2, var, "", gopt,H,bin,title);
 };
+*/
 
 
 /* 
@@ -1109,7 +1118,7 @@ void make_compare(ScanPoint_t & P1, ScanPoint_t & P2, Selection_t & sel, int bin
 }
 
 /* This compare of data and MC fold all points together */
-void make_compare2(std::vector<std::reference_wrapper<Scan_t>>  SCANS, Selection_t & SEL, int bin)
+void make_compare2(std::vector<std::reference_wrapper<Scan_t>>  SCANS, std::vector<Selection_t> & SEL, int bin)
 {
   gStyle->Reset("Pub");
   auto compare = [&](std::string var, int Nb, double min,double max, std::string extracut="") {
@@ -1139,7 +1148,7 @@ void make_compare2(std::vector<std::reference_wrapper<Scan_t>>  SCANS, Selection
 };
 
 
-void save(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string default_lum="")
+void save(const SelectionResult_t & sr, std::string  filename="scan.txt", std::string default_lum="")
 {
   std::cout << "Saving selection: " << sr.title << " to file: " << filename << std::endl;
   std::stringstream os;
@@ -1226,7 +1235,7 @@ void savemh(const std::vector<PointSelectionResult_t> & sr, std::string  filenam
 }
 
 
-void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
+void fit(const SelectionResult_t & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
 {
   save(sr,filename,default_lum);
   char command[65536];
@@ -1236,7 +1245,7 @@ void fit(const ChannelSelectionResult_t & sr, std::string  filename="scan.txt", 
   system(command);
 }
 
-void fit(const std::vector<ChannelSelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
+void fit(const std::vector<SelectionResult_t> & sr, std::string  filename="scan.txt", std::string title="", std::string default_lum = "", bool wait = false)
 {
   fit(fold(sr),filename,title, default_lum, wait);
 }
@@ -1915,7 +1924,9 @@ void draw_stack(std::vector<ScanPointRef_t> DATA, std::string var, std::string c
 }
 
 
-void draw(ScanPoint_t & DATA, ScanPoint_t & MC, std::vector<ScanPointRef_t> BGs, Selection_t & SEL, int i, std::string var, int Nbin, double xmin, double xmax) {
+/*
+void draw(ScanPoint_t & DATA, ScanPoint_t & MC, std::vector<ScanPointRef_t> BGs, Selection_t & SEL, int i, std::string var, int Nbin, double xmin, double xmax) 
+{
   std::string cut = SEL.common_cut() + " && " +  SEL[i].cut;
   //std::string cut = "";
   auto hs = new THStack("hs","");
@@ -1950,6 +1961,7 @@ void draw(ScanPoint_t & DATA, ScanPoint_t & MC, std::vector<ScanPointRef_t> BGs,
 
   hs->Draw("same");
 }
+*/
 
 
 TH1 * select_histogram(const ScanPoint_t & sp, std::string var, std::string cut, int Nbin, double xmin, double xmax, bool is_scale=false) {
@@ -2007,7 +2019,7 @@ std::tuple<double,double> my_chi2_histogram_test ( TH1 * h1, TH1 *h2) {
   return {chi2, TMath::Prob(chi2,2*Ndf)};
 }
 
-TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGNAL, const std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
+TCanvas * draw(const std::vector<Selection_t> & SEL, const Scan_t & DATA, const Scan_t & SIGNAL, const std::vector<ScanRef_t> BGs, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
   auto  c = new TCanvas;
   gStyle->Reset("Pub");
   gStyle->SetPalette(kOcean);
@@ -2017,7 +2029,7 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGN
   std::vector< std::vector<TH1*> > Hbgs(BGs.size()); 
 
   for(auto & sel : SEL ) { //loop over selection channels
-    std::string cut = SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+    std::string cut = sel.cut + extracut; // SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
     //std::string cut = remove_some_cuts(var,SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
     std::cout << cut << std::endl;
     const bool SCALE = true;
@@ -2152,7 +2164,9 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Scan_t & SIGN
   return c;
 }
 
-TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t & MC, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") {
+TCanvas * draw(const std::vector<Selection_t> & SEL, const Scan_t & DATA, const Simulation_t & MC, std::string var, int Nbin, double xmin, double xmax, std::string extracut="") 
+{
+  if(SEL.empty()) return nullptr;
   auto  c = new TCanvas;
   gStyle->SetPalette(kOcean);
   auto hs = new THStack(("hstack"+std::to_string(++HISTO_INDEX)).c_str(),var.c_str());
@@ -2186,8 +2200,9 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t 
         Hbgs[i].push_back(hbg);
       }
   };
-  if(SEL.empty()) sel(SEL);
-  else for(auto & s : SEL ) sel(s);
+  //if(SEL.empty()) sel(SEL);
+  //else 
+  for(auto & s : SEL ) sel(s);
 
   auto lfold = [Nbin,xmin,xmax] (auto & hs) {
     return fold(hs,Nbin,xmin,xmax);
@@ -2301,7 +2316,7 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t 
   return c;
 }
 
-//TCanvas * unconstrain_par_and_draw(const ChannelSelection_t & sel, const  Scan_t & DATA, const Simulation_t & SIM, std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+//TCanvas * unconstrain_par_and_draw(const Selection_t & sel, const  Scan_t & DATA, const Simulation_t & SIM, std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
 //  //auto  c = new TCanvas(sel.root_title().c_str(), sel.root_title().c_str());
 //  auto pars = split(vars,"&&");
 //  std::string var(pars[0]);
@@ -2463,7 +2478,8 @@ TCanvas * draw(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t 
 //  }
 //}
 
-TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA, const Simulation_t & SIM, const std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+TCanvas * unconstrain_par_and_draw(const std::vector<Selection_t> & SEL, const  Scan_t & DATA, const Simulation_t & SIM, const std::string vars, int Nbin, double xmin, double xmax, std::string extracut="", double bg_scale=-1) {
+  if(SEL.empty()) return nullptr;
   gStyle->Reset("Pub");
   //auto  c = new TCanvas;
   const std::string var= std::string(split(vars,"&&")[0]);
@@ -2502,10 +2518,11 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
     }
   };
 
-  if(SEL.empty()) sel(SEL);
-  else {
-    for(auto & s : SEL ) { sel(s); }
-  }
+  for(const auto & s : SEL) sel(s);
+  //if(SEL.empty()) sel(SEL);
+  //else {
+  //  for(auto & s : SEL ) { sel(s); }
+  //}
 
   auto lfold = [Nbin,xmin,xmax] (auto & hs) {
     return fold(hs,Nbin,xmin,xmax);
@@ -2624,7 +2641,7 @@ TCanvas * unconstrain_par_and_draw(const Selection_t & SEL, const  Scan_t & DATA
   return c;
 }
 
-void draw_all(Selection_t & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=80) {
+void draw_all(std::vector<Selection_t> & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef_t> BGs, int Nbin=80) {
   gStyle->Reset("Pub");
   auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
     std::cout << "Draw " << var << std::endl;
@@ -2644,7 +2661,7 @@ void draw_all(Selection_t & SEL, Scan_t & DATA, Scan_t & MC, std::vector<ScanRef
   compare("acol"           , Nbin , 0     , 3.1415 , "");
 };
 
-void unconstrain_draw_all(const Selection_t & SEL, const Scan_t & DATA, const Simulation_t & MC, int Nbin=80) {
+void unconstrain_draw_all(const std::vector<Selection_t> & SEL, const Scan_t & DATA, const Simulation_t & MC, int Nbin=80) {
   gStyle->Reset("Pub");
   auto compare = [&](std::string var, int Nb, double xmin,double xmax, std::string extracut="") {
     std::cout << "Draw " << var << std::endl;
@@ -2680,7 +2697,7 @@ struct HistConfig_t {
 };
 
 
-TCanvas * draw_background_vs_energy(const Selection_t & SEL, const std::vector<ScanRef_t> BGs, std::string extracut="" ) {
+TCanvas * draw_background_vs_energy(const std::vector<Selection_t> & SEL, const std::vector<ScanRef_t> BGs, std::string extracut="" ) {
   //hcfg.print();
   //check number of points in the background
   if(BGs.empty()) return nullptr;
@@ -2902,123 +2919,123 @@ std::tuple<TGraph*, double, double, double>  scan_param(const Scan_t &DATA, cons
 }
 
 
-void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL, int i, std::string par, std::string_view parfmt, int Nbin, double min, double max) {
-  gStyle->Reset("Pub");
-  auto c = new TCanvas(SEL[i].root_title().c_str(), SEL[i].root_title().c_str());
-  std::string initial_cut =  SEL.common_cut();
-  if(SEL[i].cut!="") initial_cut + "&&" + SEL[i].cut;
-  std::string cut =  remove_some_cuts(par, initial_cut);
-  //}
-}
+//void find_optimal_cuts(Simulation_t & sim, std::vector<Selection_t> & SEL, int i, std::string par, std::string_view parfmt, int Nbin, double min, double max) {
+//  gStyle->Reset("Pub");
+//  auto c = new TCanvas(SEL[i].root_title().c_str(), SEL[i].root_title().c_str());
+//  //std::string initial_cut =  SEL.common_cut();
+//  //if(SEL[i].cut!="") initial_cut + "&&" + SEL[i].cut;
+//  std::string cut =  remove_some_cuts(par, SEL[i].cut);
+//  //}
+//}
 
-void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL, int i, std::string par, std::string_view parfmt, double min, double max, double step) {
+void find_optimal_cuts(Simulation_t & sim, std::vector<Selection_t> & SEL, int i, std::string par, std::string_view parfmt, double min, double max, double step) {
   gStyle->Reset("Pub");
   //auto cptem = new TCanvas;
   //auto gptem = find_optimal_cut(SIG,BGs, SEL.common_cut + " && Nn==0 && eu && acop>0.1","ptem>%.3f", 0, 0.3,0.01); 
   //for(size_t channel = 0; channel<SEL.size(); ++i) {
   auto c = new TCanvas(SEL[i].root_title().c_str(), SEL[i].root_title().c_str());
-  std::string initial_cut =  SEL.common_cut();
-  if(SEL[i].cut!="") initial_cut += "&&" + SEL[i].cut;
-  std::string cut =  remove_some_cuts(par, initial_cut);
+  //std::string initial_cut =  SEL.common_cut();
+  //if(SEL[i].cut!="") initial_cut += "&&" + SEL[i].cut;
+  std::string cut =  remove_some_cuts(par, SEL[i].cut);
   std::cout << SEL[i].title << "  : " << par <<  "  cut = " <<  cut << std::endl;
   auto gptem = find_optimal_cut_new(sim, cut, parfmt, min, max, step);
   gptem->Draw("ap");
   //}
 }
 
-void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL, std::string par, std::string_view parfmt, double min, double max, double step) {
+void find_optimal_cuts(Simulation_t & sim, std::vector<Selection_t> & SEL, std::string par, std::string_view parfmt, double min, double max, double step) {
   for(size_t ch = 0; ch!=SEL.size(); ++ch) {
     find_optimal_cuts(sim, SEL, ch, par, parfmt, min,max,step);
   }
 }
 
-void find_optimal_cuts(Simulation_t & sim, Selection_t & SEL) {
+void find_optimal_cuts(Simulation_t & sim, std::vector<Selection_t> & SEL) {
   find_optimal_cuts(sim, SEL, "ptem", "ptem>%.3f", 0, 1.0, 0.05);
 }
 
-void scan_param(const Scan_t & DATA, const Scan_t & SIG, Selection_t & SEL, int i, std::string par, std::string_view parfmt, double min, double max, double step) {
-  gStyle->Reset("Pub");
-  //auto c = new TCanvas(SEL[i].root_title.c_str(), SEL[i].root_title.c_str());
-  new TCanvas;
-  std::string initial_cut =  SEL.common_cut();
-  std::cout << "SEL[i].cut = " << SEL[i].cut << std::endl;
-  std::regex re(R"(\s*)");
-  std::smatch sm;
-  if(!std::regex_match(SEL[i].cut, sm, re)) {
-    initial_cut += ("&&" + SEL[i].cut);
-  }
-  //std::cout << "initial_cut = " << initial_cut << std::endl;
-  std::string cut =  remove_some_cuts(par, initial_cut);
-  //std::cout << SEL[i].title << "  : " << par <<  "  cut = " <<  cut << std::endl;
-  auto [g,xmax,ymax,edm] = scan_param(DATA,SIG, cut, parfmt, min, max, step);
-  g->Draw("ap");
-  //}
-}
+//void scan_param(const Scan_t & DATA, const Scan_t & SIG, std::vector<Selection_t> & SEL, int i, std::string par, std::string_view parfmt, double min, double max, double step) {
+//  gStyle->Reset("Pub");
+//  //auto c = new TCanvas(SEL[i].root_title.c_str(), SEL[i].root_title.c_str());
+//  new TCanvas;
+//  std::string initial_cut =  SEL.common_cut();
+//  std::cout << "SEL[i].cut = " << SEL[i].cut << std::endl;
+//  std::regex re(R"(\s*)");
+//  std::smatch sm;
+//  if(!std::regex_match(SEL[i].cut, sm, re)) {
+//    initial_cut += ("&&" + SEL[i].cut);
+//  }
+//  //std::cout << "initial_cut = " << initial_cut << std::endl;
+//  std::string cut =  remove_some_cuts(par, initial_cut);
+//  //std::cout << SEL[i].title << "  : " << par <<  "  cut = " <<  cut << std::endl;
+//  auto [g,xmax,ymax,edm] = scan_param(DATA,SIG, cut, parfmt, min, max, step);
+//  g->Draw("ap");
+//  //}
+//}
+//
+//TCanvas * scan_param(const Scan_t & DATA, const Scan_t & SIG, Selection_t & SEL, std::string par, std::string_view parfmt, double min, double max, double step) {
+//  gStyle->Reset("Pub");
+//  auto c = new TCanvas(("scan_param_"+par).c_str(), ("Scan parameter + " + par ).c_str());
+//  TMultiGraph * mg = new TMultiGraph;
+//  std::cout << "=========== Scaning " << par << "  ======================== " << std::endl;
+//  std::cout << "common_cut = " << SEL.common_cut() << std::endl;
+//  TLegend * l = new TLegend(0.6,0.8,1.0,1.0);
+//  l->SetHeader(par.c_str());
+//  for(size_t i = 0;i<SEL.size(); ++i) {
+//    std::cout << SEL[i].title << " cut = " <<  SEL[i].cut << std::endl;
+//    std::string cut =  remove_some_cuts(par, SEL[i].cut);
+//    auto [g,xmax,ymax, edm] = scan_param(DATA,SIG, cut, parfmt, min, max, step);
+//    g->SetLineColor(i+1);
+//    g->SetMarkerColor(i+1);
+//    mg->Add(g);
+//    char buf[1024];
+//    sprintf(buf, "%s : %s = %.3f, max = %.3f", SEL[i].root_title().c_str(), par.c_str(), xmax, ymax);
+//    l->AddEntry(g,buf,"lp");
+//    if(i==0)  {
+//      mg->Draw("apl");
+//      l->Draw();
+//    }
+//    c->Modified();
+//    c->Update();
+//  }
+//  return c;
+//}
 
-TCanvas * scan_param(const Scan_t & DATA, const Scan_t & SIG, Selection_t & SEL, std::string par, std::string_view parfmt, double min, double max, double step) {
-  gStyle->Reset("Pub");
-  auto c = new TCanvas(("scan_param_"+par).c_str(), ("Scan parameter + " + par ).c_str());
-  TMultiGraph * mg = new TMultiGraph;
-  std::cout << "=========== Scaning " << par << "  ======================== " << std::endl;
-  std::cout << "common_cut = " << SEL.common_cut() << std::endl;
-  TLegend * l = new TLegend(0.6,0.8,1.0,1.0);
-  l->SetHeader(par.c_str());
-  for(size_t i = 0;i<SEL.size(); ++i) {
-    std::cout << SEL[i].title << " cut = " <<  SEL[i].cut << std::endl;
-    std::string cut =  remove_some_cuts(par, SEL[i].cut);
-    auto [g,xmax,ymax, edm] = scan_param(DATA,SIG, cut, parfmt, min, max, step);
-    g->SetLineColor(i+1);
-    g->SetMarkerColor(i+1);
-    mg->Add(g);
-    char buf[1024];
-    sprintf(buf, "%s : %s = %.3f, max = %.3f", SEL[i].root_title().c_str(), par.c_str(), xmax, ymax);
-    l->AddEntry(g,buf,"lp");
-    if(i==0)  {
-      mg->Draw("apl");
-      l->Draw();
-    }
-    c->Modified();
-    c->Update();
-  }
-  return c;
-}
 
-
-TCanvas * unconstrain_par_and_draw2d(const Selection_t & SEL, const std::vector<ScanRef_t> bgs, std::string var, int Nbinx, double xmin, double xmax, int Nbiny, double ymin, double ymax, std::string extracut="") {
-  auto  c = new TCanvas;
-  gStyle->SetPalette(kOcean);
-
-  auto local_select = [Nbinx, xmin, xmax, Nbiny, ymin, ymax, &var]( const ScanPoint_t & sp , std::string cut)  {
-    std::string name = "h"+std::to_string(++HISTO_INDEX);
-    char expr[1024];
-    sprintf(expr, "%s>>%s(%d,%f,%f,%d,%f,%f)", var.c_str(), name.c_str(), Nbinx, xmin,xmax, Nbiny, ymin, ymax);
-    sp.tt.tree->Draw(expr,cut.c_str(),"goff");
-    return std::shared_ptr<TH2>((TH2*) sp.tt.tree->GetHistogram());
-    //TH2* h2  = new TH2F(name.c_str(), var.c_str(), Nbinx, xmin, xmax, Nbiny, ymin, ymax); 
-    //h2->Draw("goff");
-  };
-
-  using his2ds_t  = std::vector<std::shared_ptr<TH2>>;
-  //std::vector< his2ds_t > hsels;
-  his2ds_t hsels;
-  for(auto & sel : SEL ) { //loop over selection channels
-    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
-    std::string cut = remove_some_cuts(var,SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
-    std::cout << cut << std::endl;
-    his2ds_t hbgs;
-    for(auto & scan : bgs ) {
-      his2ds_t hpts;
-      for(auto & sp : scan.get() ) {
-        hpts.push_back(local_select(sp,cut));
-      }
-      hbgs.push_back(fold(hpts));
-    }
-    hsels.push_back(fold(hbgs));
-  }
-  auto h = fold(hsels);
-  h->Draw("colz");
-  return c;
-}
+//TCanvas * unconstrain_par_and_draw2d(const std::vector<Selection_t> & SEL, const std::vector<ScanRef_t> bgs, std::string var, int Nbinx, double xmin, double xmax, int Nbiny, double ymin, double ymax, std::string extracut="") {
+//  auto  c = new TCanvas;
+//  gStyle->SetPalette(kOcean);
+//
+//  auto local_select = [Nbinx, xmin, xmax, Nbiny, ymin, ymax, &var]( const ScanPoint_t & sp , std::string cut)  {
+//    std::string name = "h"+std::to_string(++HISTO_INDEX);
+//    char expr[1024];
+//    sprintf(expr, "%s>>%s(%d,%f,%f,%d,%f,%f)", var.c_str(), name.c_str(), Nbinx, xmin,xmax, Nbiny, ymin, ymax);
+//    sp.tt.tree->Draw(expr,cut.c_str(),"goff");
+//    return std::shared_ptr<TH2>((TH2*) sp.tt.tree->GetHistogram());
+//    //TH2* h2  = new TH2F(name.c_str(), var.c_str(), Nbinx, xmin, xmax, Nbiny, ymin, ymax); 
+//    //h2->Draw("goff");
+//  };
+//
+//  using his2ds_t  = std::vector<std::shared_ptr<TH2>>;
+//  //std::vector< his2ds_t > hsels;
+//  his2ds_t hsels;
+//  for(auto & sel : SEL ) { //loop over selection channels
+//    //std::string cut = SEL.common_cut + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) );
+//    std::string cut = remove_some_cuts(var,SEL.common_cut() + " && " +  sel.cut + (extracut == "" ? "" :  (" && " + extracut) ));
+//    std::cout << cut << std::endl;
+//    his2ds_t hbgs;
+//    for(auto & scan : bgs ) {
+//      his2ds_t hpts;
+//      for(auto & sp : scan.get() ) {
+//        hpts.push_back(local_select(sp,cut));
+//      }
+//      hbgs.push_back(fold(hpts));
+//    }
+//    hsels.push_back(fold(hbgs));
+//  }
+//  auto h = fold(hsels);
+//  h->Draw("colz");
+//  return c;
+//}
 
 
 
@@ -3101,7 +3118,7 @@ void check_common_cuts(const Scan_t & SCAN, std::string initial_cut) {
       sprintf(buf,"%15.8f  %15.8f", cor, error);
       ofs << buf;
     }
-    ofs << endl;
+    ofs << std::endl;
     mgraph[par]=g;
     l->AddEntry(g,par.c_str(), "lp");
     mg2->Add(g,"lp");
@@ -3423,7 +3440,7 @@ void check_common_cuts2(const Scan_t & SCAN, const std::vector<std::string> & cu
   }
 }
 
-void registration_efficiency_sys(const Scan_t & SCAN, const Selection_t & SEL,  std::string file_prefix="sys-") {
+void registration_efficiency_sys(const Scan_t & SCAN, const std::vector<Selection_t> & SEL,  std::string file_prefix="sys-") {
   gStyle->Reset("Pub");
   std::vector< std::pair<std::string, std::string > > pars
   {
@@ -3974,7 +3991,7 @@ void count3(Scan_t & D, std::string cut="", std::string filter="") {
   }
 }
 
-void cmpall(Scan_t DATA, Scan_t SIGNAL, Selection_t &S) {
+void cmpall(Scan_t DATA, Scan_t SIGNAL, std::vector<Selection_t> &S) {
   //cmp({SIGNAL , DATA} , S , "ptem"           , "" , "NORM" , 40 , 0   , 1.1);
   //cmp({SIGNAL , DATA} , S , "cos_theta_mis2" , "" , "NORM" , 40 , -1  , +1);
   //cmp({SIGNAL , DATA} , S , "acop"           , "" , "NORM" , 40 , 0   , TMath::Pi());

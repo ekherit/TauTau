@@ -21,6 +21,7 @@
 #include <map>
 #include "Config.h"
 
+
 #include "Draw.h"
 
 //ems3 mh noemc mylum2
@@ -210,10 +211,7 @@ std::vector<ParticleID_t> PID =
   }
 };
 
-
-Selection_t SEL12 =
-{
-  "sel12", //selection name
+std::vector<Selection_t> SEL12 =  make_selections(PID, 
   "Ncg==2"
   "&& Ncg==Ncc"
   "&& abs(vz[0])<10 && abs(vz[1])<10"
@@ -224,105 +222,128 @@ Selection_t SEL12 =
   "&& pt[0] > 0.2 && pt[1] > 0.2"
   "&& cgood"
   "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
- "&& ptem50>0.25 && ptem50<1.1"
+   "&& ptem50>0.25 && ptem50<1.1"
   , 
-
-  PID,
-  { 
-//    {"μμ",      "NnE50==0 && uu "},
-    {"eX",      "NnE50==0 && eX && missed_photon_angle"},
-    {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
-  },
-};
-
-Selection_t SELEE =
-{
-  "sel12", //selection name
-  "Ncg==2"
-  "&& Ncg==Ncc"
-  "&& abs(vz[0])<10 && abs(vz[1])<10"
-  "&& vxy[0]<1.0 && vxy[1]<1.0"
-  "&& E[0]>0.025 && E[1]>0.025"
-  "&& q[0]==-1 && q[1]==1"
-  "&& p[0] < 1.1 && p[1] < 1.1"
-  "&& pt[0] > 0.2 && pt[1] > 0.2"
-  "&& cgood"
-  "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
-  "&& ptem50>0.25 && ptem50<1.1"
-  , 
-
-  PID,
-  { 
-    //{"ee",      "NnE50==0 && ee && missed_photon_angle"},
-    {"uu",      "NnE50==0 && uu && missed_photon_angle"},
-  },
-};
-
-Selection_t SELN =
-{
-  "seln", //selection name
-  "Ncg==2"
-  "&& Ncg==Ncc"
-  "&& abs(vz[0])<10 && abs(vz[1])<10"
-  "&& vxy[0]<1.0 && vxy[1]<1.0"
-  "&& E[0]>0.025 && E[1]>0.025"
-  "&& q[0]==-1 && q[1]==1"
-  "&& p[0] < 1.1 && p[1] < 1.1"
-  "&& pt[0] > 0.2 && pt[1] > 0.2"
-  "&& cgood"
-  "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
-  "&& ptem50>0.25 && ptem50<1.1"
-  , 
-
-  PID,
   { 
     {"eX",      "NnE50==0 && eX && missed_photon_angle"},
     {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
-    {"ee",      "NnE25==0 && ee && Emis>1.8 && ptem25 > 0.34*(1+cos_theta_mis2^2) && acop>0.1"},
-    {"μμ",      "NnE25==0 && uu && ptem25>0.2"},
-    {"ππ",      "NnE25==0 && pipi && ptem25>0.15 &&  1.7 < Emis && Emis < 1.95"},
-    {"μπ",      "NnE25==0 && upi && barrel"},
-    {"πρ",      "Nng==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8"},
-    {"μρ",      "Nng==2 && Npi0 == 1 && urho && acop>0.1"},
-    //{"Xρ",      "Nng==2   && XX && Mpi0[0] < 0.14 && Mpi0[0]>0.12" },
-    //{"XX",      "NnE50==0 && XX" },
-  },
-};
+  }
+  );
 
-Selection_t SEL_HIGH_BG =
-{
-  "sel_high_bg", //selection name
-  "Ncg<=3"
-  "&& Ncg==Ncc"
-  "&& E[0]>0.025 && E[1]>0.025"
-  "&& q[0]==-1 && q[1]==1"
-  "&& cgood"
-  "&& abs(vz[0])<12 && abs(vz[1])<12"  // cosm
-  "&& vxy[0]<1.2 && vxy[1]<1.2"        //cosm
-  "&& 1 < tof[0] && tof[0] < 6 && 1 < tof[1] && tof[1] < 6" //cosm
-  "&& p[0] < 1.2 && p[1] < 1.2" //ISR
-  "&& pt[0] > 0.05 && pt[1] > 0.05" //beam
-  "&& ptem50>0.20 && ptem50<1.1" //twogam
-  , 
 
-  PID,
-  { 
-    {"eX",      "NnE50==0 && eX && abs(cos_theta_mis)<0.95"},
-    {"eρ",     "(Nng==2 || Nng==3) && eX && good_emc_time" },
-  },
-};
+//Selection_t SEL12 =
+//{
+//  "sel12", //selection name
+//  "Ncg==2"
+//  "&& Ncg==Ncc"
+//  "&& abs(vz[0])<10 && abs(vz[1])<10"
+//  "&& vxy[0]<1.0 && vxy[1]<1.0"
+//  "&& E[0]>0.025 && E[1]>0.025"
+//  "&& q[0]==-1 && q[1]==1"
+//  "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& pt[0] > 0.2 && pt[1] > 0.2"
+//  "&& cgood"
+//  "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
+// "&& ptem50>0.25 && ptem50<1.1"
+//  , 
+//
+//  PID,
+//  { 
+////    {"μμ",      "NnE50==0 && uu "},
+//    {"eX",      "NnE50==0 && eX && missed_photon_angle"},
+//    {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
+//  },
+//};
+
+//Selection_t SELEE =
+//{
+//  "sel12", //selection name
+//  "Ncg==2"
+//  "&& Ncg==Ncc"
+//  "&& abs(vz[0])<10 && abs(vz[1])<10"
+//  "&& vxy[0]<1.0 && vxy[1]<1.0"
+//  "&& E[0]>0.025 && E[1]>0.025"
+//  "&& q[0]==-1 && q[1]==1"
+//  "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& pt[0] > 0.2 && pt[1] > 0.2"
+//  "&& cgood"
+//  "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
+//  "&& ptem50>0.25 && ptem50<1.1"
+//  , 
+//
+//  PID,
+//  { 
+//    //{"ee",      "NnE50==0 && ee && missed_photon_angle"},
+//    {"uu",      "NnE50==0 && uu && missed_photon_angle"},
+//  },
+//};
+//
+//Selection_t SELN =
+//{
+//  "seln", //selection name
+//  "Ncg==2"
+//  "&& Ncg==Ncc"
+//  "&& abs(vz[0])<10 && abs(vz[1])<10"
+//  "&& vxy[0]<1.0 && vxy[1]<1.0"
+//  "&& E[0]>0.025 && E[1]>0.025"
+//  "&& q[0]==-1 && q[1]==1"
+//  "&& p[0] < 1.1 && p[1] < 1.1"
+//  "&& pt[0] > 0.2 && pt[1] > 0.2"
+//  "&& cgood"
+//  "&& 2.5 < tof[0] && tof[0] < 5.5 && 2.5 < tof[1] && tof[1] < 5.5"
+//  "&& ptem50>0.25 && ptem50<1.1"
+//  , 
+//
+//  PID,
+//  { 
+//    {"eX",      "NnE50==0 && eX && missed_photon_angle"},
+//    {"eρ",     "Nng==2   && eX && Mpi0[0] < 0.14 && Mpi0[0]>0.12 && good_emc_time" },
+//    {"ee",      "NnE25==0 && ee && Emis>1.8 && ptem25 > 0.34*(1+cos_theta_mis2^2) && acop>0.1"},
+//    {"μμ",      "NnE25==0 && uu && ptem25>0.2"},
+//    {"ππ",      "NnE25==0 && pipi && ptem25>0.15 &&  1.7 < Emis && Emis < 1.95"},
+//    {"μπ",      "NnE25==0 && upi && barrel"},
+//    {"πρ",      "Nng==2 && Npi0 == 1 && pirho && acop > 1.2 && Emis>1.5 && Emis <1.8"},
+//    {"μρ",      "Nng==2 && Npi0 == 1 && urho && acop>0.1"},
+//    //{"Xρ",      "Nng==2   && XX && Mpi0[0] < 0.14 && Mpi0[0]>0.12" },
+//    //{"XX",      "NnE50==0 && XX" },
+//  },
+//};
+//
+//Selection_t SEL_HIGH_BG =
+//{
+//  "sel_high_bg", //selection name
+//  "Ncg<=3"
+//  "&& Ncg==Ncc"
+//  "&& E[0]>0.025 && E[1]>0.025"
+//  "&& q[0]==-1 && q[1]==1"
+//  "&& cgood"
+//  "&& abs(vz[0])<12 && abs(vz[1])<12"  // cosm
+//  "&& vxy[0]<1.2 && vxy[1]<1.2"        //cosm
+//  "&& 1 < tof[0] && tof[0] < 6 && 1 < tof[1] && tof[1] < 6" //cosm
+//  "&& p[0] < 1.2 && p[1] < 1.2" //ISR
+//  "&& pt[0] > 0.05 && pt[1] > 0.05" //beam
+//  "&& ptem50>0.20 && ptem50<1.1" //twogam
+//  , 
+//
+//  PID,
+//  { 
+//    {"eX",      "NnE50==0 && eX && abs(cos_theta_mis)<0.95"},
+//    {"eρ",     "(Nng==2 || Nng==3) && eX && good_emc_time" },
+//  },
+//};
 
 
 auto & SEL = SEL12;
-std::vector<SelRef_t> SELS = {SEL12, SEL_HIGH_BG, SELN,SELEE};
+//std::vector<SelRef_t> SELS = {SEL12, SEL_HIGH_BG, SELN,SELEE};
+std::vector<SelRef_t> SELS = {SEL12};
 
 
 
-void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, Scan_t & M = SIGNAL, Config cfg = CFG)
+void doall(Scan_t & D = DATA/* data */ , std::vector<Selection_t> & S=SEL, Scan_t & M = SIGNAL, Config cfg = CFG)
 {
   std::cout << "Configurateion: " << cfg.name << "  luminosity: " << cfg.lum << std::endl;
-  S.apply_common_cut();
-  set_kptem(D,1.0); 
+  //S.apply_common_cut();
+  //set_kptem(D,1.0); 
   //GG_SEL = LOCAL_GG_SEL + (cfg.gglum_extra_cut != "" ? "&&"+cfg.gglum_extra_cut : "");
   //BB_SEL = LOCAL_BB_SEL + (cfg.eelum_extra_cut != "" ? "&&"+cfg.eelum_extra_cut : "");
   GG_SEL = LOCAL_GG_SEL && cfg.gglum_extra_cut;
@@ -333,7 +354,7 @@ void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, Scan_t & M = SIGNA
   print_luminosity(D);
   set_kptem(M,1.0);
   set_efficiency(result,M,N0MC);
-  std::string file_to_fit  = S.title;
+  std::string file_to_fit  = CFG.name;
   file_to_fit += "_" + cfg.energy_version;
   file_to_fit += "_"+cfg.lum;
   if(cfg.lum == "ee" && cfg.eelum_extra_cut != "") {
@@ -348,11 +369,11 @@ void doall(Scan_t & D = DATA/* data */ , Selection_t & S=SEL, Scan_t & M = SIGNA
     c.erase(std::remove(c.begin(), c.end(), '&'), c.end());
     file_to_fit += "_"+c;
   }
-  if(cfg.name != "") file_to_fit += "_"+cfg.name;
+  //if(cfg.name != "") file_to_fit += "_"+cfg.name;
   std::string prefix=file_to_fit;
   file_to_fit += ".txt";
   std::cout << "Ouput file: " << file_to_fit << "\n";
-  fit(result, file_to_fit,  S.title, cfg.lum);
+  fit(result, file_to_fit,  CFG.name, cfg.lum);
   //sleep(10);
   make_tex(print_tex(result, file_to_fit, prefix + "_fit.pdf"),prefix + ".tex");
 };
@@ -443,9 +464,9 @@ void select()
   GG_SEL = LOCAL_GG_SEL;
   TAUFIT = LOCAL_TAUFIT;
   double Kptem = 1.0;
-  for(auto & S : SELS) {
-    S.get().apply_common_cut();
-  }
+  //for(auto & S : SELS) {
+  //  S.get().apply_common_cut();
+  //}
 
   std::vector<ScanRef_t> LUM_MCs = {BB,GG};
   std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
