@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <type_traits>
 
 /* ==================== WORKING WITH UTF-8 ================================================== */
 
@@ -38,13 +39,41 @@ void print_utf(int width, const char * s)
   print_utf(width, std::string(s));
 };
 
-template<typename...Ts>
-std::string myfmt(std::string format, Ts...ts)
-{
-  static char MY_FORMAT_BUF[65535];
-  sprintf(MY_FORMAT_BUF, format.c_str(), ts...);
-  return std::string(MY_FORMAT_BUF);
-};
+namespace ibn {
+  template<typename...Ts>
+   inline  std::string format(std::string f, Ts...ts)
+    {
+      static char MY_FORMAT_BUF[65535];
+      snprintf(MY_FORMAT_BUF, sizeof(MY_FORMAT_BUF), f.c_str(), ts...);
+      return std::string(MY_FORMAT_BUF);
+    };
+
+  template<typename...Ts>
+    std::string mformat(std::string format, Ts...ts);
+
+  template<>
+    inline std::string mformat(std::string f) { return ""; };
+
+  template<typename T, typename...Ts>
+    inline std::string mformat(std::string f, T t, Ts...ts)
+    {
+      std::string lf="%";
+      if constexpr (std::is_same_v<double,decltype(t)> ){
+        lf+=f+"f";
+      }
+      if constexpr (std::is_same_v<int,decltype(t)> ){
+        lf  += f.substr(0,f.find('.')) + "d";
+      }
+      if constexpr (std::is_same_v<long,decltype(t)> ){
+        lf  += f.substr(0,f.find('.')) + "ld";
+      }
+      if constexpr (std::is_same_v<std::string,decltype(t)>  || std::is_same_v<const char *,decltype(t)> ){
+        lf  += f.substr(0,f.find('.')) + "s";
+      }
+      //std::cout << f << "  " << lf << "  " << t << std::endl;
+      return format(lf,t) + mformat(f, ts...);
+    };
+}
 
 /* ========================================================================================== */
 
@@ -459,6 +488,72 @@ template<typename Container, typename Func>
 typename Container::iterator find_best(Container & c, Func F)
 {
   return find_best(std::begin(c), std::end(c), F);
+}
+
+#include <sys/ioctl.h>
+#include <termios.h>
+
+//inline bool kbhit(void)
+//{
+//    termios term;
+//    tcgetattr(0, &term);
+//
+//    termios term2 = term;
+//    term2.c_lflag &= ~ICANON;
+//    tcsetattr(0, TCSANOW, &term2);
+//
+//    int byteswaiting;
+//    ioctl(0, FIONREAD, &byteswaiting);
+//
+//    tcsetattr(0, TCSANOW, &term);
+//
+//    return byteswaiting > 0;
+//}
+
+//inline bool kbhit() {
+//  static const int STDIN = 0;
+//  static bool initialized = false;
+//
+//  if (! initialized) {
+//    // Use termios to turn off line buffering
+//    termios term;
+//    tcgetattr(STDIN, &term);
+//    term.c_lflag &= ~ICANON;
+//    tcsetattr(STDIN, TCSANOW, &term);
+//    setbuf(stdin, NULL);
+//    initialized = true;
+//  }
+//
+//  int bytesWaiting;
+//  ioctl(STDIN, FIONREAD, &bytesWaiting);
+//  return bytesWaiting>0;
+//}
+
+inline bool kbhit(void)
+{
+  struct termios oldt, newt;
+  int ch;
+  int oldf;
+
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+  ch = getchar();
+
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+  if(ch != EOF)
+  {
+    //ungetc(ch, stdin);
+    return true;
+  }
+
+  return false;
 }
 
 #endif

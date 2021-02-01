@@ -85,7 +85,7 @@ void set_alias(TTree * tt, double W, double L=1.0)
 
 
 
-  tt->SetAlias("lum",myfmt("%6.2f*1",L).c_str());
+  tt->SetAlias("lum",ibn::format("%6.2f*1",L).c_str());
   char Eb[1024];
   sprintf(Eb,"%5.3f*1",W*0.5);
   tt->SetAlias("Eb",Eb);

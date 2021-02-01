@@ -144,6 +144,30 @@ struct ScanPoint_t : public AcceleratorInfo_t
   };
   */
 
+  template<typename ... Projs>
+    void print_column(void) const {};
+
+  template<typename Proj1, typename ... Projs>
+    void print_column(Proj1 proj1,  Projs... ps) const
+    {
+      constexpr size_t Nbuf{1024};
+      char buf[Nbuf];
+      constexpr size_t Ns = sizeof...(ps);
+
+      auto data = std::invoke(proj1,*this);
+      if constexpr (std::is_same_v<double,decltype(data)> ){
+        snprintf(buf,Nbuf, "%15.6f", data);
+      }
+      if constexpr (std::is_same_v<int,decltype(data)> || std::is_same_v<unsigned,decltype(data)> ){
+        snprintf(buf,Nbuf, "%15d", data);
+      }
+      if constexpr (std::is_same_v<int,decltype(data)> || std::is_same_v<long,decltype(data)> ){
+        snprintf(buf,Nbuf, "%15ld", data);
+      }
+      std::cout << buf;
+      if constexpr (Ns>0) print_column(ps...);
+    }
+
 };
 
 using PointSelectionResult_t = ScanPoint_t;

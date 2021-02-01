@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IBN_TAU_DRAW_HELPER_H
+#define IBN_TAU_DRAW_HELPER_H
 
 #include <TCanvas.h>
 #include <TMultiGraph.h>
@@ -6,6 +7,10 @@
 
 static int HISTO_INDEX = 0; //current canvas number
 static int CANVAS_INDEX = 0; //current canvas number
+
+inline std::string get_unique_histogram_name(void) {
+  return "h"+std::to_string(++HISTO_INDEX);
+};
 
 #include "PhysConst.h"
 #include "ScanPoint.h"
@@ -34,28 +39,6 @@ inline TCanvas * make_canvas(std::string title)
 }
 
 
-template<typename ProjX, typename ProjY>
-inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy) {
-  make_canvas("draw");
-  TGraphErrors * g = new TGraphErrors;
-  for(const auto & sp : SPL) {
-    double x = std::invoke(projx, sp).value;
-    double y = std::invoke(projy, sp).value;
-    double dx = std::invoke(projx, sp).error;
-    double dy = std::invoke(projy, sp).error;
-    int n = g->GetN();
-    g->SetPoint(n, x,y);
-    g->SetPointError(n,dx,dy);
-  }
-  g->SetMarkerStyle(21);
-  g->Draw("ap");
-  return g;
-}
-
-
-inline TGraph * draw_efficiency(const Scan_t & SR) {
-  return draw(SR, [](const auto & sp) { return sp.energy; }, [](const auto & sp) { return sp.tt.efficiency; });
-}
 
 inline void draw_lum_per_run2(const std::vector<ScanPoint_t> & SPL)
 {
@@ -188,3 +171,96 @@ inline TGraphErrors * draw_result(const char * selection, const std::vector<Scan
   }
   return g;
 }
+
+//std::vector<std::vector<PointSelectionResult_t>> draw2(const std::vector<std::vector<ScanPoint_t> *> P, const std::string & var, const std::string & sel, std::string gopt="")
+//{
+//  auto c = new TCanvas;
+//  int canvas_pos_x = 0;
+//  int canvas_width_x = 1920*2/5.0*P.size();
+//  int canvas_width_y = 1080*0.5;
+//  static int canvas_pos_y = 0;
+//  c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
+//  canvas_pos_y+=canvas_width_y+60;
+//  canvas_pos_y%=(1080*2);
+//  c->SetWindowSize(canvas_width_x,canvas_width_y);
+//  c->SetTitle(sel.c_str());
+//  std::vector<std::vector<PointSelectionResult_t>> Result(P.size());
+//  //find the Scan with bigest number of points
+//  int nS = std::distance(P.begin(), std::max_element(P.begin(),P.end(),[](auto s1, auto s2){ return s1->size() < s2->size(); }));
+//  std::vector<ScanPoint_t> & S = *P[nS];
+//  c->Divide(S.size() ,1);
+//
+//  auto draw = [&](int s, int color) {
+//    auto & scan = *P[s];
+//    Result[s].resize(scan.size());
+//    for(int i=0;i<scan.size();++i) {
+//      int nc = i==nS ? 
+//               1+i :
+//               1+std::distance(S.begin(), find_best(S, [&scan,&i](const auto & p) { return  std::abs(p.energy-scan[i].energy); } ));
+//      c->cd(nc);
+//      auto & r       = Result[s][i]; //point result
+//      auto & p       = scan[i];      //current point
+//      p.tt.tree->SetLineColor(s);
+//      p.tt.tree->SetMarkerColor(s);
+//      if ( i == nS ) r.tt.N = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+//      else r.tt.N = p.tt.tree->Draw(var.c_str(),sel.c_str(),(gopt+"SAME").c_str());  
+//      std::string result_title = p.title  + ": " + std::to_string(r.tt.N) + " events";
+//      p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
+//      //if(p.gg) r.Ngg = p.gg->GetEntries();
+//      //if(p.bb) r.Nbb = p.gg->GetEntries(BB_SEL.c_str());
+//      r.name         = p.title;
+//      r.root_name    = p.title;
+//      r.tex_name     = p.title;
+//      r.energy       = p.energy;
+//      r.luminosity   = p.luminosity;
+//    }
+//  };
+//  for(int s = 0; s < P.size(); ++s)
+//  {
+//    draw(s,s+1);
+//  }
+//  return Result;
+//}
+//
+//std::vector<PointSelectionResult_t> draw(const std::vector<ScanPoint_t> & P, const std::string  var, const std::string  sel, std::string gopt="")
+//{
+//  auto c = new TCanvas;
+//  int canvas_pos_x = 0;
+//  int canvas_width_x = 1920*2/5.0*P.size();
+//  int canvas_width_y = 1080*0.5;
+//  static int canvas_pos_y = 0;
+//  c->SetWindowPosition(canvas_pos_x,canvas_pos_y);
+//  canvas_pos_y+=canvas_width_y+60;
+//  canvas_pos_y%=(1080*2);
+//  c->SetWindowSize(canvas_width_x,canvas_width_y);
+//  c->SetTitle(sel.c_str());
+//  c->Divide(P.size(),1);
+//  std::vector<PointSelectionResult_t> R(P.size());
+//  for(int i=0;i<P.size();++i)
+//  {
+//    c->cd(i+1);
+//    auto & r       = R[i];
+//    auto & p       = P[i];
+//    r.tt.N         = p.tt.tree->Draw(var.c_str(),sel.c_str(),gopt.c_str());  
+//    std::string result_title = p.title  + ": " + std::to_string(r.tt.N) + " events";
+//    p.tt.tree->GetHistogram()->SetTitle(result_title.c_str());
+//    //if(p.gg) r.Ngg = p.gg->GetEntries();
+//    //if(p.bb) r.Nbb = p.gg->GetEntries();
+//    r.name         = p.title;
+//    r.root_name    = p.title;
+//    r.tex_name     = p.title;
+//    r.energy       = p.energy;
+//    r.luminosity   = p.luminosity;
+//  }
+//  return R;
+//}
+//
+//std::vector<PointSelectionResult_t> draw(std::vector<ScanPoint_t> & DATA, const Selection_t & S, int i, const std::string  var,  std::string extracut="", std::string gopt="") 
+//{
+//  set_pid(DATA, S.pid);
+//  std::string cut = S[i].cut;
+//  if(S.cut!="") cut += " && " + S.cut;
+//  if(extracut!="")     cut += " && " + extracut;
+//  return draw(DATA, var, cut, gopt);
+//};
+#endif

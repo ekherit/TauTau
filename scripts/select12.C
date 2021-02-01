@@ -21,6 +21,8 @@
 #include <map>
 #include "Config.h"
 
+#include "Draw.h"
+
 //ems3 mh noemc mylum2
 std::string LOCAL_TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2299 --ems-cmenergy-shift=-0.0201182 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
 //ems2
@@ -131,8 +133,9 @@ std::string LOCAL_GG_SEL = "";
 //std::string local_mh_sel = "echmin>0.05 && nchc==nchgcemc && ptmin>0.2 && s>0.1 && maxctheta<0.8 && minctheta>-0.8 && nchc>2";
 //std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.7 && minctheta>-0.7 && Nchc>2";
 //std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>3";
+
 //теперь это новый отбор многоадронных
-std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
 //std::string LOCAL_MH_SEL = "S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
 //std::string LOCAL_MH_SEL = "ptmin>0.19 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
 //std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.15 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
@@ -145,6 +148,12 @@ std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0
 //std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
 //std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.7 && fabs(cos(theta[1]))<0.7 && theta[0]+theta[1]-TMath::Pi()<0.04 && theta[0]+theta[1]-TMath::Pi()>-0.04 && fabs(phi[0]-phi[1])-TMath::Pi()<0.01 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.05";
 std::string PRIVALOV_GG_SEL="fabs(cos(theta[0]))<0.8 && fabs(cos(theta[1]))<0.8 && theta[0]+theta[1]-TMath::Pi()<0.055 && theta[0]+theta[1]-TMath::Pi()>-0.06 && fabs(phi[0]-phi[1])-TMath::Pi()<0.014 && fabs(phi[0]-phi[1])-TMath::Pi()>-0.054";
+
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && Nchc==Nchgcemc && ptmin>0.08  && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "Echmin>0.05 && ptmin>0.08  && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+//std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+std::string LOCAL_MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchgcemc>2";
 
 //particla identification configuration
 std::vector<ParticleID_t> PID = 
@@ -415,8 +424,15 @@ void res(std::string suffix="_test") {
   std::string jpsiname = "jpsi"+suffix+".txt";
   std::string psiname = "psip"+suffix+".txt";
   std::string resname = "res"+suffix+".txt";
-  res(jpsiname, JPSI, JPSIMC, JPSIGG, JPSIGGMC);
-  res(psiname, PSIP, PSIPMC, PSIGG, PSIGGMC);
+  auto jpsi = res(jpsiname, JPSI, JPSIMC, JPSIGG, JPSIGGMC);
+  auto psi  = res(psiname, PSIP, PSIPMC, PSIGG, PSIGGMC);
+  auto Ws=[](const auto & sp) { return sp.energy; };
+  auto Eps =  [](auto sp) { return sp.tt.efficiency; };
+  auto Cors =  [](auto sp) { return sp.tt.effcor; };
+  draw(jpsi,Ws, Eps);
+  draw(psi, Ws, Eps);
+  draw(jpsi,Ws, Cors);
+  draw(psi, Ws, Cors);
   system(("cat "+jpsiname + " " + psiname + " > " +  resname).c_str());
 }
 
@@ -561,4 +577,10 @@ void calc_cbs_spread(const Scan_t & S) {
   std::cout << "Average spread: " << A.average() << " +-  " << A.sigma_average() << std::endl;
   g->Draw("a*");
   g->Fit("pol0");
+}
+
+inline std::tuple<TH1*,TH1*> 
+cmpjpsi(int i, std::string var, std::string sel, int Nbin, double xmin, double xmax) {
+  if(i>=std::min(JPSI.size(), JPSIMC.size())) return {};
+  return cmp(JPSI[i],JPSIMC[i], &ScanPoint_t::tt, var,sel,"NORM",Nbin,xmin,xmax);
 }
