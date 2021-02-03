@@ -73,12 +73,12 @@ struct DataSample_t  : public AcceleratorInfo_t
     //d.cross_section = d1.cross_section
     efficiency += d.efficiency;
     effcor += d.effcor; 
-    //if(!tree)  tree.reset( new TChain ( d.tree->GetName(), d.tree->GetTitle()));
+    if(!tree)  tree.reset( new TChain ( d.tree->GetName(), d.tree->GetTitle()));
 
-    //if(std::string(tree->GetName()) != std::string(tree->GetName())) {
-    //  throw std::runtime_error("Unable to add different chains");
-    //};
-    //dynamic_pointer_cast<TChain>(tree)->Add( dynamic_cast<TChain*>(d.tree.get()) );
+    if(std::string(tree->GetName()) != std::string(tree->GetName())) {
+      throw std::runtime_error("Unable to add different chains");
+    };
+    dynamic_pointer_cast<TChain>(tree)->Add( dynamic_cast<TChain*>(d.tree.get()) );
     return d;
   };
 };
@@ -87,17 +87,6 @@ inline DataSample_t operator+(const DataSample_t & d1, const DataSample_t & d2) 
   DataSample_t d;
   d+=d1;
   d+=d2;
-  //d.N = d1.N + d2.N;
-  //d.Nmc = d1.Nmc + d2.Nmc;
-  //d.N0mc = d1.N0mc + d2.N0mc;
-  ////d.cross_section = d1.cross_section
-  //d.efficiency = d1.efficiency + d2.efficiency;
-  //d.effcor = d1.effcor + d2.effcor;
-  //if(std::string(d1.tree->GetName()) != std::string(d2.tree->GetName())) {
-  //  throw std::runtime_error("Unable to add different chains");
-  //};
-  //d.tree.reset( new TChain ( d1.tree->GetName(), d1.tree->GetTitle()));
-  //dynamic_pointer_cast<TChain>(d.tree)->Add( dynamic_cast<TChain*>(d1.tree.get()) );
   return d;
 };
 

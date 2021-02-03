@@ -311,7 +311,7 @@ Scan_t read_privalov_lum(std::string data_dir, const Scan_t & cfg, std::string f
 }
 
 
-std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+inline std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
@@ -642,7 +642,7 @@ void read_galuga_cross_section(std::string filename, Scan_t & eeee, Scan_t & eeu
   }
 }
 
-void read_privalov_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+inline void read_privalov_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
   std::ifstream ifs(filename);
   if(!ifs) {
     std::cerr << "ERROR: Unable to open file " << filename << "  for reading gg privalov cross section" << std::endl;
@@ -659,7 +659,7 @@ void read_privalov_gg_cross_section(std::string filename, std::vector<ScanPoint_
 } 
 
 template<typename Projector>
-void me(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="") {
+inline void me(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="") {
   for(auto & sp : scan) {
     auto & ds = proj(sp);
     ds.N0mc = N0_MC;
