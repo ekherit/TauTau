@@ -749,7 +749,7 @@ std::vector<PointSelectionResult_t> & set_efficiency(std::vector<PointSelectionR
     }
     r.tt.efficiency = eps;
   }
-  auto & reference_point = * find_best(psr, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
+  auto & reference_point = * find_minimum(psr, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
   //normalize efficiency correction to threshold efficiency
   for(auto & rp : psr) {
     rp.tt.effcor = rp.tt.efficiency / reference_point.tt.efficiency.value;
@@ -1578,35 +1578,6 @@ void set_res_gg_luminosity(Scan_t & Data, const Scan_t & Mc) {
   }
 };
 
-void print_luminosity(Scan_t & data) {
-  //char buf[1024*16];
-  printf("%5s %10.6s %10.6s %10.6s %10.6s %10s %10.6s %10.6s %10s %10s\n",
-      "point", "E,GeV", "Lonline,pb^-1","Lgg, pb^-1", "dLgg,pb^-1", "Ngg","Lbb,pb^-1", "dLbb,pb^-1", "Nbb", "Lbb/Lgg"
-      );
-  ibn::valer<double> Lgg={0,0};
-  ibn::valer<double> Lee={0,0};
-  double Lonline=0;
-  long Ngg=0;
-  long Nee=0;
-  for(auto & sp : data) {
-    Lgg+=sp.gg.luminosity;
-    Lee+=sp.bb.luminosity;
-    Ngg+=sp.gg.N;
-    Nee+=sp.bb.N;
-    Lonline+sp.luminosity.value;
-    printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
-        sp.title.c_str(), sp.energy.value, sp.luminosity.value, 
-        sp.gg.luminosity.value*1e-3, sp.gg.luminosity.error*1e-3, sp.gg.N,
-        sp.bb.luminosity.value*1e-3, sp.bb.luminosity.error*1e-3, sp.bb.N,
-        sp.bb.luminosity.value/sp.gg.luminosity.value
-        );
-  }
-    printf("%5s %10s %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f %10.6f\n",
-        "total", "", Lonline, Lgg.value*1e-3, Lgg.error*1e-3, Ngg,
-                     Lee.value*1e-3, Lee.error*1e-3, Nee,
-                     (Lee/Lgg).value, (Lee/Lgg).error
-        );
-}
 
 void draw_luminosity(Scan_t & data) {
   auto make_graph = [&data] ( int color, int marker, int line, auto F ) {

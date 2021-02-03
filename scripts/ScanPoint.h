@@ -73,12 +73,12 @@ struct DataSample_t  : public AcceleratorInfo_t
     //d.cross_section = d1.cross_section
     efficiency += d.efficiency;
     effcor += d.effcor; 
-    if(!tree)  tree.reset( new TChain ( d.tree->GetName(), d.tree->GetTitle()));
+    //if(!tree)  tree.reset( new TChain ( d.tree->GetName(), d.tree->GetTitle()));
 
-    if(std::string(tree->GetName()) != std::string(tree->GetName())) {
-      throw std::runtime_error("Unable to add different chains");
-    };
-    dynamic_pointer_cast<TChain>(tree)->Add( dynamic_cast<TChain*>(d.tree.get()) );
+    //if(std::string(tree->GetName()) != std::string(tree->GetName())) {
+    //  throw std::runtime_error("Unable to add different chains");
+    //};
+    //dynamic_pointer_cast<TChain>(tree)->Add( dynamic_cast<TChain*>(d.tree.get()) );
     return d;
   };
 };
@@ -171,7 +171,15 @@ struct ScanPoint_t : public AcceleratorInfo_t
   auto select(Projector  proj, std::string  sel) const ->  ScanPoint_t{
     ScanPoint_t result = *this; //copy data
     DataSample_t & ds = std::invoke(proj,result);
-    ds.N = ds.GetEntries(sel);
+    long N = ds.GetEntries(sel);
+    ds.N = N;
+    if(result.luminosity.value < 0) { //Monte Carlo case
+      ds.Nmc = N;
+      auto & eps = ds.efficiency;
+      double N0 = ds.N0mc;
+      ds.efficiency.value = double(N)/N0;
+      ds.efficiency.error = sqrt( eps.value/N0 * ( 1.0 - eps.value));
+    } 
     return result;
   };
 

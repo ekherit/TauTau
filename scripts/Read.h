@@ -53,7 +53,7 @@ struct PointDiscriminatorByRunList
   }
 };
 
-void set_alias(TTree * tt, double W, double L=1.0)
+inline void set_alias(TTree * tt, double W, double L=1.0)
 {
   tt->SetAlias("good_emc_time", "0<=ntemc[0]&&ntemc[0]<=14&&0<=ntemc[1]&&ntemc[1]<=14");
   tt->SetAlias("cgood","abs(cos(theta[0]))<0.93 && abs(cos(theta[1]))<0.93");
@@ -132,7 +132,7 @@ void set_alias(TTree * tt, double W, double L=1.0)
   tt->SetAlias("all_cut",   "lpipi0_cut || eu_cut || epi_cut");
 }
 
-Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+inline Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
 {
   std::cout << "Reading data directory \"" << data_dir << "\":\n";
   auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root

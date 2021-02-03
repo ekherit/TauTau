@@ -67,30 +67,8 @@
 
 #include "pdg_table.h"
 
-
-
-//std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=-0.078";
-static std::string TAUFIT = "taufit --lum=bes --tau-spread=1.258 --energy-correction=+0.011";
-//static std::string PSIFIT = "psifit --free-lum --free-effcor --pdg-shift-file=shift.txt ";
-static std::string PSIFIT = "psifit --free-lum --free-effcor --free-mpdg --minos ";
-
-
-void clean_taufit(void) {
-  system("killall -9 taufit");
-}
-
-static std::string BB_SEL = "(acol-TMath::Pi())>-0.03 && abs(cos(theta[0]) < 0.8 && abs(cos(theta[1])) < 0.8";
-static std::string GG_SEL = "";
-
-
-std::map<std::string, std::string > SelMap;
-
-
-void set_pid(Scan_t D, const ParticleID_t & pid) {
-
-};
-
-struct Analysis {
+struct Analysis 
+{
   const std::string WORKDIR="./";
   const std::string SHAREDIR="/home/nikolaev/tauscan/TauTau/share/";
   std::string TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2299 --ems-cmenergy-shift=-0.0201182 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
@@ -146,6 +124,7 @@ struct Analysis {
   std::string MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
   std::vector<ParticleID_t> PID;
   std::vector<Selection_t> SEL;
+
   Analysis(void) {
     std::cout << "In default constructor\n";
     Init();
@@ -154,10 +133,10 @@ struct Analysis {
   Analysis(std::string workdir, std::string rtname) : 
     WORKDIR{workdir}, 
     runtable_name(SHAREDIR+rtname) 
-  {
-    std::cout << "In rtname\n";
-    Init();
-  };
+    {
+      std::cout << "In rtname\n";
+      Init();
+    };
 
   Analysis(
       std::string workdir, 
@@ -170,111 +149,37 @@ struct Analysis {
     runtable_name{SHAREDIR+rtname},
     PID(pid),
     SEL(make_selections(pid,common_cut, sel) ) 
-  {
-    Init();
-  };
-
-  //Analysis(std::string workdir, std::string rtname, const  Selection_t & sel) : 
-  //  WORKDIR{workdir},
-  //  runtable_name{SHAREDIR+rtname}, 
-  //  SEL(sel) 
-  //{
-  //  std::cout << "In rtname\n";
-  //  Init();
-  //};
-
-
-  /*
-  Analysis(const Analysis & an) {
-    std::cout << "In constructor\n";
-    *this = an;
-    Init();
-  };
-  */
-
-  void Init(void) {
-    std::cout << "Apply common cuts to SEL\n";
-    //SEL.apply_common_cut();
-    std::vector<ScanRef_t> LUM_MCs = {BB,GG};
-    //std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
-    //std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
-
-    std::map<std::string, ScanRef_t> GALUGA = {
-      {"ee", EEEE},
-      {"uu",  EEUU},
-      {"pipi", EEPIPI},
-      {"KK", EEKK},
+    {
+      Init();
     };
 
-    //for( auto & p: GALUGA) BGall_MCs.push_back(p.second);
 
-    read_tau_cross_section(SHAREDIR+"/tau_cross_section.txt", SIGNAL);
-    read_bhabha_cross_section(SHAREDIR+"/bhabha_cross_section.txt", BB);
-    read_gg_cross_section(SHAREDIR+"/gg_cross_section.txt", GG);
-    read_galuga_cross_section(SHAREDIR+"/galuga_cross_section.txt", GALUGA);
-    read_mumu_or_pipi_cross_section(SHAREDIR+"/mumu_cross_section.txt", UU);
-    read_pipi_cross_section(SHAREDIR+"/pipi_cross_section.txt", PIPI);
-    read_hadron_cross_section(SHAREDIR+"/hadron_cross_section.txt", HADR);
+  void Init(void);  
 
-    std::cout << "Setting  PID" << std::endl;
-    set_pid(DATA       , PID);
-    set_pid(SIGNAL         , PID);
-    for(auto d : BGs)       set_pid(d,PID);
-    for(auto d : LUM_MCs)   set_pid(d,PID);
-
-    std::cout << "Measuring luminosity" << std::endl;
+  void measure_tau_luminosity(void) {
     measure_luminosity(DATA,BB,GG,1e6);
     set_luminosity(DATA,SIGNAL);
     for(auto d : BGs) set_luminosity(DATA,d);
     set_gg_luminosity(DATA,BB);
   };
 
-  void measure_luminosity(void) {
-
-  };
-
   void set_pid(std::vector<ScanPoint_t> & D, const std::vector<ParticleID_t> & Pid);
 
-  template<typename Projector> 
-  void measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, Projector proj);
-  void measure_bhabha_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel); 
-  void measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel); 
+  template<typename Projector> void measure_efficiency(Scan_t & scan, long N0_MC, Projector  proj, std::string sel="");
 
-  void measure_luminosity(Scan_t & data, Scan_t & bb, Scan_t & gg, long N0_MC) {
-    measure_gg_luminosity(data,gg,N0_MC, GG_SEL);
-    measure_bhabha_luminosity(data,bb,N0_MC, BB_SEL);
-  }
+  template<typename Projector> void measure_luminosity        ( Scan_t & data , Scan_t & mc          , long N0_MC      , std::string sel   , Projector proj);
 
-  void set_luminosity(Scan_t & DATA, Scan_t & MC ) {
-    for(auto & mc : MC ) {
-      auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
-      mc.bb = p.bb;
-      mc.gg = p.gg;
-    }
-  }
-
-  void set_luminosity(Scan_t & DATA, std::map<std::string, Scan_t>  & G ) {
-    for(auto & [name, s] : G ) {
-      set_luminosity(DATA,s);
-    }
-  }
-
-  void set_gg_luminosity(Scan_t & DATA, Scan_t & MC ) {
-    for(auto & mc : MC ) {
-      auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
-      mc.gg = p.gg;
-    }
-  }
+  void measure_bhabha_luminosity ( Scan_t & data , Scan_t & mc          , long N0_MC      , std::string sel);
+  void measure_gg_luminosity     ( Scan_t & data , Scan_t & mc          , long N0_MC      , std::string sel);
+  void measure_luminosity        ( Scan_t & data , Scan_t & bb          , Scan_t & gg     , long N0_MC);
+  void set_luminosity            ( Scan_t & DATA , Scan_t & MC );
+  void set_luminosity            ( Scan_t & DATA , std::map<std::string , Scan_t>  & G );
+  void set_gg_luminosity         ( Scan_t & DATA , Scan_t & MC );
 
   //Apply selection cut "sel" to ProjSampe "sample" (tt,bb,gg) and return new Scan_t
-  template<typename ProjSample> 
-  auto select(const Scan_t & P, const std::string & sel,  ProjSample sample) const ->  Scan_t;
-
-  template<typename ProjSample> 
-  auto select(const Scan_t & P, const Selection_t & S, ProjSample sample, std::string extra_cut="") const -> SelectionResult_t;
-
-  template<typename ProjSample> 
-  auto select(const Scan_t & P, const std::vector<Selection_t> & S, ProjSample sample, std::string extra_cut="") const -> std::vector<SelectionResult_t>;
+  template<typename ProjSample> auto select(const Scan_t & P, const std::string & sel,  ProjSample sample) const ->  Scan_t;
+  template<typename ProjSample> auto select(const Scan_t & P, const Selection_t & S, ProjSample sample, std::string extra_cut="") const -> SelectionResult_t;
+  template<typename ProjSample> auto select(const Scan_t & P, const std::vector<Selection_t> & S, ProjSample sample, std::string extra_cut="") const -> std::vector<SelectionResult_t>;
 
   auto select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t;
   auto select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t;
@@ -285,18 +190,73 @@ struct Analysis {
   auto select_bb(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
   auto select_gg(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
 
-  auto select_tt(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
-  auto select_bb(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
-  auto select_gg(const Scan_t & P,        const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
+  auto select_tt(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
+  auto select_bb(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
+  auto select_gg(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
 
-  /*
-  auto select_tt(std::string extra_cut="") const -> std::vector<ChannelSelectionResult_t> {
-    return select_tt(DATA, SEL, extra_cut);
+  auto select_tt(std::string extra_cut="") const -> std::vector<SelectionResult_t> { return select_tt(DATA, SEL, extra_cut); }
+
+  template<typename Proj> void set_effcor    (Scan_t  & P, Proj proj, double Wref);
+  template<typename Proj> void set_efficiency(Scan_t  & psr,  const Scan_t & mc, Proj proj);
+  template<typename Proj> void set_effcor    (std::vector<SelectionResult_t>  & P, Proj proj, double Wref);
+  template<typename Proj> void set_efficiency(std::vector<SelectionResult_t>  & D /*data*/,  const std::vector<SelectionResult_t> & M /*Monte Carlo*/, Proj proj);
+
+  inline void do_tau(std::string extra_cut = "") {
+    if(!is_tau_luminosity_measured)  {
+      std::clog << "Measure tau luminosity...\n";
+      measure_tau_luminosity();
+      is_tau_luminosity_measured = true;
+    } else {
+      std::clog << "Tau luminosity already measured before\n";
+    };
+    print_luminosity(DATA);
+    std::clog << "Selecting tau tau events for data...\n";
+    auto result = select_tt(DATA,SEL,extra_cut);
+    std::clog << "Selecting tau tau events for MC...\n";
+    auto mc   = select_tt(SIGNAL,SEL,extra_cut);
+    set_effcor(mc, &ScanPoint_t::tt, 2*MTAU-1.0*MeV);
+    set_efficiency(result,mc, &ScanPoint_t::tt);
+    print_efficiency(result);
+    print_effcor(result);
+    save(fold(result), "test.txt");
   }
-  */
 
+  void save(const SelectionResult_t & sr, std::string  filename="scan.txt", std::string default_lum="gg")  const;
+
+  private:
+  bool is_tau_luminosity_measured = false;
 };
 
+inline void Analysis::Init(void) {
+  std::cout << "Apply common cuts to SEL\n";
+  //SEL.apply_common_cut();
+  std::vector<ScanRef_t> LUM_MCs = {BB,GG};
+  //std::vector<ScanRef_t> BG_MCs =  {HADR, UU, PIPI};
+  //std::vector<ScanRef_t> BGall_MCs =  BG_MCs;
+
+  std::map<std::string, ScanRef_t> GALUGA = {
+    {"ee", EEEE},
+    {"uu",  EEUU},
+    {"pipi", EEPIPI},
+    {"KK", EEKK},
+  };
+
+  //for( auto & p: GALUGA) BGall_MCs.push_back(p.second);
+
+  read_tau_cross_section(SHAREDIR+"/tau_cross_section.txt", SIGNAL);
+  read_bhabha_cross_section(SHAREDIR+"/bhabha_cross_section.txt", BB);
+  read_gg_cross_section(SHAREDIR+"/gg_cross_section.txt", GG);
+  read_galuga_cross_section(SHAREDIR+"/galuga_cross_section.txt", GALUGA);
+  read_mumu_or_pipi_cross_section(SHAREDIR+"/mumu_cross_section.txt", UU);
+  read_pipi_cross_section(SHAREDIR+"/pipi_cross_section.txt", PIPI);
+  read_hadron_cross_section(SHAREDIR+"/hadron_cross_section.txt", HADR);
+
+  std::cout << "Setting  PID" << std::endl;
+  set_pid(DATA       , PID);
+  set_pid(SIGNAL         , PID);
+  for(auto d : BGs)       set_pid(d,PID);
+  for(auto d : LUM_MCs)   set_pid(d,PID);
+};
 
 inline void Analysis::set_pid(std::vector<ScanPoint_t> & D, const std::vector<ParticleID_t> & Pid) 
 {
@@ -351,8 +311,19 @@ inline void Analysis::set_pid(std::vector<ScanPoint_t> & D, const std::vector<Pa
 };
 
 template<typename Projector>
+inline void Analysis::measure_efficiency(Scan_t & scan, long N0_MC, Projector  proj, std::string sel) {
+  for(auto & sp : scan) {
+    auto & ds = proj(sp);
+    ds.N0mc = N0_MC;
+    ds.Nmc = ds.tree->GetEntries(sel.c_str());
+    ds.efficiency.value = double(ds.Nmc)/ds.N0mc;
+    ds.efficiency.error = sqrt( ds.efficiency.value * ( 1.0 - ds.efficiency.value )/ds.N0mc );
+  }
+}
+
+template<typename Projector>
 inline void Analysis::measure_luminosity(Scan_t & data, Scan_t & mc, long N0_MC, std::string sel, Projector proj) {
-  me(mc, N0_MC, proj, sel);
+  measure_efficiency(mc, N0_MC, proj, sel);
   //find close point and select
   for(auto & sp :data) {
     auto & p  = *std::min_element(mc.begin(), mc.end(), [&sp](auto a, auto b){ return fabs(a.energy-sp.energy)<fabs(b.energy-sp.energy); } );
@@ -389,14 +360,43 @@ inline void Analysis::measure_gg_luminosity(Scan_t & data, Scan_t & mc, long N0_
 }
 
 
+inline  void Analysis::measure_luminosity(Scan_t & data, Scan_t & bb, Scan_t & gg, long N0_MC) {
+    measure_gg_luminosity(data,gg,N0_MC, GG_SEL);
+    measure_bhabha_luminosity(data,bb,N0_MC, BB_SEL);
+  }
+
+inline  void Analysis::set_luminosity(Scan_t & DATA, Scan_t & MC ) 
+{
+  for(auto & mc : MC ) {
+    auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
+    mc.bb = p.bb;
+    mc.gg = p.gg;
+  }
+}
+
+inline  void Analysis::set_luminosity(Scan_t & DATA, std::map<std::string, Scan_t>  & G )
+{
+  for(auto & [name, s] : G ) {
+    set_luminosity(DATA,s);
+  }
+}
+
+inline  void Analysis::set_gg_luminosity(Scan_t & DATA, Scan_t & MC )
+{
+  for(auto & mc : MC ) {
+    auto & p  = *std::min_element(DATA.begin(), DATA.end(), [&mc](auto a, auto b){ return fabs(a.energy-mc.energy)<fabs(b.energy-mc.energy); } );
+    mc.gg = p.gg;
+  }
+}
+
+
 template<typename Sample>
-inline auto Analysis::select(const Scan_t & P, const std::string & sel, Sample sample) const ->  Scan_t {
+inline auto Analysis::select(const Scan_t & P, const std::string & sel, Sample sample) const ->  Scan_t
+{
   std::vector<ScanPoint_t> R;
   for(const auto & p : P) {
-    //std::cout << "point : " << p.title  << "  sel = " << sel  << std::endl;
     R.push_back(p.select(sample, sel));
   };
-  //std::cout << "After points" << std::endl;
   return R;
 }
 
@@ -450,3 +450,84 @@ inline auto Analysis::select_tt(const Scan_t & P, const std::vector<Selection_t>
 }
 
 
+template<typename Proj>
+void  Analysis::set_effcor(Scan_t  & P, Proj proj, double Wref)  {
+  //determine reference point
+  std::cout << "Find reference point\n";
+  DataSample_t  & ds0 = std::invoke(proj, *find_minimum(P, [&Wref](const auto & p) { std::cout << " p.energy = " << p.energy << "   Wref = " << Wref << std::endl; return  std::abs(p.energy - Wref); } ) );
+  std::cout << "End of finding reference point \n";
+  for(auto & sp : P) {
+    DataSample_t & ds = std::invoke(proj, sp);
+    ds.effcor.value = ds.efficiency/ds0.efficiency.value;
+    ds.effcor.error = ds.efficiency.error/ds0.efficiency.value;  //we should not take into account the efficiency error of the reference point
+    //, ds0.efficiency.error / ds0.efficiency.value);
+  };
+  ds0.effcor.error = 0;
+};
+
+  /* Теперь надо присвоить эффективность регистрации для данных, а также
+   * поправки к эффективности регистрации 
+   * Для этого надо для точки по энергии найти ближайшую точку в моделировании
+   * */
+template< typename Proj> 
+void Analysis::set_efficiency(Scan_t  & psr,  const Scan_t & mc, Proj proj)
+{
+  for(size_t i = 0; i< psr.size(); ++i) {
+    ScanPoint_t & dsp = psr[i]; //data scan point
+    const ScanPoint_t & msp = *find_minimum(mc, [&dsp](const ScanPoint_t & p)->double { return std::abs(p.energy.value-dsp.energy.value);});
+    DataSample_t & d = std::invoke(proj, dsp);
+    const DataSample_t & m = std::invoke(proj, msp);
+    d.efficiency = m.efficiency;
+    d.effcor     = m.effcor;
+  }
+}
+
+
+template<typename Proj>
+inline void  Analysis::set_effcor(std::vector<SelectionResult_t>  & P, Proj proj, double Wref)  {
+  for(size_t i=0;i!=P.size();++i) {
+    set_effcor(P[i], proj, Wref);
+  }
+};
+
+template< typename Proj> 
+void Analysis::set_efficiency(std::vector<SelectionResult_t> & D /*data*/,  const std::vector<SelectionResult_t> & M /*Monte Carlo*/, Proj proj)
+{
+  assert(D.size() == M.size());
+  for(size_t i=0;i!=D.size();++i) {
+    set_efficiency(D[i], M[i], proj);
+  }
+}
+
+
+
+inline void Analysis::save(const SelectionResult_t & sr, std::string  filename, std::string default_lum) const
+{
+  std::cout << "Saving selection: " << sr.title << " to file: " << filename << std::endl;
+  std::stringstream os;
+  os << ibn::mformat("15.6", "#", "L,nb^-1","dL,nb^-1","W,MeV", "dW,MeV","Sw,MeV","dSw,MeV","Ntt","Nbb","Ngg","effcor");
+  os << "\n";
+  auto lum = [&default_lum](const ScanPoint_t & sp) -> ibn::valer<double> {
+    if(default_lum == "bb" || default_lum=="ee") { return sp.bb.luminosity; }
+    if(default_lum == "gg") { return sp.gg.luminosity; }
+    return sp.luminosity;//*(nb/pb);
+  };
+
+  int idx=0;
+  for(const auto & p : sr) {
+    std::string name = (p.name == "" ? std::to_string(++idx) : p.name);
+    os << ibn::mformat("15.6", 
+        name.c_str(),
+        lum(p).value, lum(p).error,
+        p.energy.value/MeV,  p.energy.error/MeV,
+        1.258,             0.060,
+        p.tt.N,
+        p.bb.N,        
+        p.gg.N,
+        p.tt.effcor.value, p.tt.effcor.error);
+    os << "\n";
+  }
+  std::cout << os.str();
+  std::ofstream ofs(filename);
+  ofs << os.str();
+}

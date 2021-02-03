@@ -68,7 +68,11 @@ namespace ibn {
       if constexpr (std::is_same_v<long,decltype(t)> ){
         lf  += f.substr(0,f.find('.')) + "ld";
       }
-      if constexpr (std::is_same_v<std::string,decltype(t)>  || std::is_same_v<const char *,decltype(t)> ){
+      if constexpr (std::is_same_v<std::string,decltype(t)> ){
+        lf  += f.substr(0,f.find('.')) + "s";
+        //return format(lf,t.c_str()) + mformat(f, ts...);
+      }
+      if constexpr (std::is_same_v<const char *,decltype(t)> ){
         lf  += f.substr(0,f.find('.')) + "s";
       }
       //std::cout << f << "  " << lf << "  " << t << std::endl;
@@ -467,7 +471,7 @@ inline std::string differece_cut(const std::string & a, const std::string & b) {
 }
 
 template<typename Iterator, typename Func>
-Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
+Iterator find_minimum(Iterator it_begin, Iterator it_end, Func F)
 {
   using ItemType = typename Iterator::value_type;
   using Type = typename std::result_of<Func(ItemType)>::type;
@@ -475,7 +479,7 @@ Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
   Iterator result=it_end;
   for(auto it = it_begin; it!=it_end; ++it)
   {
-    auto x = F(*it);
+    auto x = std::invoke(F,*it);
     if( x < chi2 ) 
     {
       result = it;
@@ -486,9 +490,15 @@ Iterator find_best(Iterator it_begin, Iterator it_end, Func F)
 };
 
 template<typename Container, typename Func>
-typename Container::iterator find_best(Container & c, Func F)
+typename Container::const_iterator find_minimum(const Container & c, Func F)
 {
-  return find_best(std::begin(c), std::end(c), F);
+  return find_minimum(std::cbegin(c), std::cend(c), F);
+}
+
+template<typename Container, typename Func>
+typename Container::iterator find_minimum(Container & c, Func F)
+{
+  return find_minimum(std::begin(c), std::end(c), F);
 }
 
 #include <sys/ioctl.h>
@@ -555,6 +565,24 @@ inline bool kbhit(void)
   }
 
   return false;
+}
+
+
+template<template <typename> typename Container, typename Function, typename A, typename ... Args>
+inline auto fmap (Function f, const  Container<A> & C, Args...args)  {
+  using B = std::invoke_result_t<Function, A, Args...>;
+  Container<B> b;
+  for(const auto & a : C) {
+    b.push_back(std::invoke(f, a, args...));
+  };
+  return b;
+}
+
+template<template <typename> typename Container, typename Function, typename A, typename ... Args>
+inline auto fmap_void (Function f, Container<A> & C, Args...args)   -> void {
+  for(const auto & a : C) {
+    std::invoke(f, a, args...);
+  };
 }
 
 #endif

@@ -24,15 +24,16 @@
 #include <regex>
 #include <list>
 
+#include "PhysConst.h"
 #include "utils.h"
 #include "ScanPoint.h"
 #include "Selection.h"
 
 struct PrintConfig_t
 {
-  int title_width=10;
-  int data_width=15;
-  int total_width=5;
+  int title_width=15;
+  int data_width=20;
+  int total_width=10;
   int vline_width=6;
   std::string thline=""; //top horizontal line
   std::string bhline=""; //bottom horizontal line
@@ -216,7 +217,7 @@ SelectionResult_t  fold(const std::vector<SelectionResult_t>  & SR, std::string 
     }
     //rp.eps_error = sqrt(eps_error2);
   }
-  auto & reference_point = * find_best(result, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
+  auto & reference_point = * find_minimum(result, [](const auto & p) { return  std::abs(p.energy*0.5-MTAU+0.5); } );
   //normalize efficiency correction to threshold efficiency
   for(size_t i=0;i<result.size();++i)
   {
@@ -468,7 +469,7 @@ void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg
 void print_effcor(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
-  std::string format_str = " %5.4f ± %5.4f ";
+  std::string format_str = " %+5.4f ± %5.4f ";
   cfg.total_width = format_str.length();
   auto hline = [&SR, &cfg](std::string s="─",std::string title="") { cfg.hline(SR[0].size(),s,title); };
   hline("━","CORRECTION TO EFFICIENCY");
@@ -534,11 +535,40 @@ void print_effcor(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = P
      prn(sr.title,sr);
   hline();
   auto f = fold(SR);
-  prn("all", f);
+  prn("cor", f);
   prn2("(cor-1)x100", f);
   hline("━");
 };
 
+inline void print_luminosity(Scan_t & data) {
+  //char buf[1024*16];
+  printf("%5s %10.6s %10.6s %10.6s %10.6s %10s %10.6s %10.6s %10s %10s\n",
+      "point", "E,GeV", "Lonline,pb^-1","Lgg, pb^-1", "dLgg,pb^-1", "Ngg","Lbb,pb^-1", "dLbb,pb^-1", "Nbb", "Lbb/Lgg"
+      );
+  ibn::valer<double> Lgg={0,0};
+  ibn::valer<double> Lee={0,0};
+  double Lonline=0;
+  long Ngg=0;
+  long Nee=0;
+  for(auto & sp : data) {
+    Lgg+=sp.gg.luminosity;
+    Lee+=sp.bb.luminosity;
+    Ngg+=sp.gg.N;
+    Nee+=sp.bb.N;
+    Lonline+=sp.luminosity.value;
+    printf("%5s %10.6f %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f \n",
+        sp.title.c_str(), sp.energy.value, sp.luminosity.value, 
+        sp.gg.luminosity.value*1e-3, sp.gg.luminosity.error*1e-3, sp.gg.N,
+        sp.bb.luminosity.value*1e-3, sp.bb.luminosity.error*1e-3, sp.bb.N,
+        sp.bb.luminosity.value/sp.gg.luminosity.value
+        );
+  }
+  printf("%5s %10s %10.6f %10.6f %10.6f %10ld %10.6f %10.6f %10ld %10.6f %10.6f\n",
+      "total", "", Lonline, Lgg.value*1e-3, Lgg.error*1e-3, Ngg,
+      Lee.value*1e-3, Lee.error*1e-3, Nee,
+      (Lee/Lgg).value, (Lee/Lgg).error
+      );
+}
 
 //void print(const std::vector<PointSelectionResult_t> & Points, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 //{
