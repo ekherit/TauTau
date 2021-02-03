@@ -71,7 +71,10 @@ struct Analysis
 {
   const std::string WORKDIR="./";
   const std::string SHAREDIR="/home/nikolaev/tauscan/TauTau/share/";
-  std::string TAUFIT = "taufit --minos --pdgshift --lum=default --tau-spread=1.2299 --ems-cmenergy-shift=-0.0201182 --free-energy --free-luminosity --free-effcor --draw-tau-mass-precision=4  --draw-diff";
+  double EMS_ENERGY_SHIFT = -0.0201182;
+  ibn::valer<double> TAU_SPREAD = {1.2299, 0.034};
+
+  std::string TAUFIT = "taufit --minos --pdgshift --lum=default  --free-energy --free-luminosity --free-effcor --free-spread --draw-tau-mass-precision=4  --draw-diff ";
 
   std::string runtable_name = SHAREDIR+"/all_scan_points_ems32.txt";
 
@@ -219,9 +222,11 @@ struct Analysis
     print_efficiency(result);
     print_effcor(result);
     save(fold(result), "test.txt");
-  }
+    fit("test.txt","test_title");
+  };
 
   void save(const SelectionResult_t & sr, std::string  filename="scan.txt", std::string default_lum="gg")  const;
+  void fit(std::string  filename, std::string title="", std::string default_lum = "", bool wait = false) const;
 
   private:
   bool is_tau_luminosity_measured = false;
@@ -531,3 +536,14 @@ inline void Analysis::save(const SelectionResult_t & sr, std::string  filename, 
   std::ofstream ofs(filename);
   ofs << os.str();
 }
+
+
+inline void Analysis::fit(std::string  filename, std::string title, std::string default_lum, bool wait) const
+{
+
+  std::string command= ibn::format("%s --tau-spread=%.6f --tau-spread-error=%.6f --ems-cmenergy-shift=%.6f  %s &", TAUFIT.c_str(), TAU_SPREAD.value, TAU_SPREAD.error, EMS_ENERGY_SHIFT, filename.c_str()); 
+  std::cout << "Doing fit:\n";
+  std::cout << command << "\n";
+  system(command.c_str());
+}
+
