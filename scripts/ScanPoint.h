@@ -106,6 +106,8 @@ struct ScanPoint_t : public AcceleratorInfo_t
   DataSample_t bb; //Bhabha  luminosity
   DataSample_t gg; //Digamma luminosity
 
+  DataSample_t data;
+
   std::list<std::pair<int,double> > runs; //for drawing luminosity per runs
 
   //std::string selection;

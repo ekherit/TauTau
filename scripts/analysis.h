@@ -108,9 +108,10 @@ struct Sample_t {
 };
 
 struct Process_t {
-  Sample_t signal;
-  Sample_t gg;
-  Sample_t bb;
+  Sample_t signal; //signal 
+  Sample_t gg; //gamma-gamma luminosity
+  Sample_t bb; //bhabha luminosity
+  std::vector<ScanRef_t> bgs; //Monte Carlo for backgrounds
 };
 
 struct Analysis 
@@ -128,20 +129,43 @@ struct Analysis
   Scan_t JPSI_RUNTABLE    = read_my_runtable(runtable_name,  DATA_JPSI);
   Scan_t PSIP_RUNTABLE    = read_my_runtable(runtable_name,  DATA_PSIP);
 
+  //two-gamma background
+  Scan_t EEEE       = read_mc(WORKDIR+"mc/galuga/ee"   , TAU_RUNTABLE, 1e6);
+  Scan_t EEUU       = read_mc(WORKDIR+"mc/galuga/uu"   , TAU_RUNTABLE, 1e6);
+  Scan_t EEPIPI     = read_mc(WORKDIR+"mc/galuga/pipi"   , TAU_RUNTABLE, 1e6);
+  Scan_t EEKK       = read_mc(WORKDIR+"mc/galuga/KK"   , TAU_RUNTABLE, 1e6);
+
+  //std::map<std::string, ScanRef_t> GALUGA;
+
+  //hadronic background
+  Scan_t HADR       = read_mc(WORKDIR+"mc/hadrons", TAU_RUNTABLE, 1e6);
+  //bhabha background
+  Scan_t BB         = read_mc(WORKDIR+"mc/bb", TAU_RUNTABLE, 1e6);
+  //uu background
+  Scan_t UU         = read_mc(WORKDIR+"mc/uu", TAU_RUNTABLE, 1e6);
+  //pipi background (unused)
+  Scan_t PIPI       = read_mc(WORKDIR+"mc/pipi", TAU_RUNTABLE, 1e6);
+  // for luminocity measurement
+  Scan_t GG         = read_mc(WORKDIR+"mc/gg", TAU_RUNTABLE, 1e6);
+
+  //list of all backgrounds
+  std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, EEEE, EEUU, EEPIPI, EEKK};
+
 
   Process_t TAU = {
     .signal = {
       .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
-      .mc   =    read_mc(WORKDIR+"mc/signal", TAU_RUNTABLE, 1e6),
+      .mc   =  read_mc(WORKDIR+"mc/signal", TAU_RUNTABLE, 1e6),
     },
     .gg =  {
       .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
-      .mc   =   read_mc(WORKDIR+"mc/gg", TAU_RUNTABLE, 1e6)
+      .mc   =  read_mc(WORKDIR+"mc/gg", TAU_RUNTABLE, 1e6)
     },
     .bb =  {
       .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
-      .mc   =   read_mc(WORKDIR+"mc/bb", TAU_RUNTABLE, 1e6)
+      .mc   =  read_mc(WORKDIR+"mc/bb", TAU_RUNTABLE, 1e6)
     },
+    .bgs = {HADR, BB, UU, GG, EEEE, EEUU, EEPIPI, EEKK}
   };
 
   Process_t JPSI = {
@@ -167,34 +191,13 @@ struct Analysis
   };
 
 
-  //two-gamma background
-  Scan_t EEEE       = read_mc(WORKDIR+"mc/galuga/ee"   , TAU_RUNTABLE, 1e6);
-  Scan_t EEUU       = read_mc(WORKDIR+"mc/galuga/uu"   , TAU_RUNTABLE, 1e6);
-  Scan_t EEPIPI     = read_mc(WORKDIR+"mc/galuga/pipi"   , TAU_RUNTABLE, 1e6);
-  Scan_t EEKK       = read_mc(WORKDIR+"mc/galuga/KK"   , TAU_RUNTABLE, 1e6);
 
-  //std::map<std::string, ScanRef_t> GALUGA;
+  //struct Simulation_t {
+  //  ScanRef_t signal;
+  //  std::vector<ScanRef_t> bgs;
+  //};
 
-  //hadronic background
-  Scan_t HADR       = read_mc(WORKDIR+"mc/hadrons", TAU_RUNTABLE, 1e6);
-  //bhabha background
-  Scan_t BB         = read_mc(WORKDIR+"mc/bb", TAU_RUNTABLE, 1e6);
-  //uu background
-  Scan_t UU         = read_mc(WORKDIR+"mc/uu", TAU_RUNTABLE, 1e6);
-  //pipi background (unused)
-  Scan_t PIPI       = read_mc(WORKDIR+"mc/pipi", TAU_RUNTABLE, 1e6);
-  // for luminocity measurement
-  Scan_t GG         = read_mc(WORKDIR+"mc/gg", TAU_RUNTABLE, 1e6);
-
-  //list of all backgrounds
-  std::vector<ScanRef_t> BGs ={HADR, BB, UU, GG, EEEE, EEUU, EEPIPI, EEKK};
-
-  struct Simulation_t {
-    ScanRef_t signal;
-    std::vector<ScanRef_t> bgs;
-  };
-
-  Simulation_t MC = { TAU.signal.mc, BGs }; 
+  //Simulation_t MC = { TAU.signal.mc, BGs }; 
 
   std::string BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0";
   std::string GG_SEL = "";
@@ -259,31 +262,16 @@ struct Analysis
 
 
   //Apply selection cut "sel" to ProjSampe "sample" (tt,bb,gg) and return new Scan_t
-  template<typename ProjSample> auto select(const Scan_t & P, const std::string & sel,  ProjSample sample) const ->  Scan_t;
-  template<typename ProjSample> auto select(const Scan_t & P, const Selection_t & S, ProjSample sample, std::string extra_cut="") const -> SelectionResult_t;
-  template<typename ProjSample> auto select(const Scan_t & P, const std::vector<Selection_t> & S, ProjSample sample, std::string extra_cut="") const -> std::vector<SelectionResult_t>;
+  template<typename Proj> auto select(Proj proj, const Scan_t & P, const std::string & sel) const ->  Scan_t;
+  template<typename Proj> auto select(Proj proj, const Scan_t & P, const Selection_t & S, std::string extra_cut="") const -> SelectionResult_t;
+  template<typename Proj> auto select(Proj proj, const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="") const -> std::vector<SelectionResult_t>;
 
-  auto select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t;
-  auto select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t;
-  auto select_gg(const Scan_t & P, const std::string & sel) const ->  Scan_t;
+  template<typename Proj> void set_effcor    (Proj proj, Scan_t  & P, double Wref);
 
+  template<typename Proj> void copy_efficiency(Proj proj, const Scan_t & mc, Scan_t  & psr) const;
 
-  auto select_tt(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
-  auto select_bb(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
-  auto select_gg(const Scan_t & P, const Selection_t & S, std::string extra_cut="")const  -> SelectionResult_t;
-
-  auto select_tt(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
-  auto select_bb(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
-  auto select_gg(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut="")const  -> std::vector<SelectionResult_t>;
-
-  //auto select_tt(std::string extra_cut="") const -> std::vector<SelectionResult_t> { return select_tt(DATA, SEL, extra_cut); }
-
-  template<typename Proj> void set_effcor    (Scan_t  & P, Proj proj, double Wref);
-
-  template<typename Proj> void copy_efficiency(const Scan_t & mc, Scan_t  & psr, Proj proj) const;
-
-  template<typename Proj> void set_effcor    (std::vector<SelectionResult_t>  & P, Proj proj, double Wref);
-  template<typename Proj> void copy_efficiency(const std::vector<SelectionResult_t> & M /*Monte Carlo*/, std::vector<SelectionResult_t>  & D /*data*/, Proj proj) const;
+  template<typename Proj> void set_effcor    (Proj proj, std::vector<SelectionResult_t>  & P, double Wref);
+  template<typename Proj> void copy_efficiency(Proj proj, const std::vector<SelectionResult_t> & M /*Monte Carlo*/, std::vector<SelectionResult_t>  & D /*data*/) const;
 
   inline void do_tau(std::string extra_cut = "") 
   {
@@ -296,11 +284,11 @@ struct Analysis
     };
     print_luminosity(TAU.signal.data);
     std::clog << "Selecting tau tau events for data...\n";
-    auto result = select_tt(TAU.signal.data,SEL,extra_cut);
+    auto result = select(&ScanPoint_t::tt, TAU.signal.data,SEL,extra_cut);
     std::clog << "Selecting tau tau events for MC...\n";
-    auto mc   = select_tt(TAU.signal.mc, SEL,extra_cut);
-    set_effcor(mc, &ScanPoint_t::tt, 2*MTAU-1.0*MeV);
-    copy_efficiency(mc,result, &ScanPoint_t::tt);
+    auto mc   = select(&ScanPoint_t::tt, TAU.signal.mc, SEL,extra_cut);
+    set_effcor( &ScanPoint_t::tt, mc, 2*MTAU-1.0*MeV);
+    copy_efficiency(&ScanPoint_t::tt, mc,result );
     print_efficiency(result);
     print_effcor(result);
     save(fold(result), "test.txt");
@@ -320,10 +308,10 @@ struct Analysis
   Scan_t  res(Process_t & P) {
     measure_luminosity(P);
     std::cout << "Selecting multihadronic events" << std::endl;
-    auto res =   select_tt(  P.signal.data,  MH_SEL);
-    auto mcres = select_tt(  P.signal.mc,    MH_SEL);
-    set_effcor(mcres, &ScanPoint_t::tt, 0.0);  //set correction to efficiency
-    copy_efficiency(mcres, res, &ScanPoint_t::tt);
+    auto res =   select(&ScanPoint_t::tt,  P.signal.data,  MH_SEL);
+    auto mcres = select(&ScanPoint_t::tt,  P.signal.mc,    MH_SEL);
+    set_effcor( &ScanPoint_t::tt, mcres,0.0);  //set correction to efficiency
+    copy_efficiency( &ScanPoint_t::tt, mcres, res);
     print(res);
     return res;
   };
@@ -372,8 +360,6 @@ inline void Analysis::Init(void) {
   std::cout << "Setting  PID" << std::endl;
   set_pid(TAU.signal.data, PID);
   set_pid(TAU.signal.mc, PID);
-
-
   for(auto d : BGs)       set_pid(d,PID);
   for(auto d : LUM_MCs)   set_pid(d,PID);
 };
@@ -445,53 +431,35 @@ template<typename Proj> void Analysis::set_default_luminosity(Scan_t & D, Proj p
 
 
 
-template<typename Sample>
-inline auto Analysis::select(const Scan_t & P, const std::string & sel, Sample sample) const ->  Scan_t
+template<typename Proj>
+inline auto Analysis::select(Proj proj, const Scan_t & P, const std::string & sel) const ->  Scan_t
 {
   std::vector<ScanPoint_t> R;
   for(const auto & p : P) {
-    R.push_back(p.select(sample, sel));
+    R.push_back(p.select(proj, sel));
   };
   return R;
 }
 
-inline auto Analysis::select_tt(const Scan_t & P, const std::string & sel) const ->  Scan_t {
-  return select(P, sel, &ScanPoint_t::tt);
-}
-
-inline auto Analysis::select_bb(const Scan_t & P, const std::string & sel) const ->  Scan_t {
-  return select(P, sel, &ScanPoint_t::tt);
-}
-
-inline auto Analysis::select_gg(const Scan_t & P, const std::string & sel) const ->  Scan_t {
-  return select(P, sel, &ScanPoint_t::tt);
-}
 
 template<typename Proj>
-auto Analysis::select(const Scan_t & P, const Selection_t & S, Proj sample, std::string extra_cut) const -> SelectionResult_t 
+auto Analysis::select(Proj proj, const Scan_t & P, const Selection_t & S, std::string extra_cut) const -> SelectionResult_t 
 {
   //std::cout << "Analysis::select_tt(Scan_t, Selection_t, Proj, std::string)" << std::endl;
   SelectionResult_t r;
   r = S; //copy selection config
   //Scan_t sps   //std::cout << "after sps" << std::endl;
-  r = select(P, S.cut + extra_cut, sample);
+  r = select(proj, P, S.cut + extra_cut);
   //std::cout << "after r = sps" << std::endl;
   return r;
 };
 
-
-inline auto Analysis::select_tt(const Scan_t & P, const Selection_t & S, std::string extra_cut) const -> SelectionResult_t 
-{
-  //std::cout << "Analysis::select_tt(Scan_t, Selection_t, std::string)" << std::endl;
-  return select(P,S,&ScanPoint_t::tt);
-};
-
 template<typename Proj>
-inline std::vector<SelectionResult_t> Analysis::select(const Scan_t & P, const std::vector<Selection_t> & S, Proj sample, std::string extra_cut) const {
+inline std::vector<SelectionResult_t> Analysis::select(Proj proj, const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut) const {
   std::vector<SelectionResult_t> R;
   int i=0;
   for(const Selection_t & s : S) {
-    SelectionResult_t r = select(P, s, sample, extra_cut);
+    SelectionResult_t r = select(proj, P, s, extra_cut);
     print(r,i);
     R.push_back(r);
     ++i;
@@ -500,13 +468,9 @@ inline std::vector<SelectionResult_t> Analysis::select(const Scan_t & P, const s
   return R;
 };
 
-inline auto Analysis::select_tt(const Scan_t & P, const std::vector<Selection_t> & S, std::string extra_cut)const  -> std::vector<SelectionResult_t> {
-  return select(P,S,&ScanPoint_t::tt,extra_cut);
-}
-
 
 template<typename Proj>
-void  Analysis::set_effcor(Scan_t  & P, Proj proj, double Wref)  {
+void  Analysis::set_effcor( Proj proj, Scan_t  & P,double Wref)  {
   //determine reference point
   DataSample_t  & ds0 = std::invoke(proj, *find_minimum(P, [&Wref](const auto & p) { return  std::abs(p.energy - Wref); } ) );
   for(auto & sp : P) {
@@ -523,7 +487,7 @@ void  Analysis::set_effcor(Scan_t  & P, Proj proj, double Wref)  {
    * Для этого надо для точки по энергии найти ближайшую точку в моделировании
    * */
 template< typename Proj> 
-inline void Analysis::copy_efficiency(const Scan_t & mc, Scan_t  & psr, Proj proj) const
+inline void Analysis::copy_efficiency(Proj proj, const Scan_t & mc, Scan_t  & psr) const
 {
   for(size_t i = 0; i< psr.size(); ++i) {
     ScanPoint_t & dsp = psr[i]; //data scan point
@@ -537,18 +501,18 @@ inline void Analysis::copy_efficiency(const Scan_t & mc, Scan_t  & psr, Proj pro
 
 
 template<typename Proj>
-inline void  Analysis::set_effcor(std::vector<SelectionResult_t>  & P, Proj proj, double Wref)  {
+inline void  Analysis::set_effcor( Proj proj, std::vector<SelectionResult_t>  & P,double Wref)  {
   for(size_t i=0;i!=P.size();++i) {
-    set_effcor(P[i], proj, Wref);
+    set_effcor( proj, P[i],Wref);
   }
 };
 
 template< typename Proj> 
-void Analysis::copy_efficiency(const std::vector<SelectionResult_t> & M /*Monte Carlo*/, std::vector<SelectionResult_t> & D /*data*/, Proj proj) const
+void Analysis::copy_efficiency(Proj proj, const std::vector<SelectionResult_t> & M /*Monte Carlo*/, std::vector<SelectionResult_t> & D /*data*/) const
 {
   assert(D.size() == M.size());
   for(size_t i=0;i!=D.size();++i) {
-    copy_efficiency(M[i], D[i], proj);
+    copy_efficiency(proj, M[i], D[i]);
   }
 }
 

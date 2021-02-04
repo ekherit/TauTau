@@ -19,6 +19,7 @@
 #define IBN_TAU_RUNTABLE_H 
 #include <fstream>
 #include "ScanPoint.h"
+#include "PhysConst.h"
 
 //create run list from single line, where runs in format [run1] [run2] [run3-run4] [run5]
 inline std::list<int> get_run_list(std::string line);
@@ -71,7 +72,7 @@ inline std::list<int> get_run_list(std::string line)
   return run_list;
 }
 
-Scan_t read_privalov_runtable(std::string filename)
+inline Scan_t read_privalov_runtable(std::string filename)
 {
   Scan_t theScan;
   std::fstream ifs(filename);

@@ -189,7 +189,7 @@ inline Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string fi
   return scan;
 }
 
-Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+inline Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
 {
   std::cout << "Reading data directory \"" << data_dir << "\":\n";
   auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
@@ -249,7 +249,7 @@ Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\
   return scan;
 }
 
-Scan_t read_privalov_lum(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
+inline Scan_t read_privalov_lum(std::string data_dir, const Scan_t & cfg, std::string filter=R"(\.root$)")
 {
   std::cout << "Reading data directory \"" << data_dir << "\":\n";
   auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
