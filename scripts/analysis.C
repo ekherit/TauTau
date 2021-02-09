@@ -70,9 +70,19 @@ std::vector<ParticleID_t> PID =
 };
 
 Analysis test(
-    "../sel12/",
+    //WORKDIR
+    "./",
+    //runtable
     "all_scan_points_ems32.txt",
+    //GG selection
+    "",
+    //BB selection
+    "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0", //bb_sel
+    //MH selection
+    "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2 && maxNmuhit==0",
+    //PID
     PID,
+    //TauTau selection
     "Ncg==2"
     "&& Ncg==Ncc"
     "&& abs(vz[0])<10 && abs(vz[1])<10"

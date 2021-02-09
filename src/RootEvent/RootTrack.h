@@ -20,7 +20,6 @@
 
 struct RootTracks
 {
-	//NTuple::Item<long>    ntrack;  //size of 
 	NTuple::Array<double>   id; //id of the track
 	NTuple::Array<double> q; //charge of the track
 	NTuple::Array<double> E;

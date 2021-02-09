@@ -154,15 +154,15 @@ struct Analysis
 
   Process_t TAU = {
     .signal = {
-      .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
-      .mc   =  read_mc(WORKDIR+"mc/signal", TAU_RUNTABLE, 1e6),
+      .data =  read_data(WORKDIR+"data/tt", TAU_RUNTABLE),
+      .mc   =  read_mc(WORKDIR+"mc/tt", TAU_RUNTABLE, 1e6),
     },
     .gg =  {
-      .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
+      .data =  read_data(WORKDIR+"data/tt", TAU_RUNTABLE),
       .mc   =  read_mc(WORKDIR+"mc/gg", TAU_RUNTABLE, 1e6)
     },
     .bb =  {
-      .data =  read_data(WORKDIR+"data", TAU_RUNTABLE),
+      .data =  read_data(WORKDIR+"data/tt", TAU_RUNTABLE),
       .mc   =  read_mc(WORKDIR+"mc/bb", TAU_RUNTABLE, 1e6)
     },
     .bgs = {HADR, BB, UU, GG, EEEE, EEUU, EEPIPI, EEKK}
@@ -170,38 +170,29 @@ struct Analysis
 
   Process_t JPSI = {
     .signal = {
-      .data =  read_mh(WORKDIR+"mhdata",JPSI_RUNTABLE),
-      .mc   =  read_mc_mh(WORKDIR+"mcmh", JPSI_RUNTABLE),
+      .data =  read_mh(WORKDIR+"data/mh",JPSI_RUNTABLE),
+      .mc   =  read_mc_mh(WORKDIR+"mc/mh", JPSI_RUNTABLE),
     },
     .gg =  {
-      .data =  read_data(WORKDIR+"data", JPSI_RUNTABLE),
+      .data =  read_data(WORKDIR+"data/tt", JPSI_RUNTABLE),
       .mc   =  read_mc(WORKDIR+"mc/gg", JPSI_RUNTABLE,1e5)
     },
   };
 
   Process_t PSI = {
     .signal = {
-      .data =  read_mh(WORKDIR+"mhdata",PSIP_RUNTABLE),
-      .mc   =  read_mc_mh(WORKDIR+"mcmh", PSIP_RUNTABLE),
+      .data =  read_mh(WORKDIR+"data/mh",PSIP_RUNTABLE),
+      .mc   =  read_mc_mh(WORKDIR+"mc/mh", PSIP_RUNTABLE),
     },
     .gg =  {
-      .data =  read_data(WORKDIR+"data", PSIP_RUNTABLE),
+      .data =  read_data(WORKDIR+"data/tt", PSIP_RUNTABLE),
       .mc   =  read_mc(WORKDIR+"mc/gg", PSIP_RUNTABLE,1e5)
     },
   };
 
-
-
-  //struct Simulation_t {
-  //  ScanRef_t signal;
-  //  std::vector<ScanRef_t> bgs;
-  //};
-
-  //Simulation_t MC = { TAU.signal.mc, BGs }; 
-
-  std::string BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0";
   std::string GG_SEL = "";
-  std::string MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2";
+  std::string BB_SEL = "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0";
+  std::string MH_SEL = "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2 && maxNmuhit==0";
   std::vector<ParticleID_t> PID;
   std::vector<Selection_t> SEL;
 
@@ -221,12 +212,18 @@ struct Analysis
   Analysis(
       std::string workdir, 
       std::string rtname,  
+      std::string gg_sel,
+      std::string bb_sel,
+      std::string mh_sel,
       const std::vector<ParticleID_t> & pid, 
       std::string common_cut,
       const  std::vector< std::tuple<std::string, std::string > > & sel
       ) : 
     WORKDIR{workdir},
     runtable_name{SHAREDIR+rtname},
+    GG_SEL{gg_sel},
+    BB_SEL{bb_sel},
+    MH_SEL{mh_sel},
     PID(pid),
     SEL(make_selections(pid,common_cut, sel) ) 
     {
@@ -550,6 +547,7 @@ inline void Analysis::save(const Scan_t & sr, std::string  filename, std::string
 }
 
 
+
 inline void Analysis::fit(std::string  filename, std::string title, std::string default_lum, bool wait) const
 {
 
@@ -558,4 +556,5 @@ inline void Analysis::fit(std::string  filename, std::string title, std::string 
   std::cout << command << "\n";
   system(command.c_str());
 }
+
 
