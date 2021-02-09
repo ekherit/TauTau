@@ -178,7 +178,7 @@ inline Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string fi
     sp.bb.energy = sp.energy;
     sp.type = data_dir;
   }
-  print(scan);
+  //print(scan);
   return scan;
 }
 
@@ -238,7 +238,7 @@ inline Scan_t read_mh(std::string data_dir, const Scan_t & cfg, std::string filt
     sp.bb.energy = sp.energy;
     sp.type = data_dir;
   }
-  print(scan);
+  //print(scan);
   return scan;
 }
 
@@ -377,11 +377,11 @@ inline std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg=
     std::string file_name(file->GetName());
     if(std::regex_match (file_name,file_match,file_re)) { //take only *.root files
       if(std::regex_match(file_name,take_match,take_re)) { //take special file
-        for( auto & a : cfg) { std::cout << a.title <<  " take_match = " << take_match[1] << "  " <<  file_name << std::endl;}
+        //for( auto & a : cfg) { std::cout << a.title <<  " take_match = " << take_match[1] << "  " <<  file_name << std::endl;}
         auto it = std::find_if(cfg.begin(), cfg.end(), [&take_match](const auto & a) { return take_match[1] == a.title; });
         if ( it != cfg.end() )  {
           auto & sp = *it;
-          std::cout << sp.title << std::endl;
+          //std::cout << sp.title << std::endl;
           P.push_back(sp);
           auto & p = P.back();
           P.back().type = dirname;
@@ -409,13 +409,13 @@ inline std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg=
         return sp1.energy < sp2.energy;
         });
 
-  for(auto & p : P) {
-      std::cout << p.title << " : ";
-      for(auto & f: p.file_list) {
-          std::cout << f << ", ";
-      }
-      std::cout << std::endl;
-  };
+  //for(auto & p : P) {
+  //    std::cout << p.title << " : ";
+  //    for(auto & f: p.file_list) {
+  //        std::cout << f << ", ";
+  //    }
+  //    std::cout << std::endl;
+  //};
   return P;
 }
 
@@ -466,7 +466,7 @@ inline std::vector<ScanPoint_t> read_mc_mhlum(std::string  dirname=".", Scan_t c
 }
 
 template<typename FCX>
-void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX  fcx) {
+inline void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX  fcx) {
   std::ifstream ifs(filename);
   if(!ifs) { 
     std::cerr << "Unable to open file with cross section" << std::endl;
@@ -477,7 +477,7 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
   double sigma; //in nanobarn
   double sigma_error; // in nanobarn
   std::string tmp; //this is for skip +-
-  std::cout << std::setw(10) << "Wmc, GeV" << std::setw(15) << "W in file, GeV" << std::setw(10) << "sigma, nb" << std::setw(10) << "error, nb" << std::endl;
+  //std::cout << std::setw(10) << "Wmc, GeV" << std::setw(15) << "W in file, GeV" << std::setw(10) << "sigma, nb" << std::setw(10) << "error, nb" << std::endl;
   while(ifs >> W >> sigma >> tmp >> sigma_error >> tmp)  {
     //std::cout << W << " " << sigma <<  " "  << sigma_error << std::endl;
     ScanPoint_t sp;
@@ -493,28 +493,28 @@ void read_cross_section(std::string filename, std::vector<ScanPoint_t> & P, FCX 
     if(fabs(sp.energy-p.energy)>1*MeV) {
       std::cerr << "WARNING: To big difference in energy points: " << sp.energy.value/MeV << "  and " << p.energy/MeV << " MeV" << std::endl;
     }
-    std::cout << std::setw(10) << sp.energy << std::setw(15) << p.energy << std::setw(10) << fcx(sp).cross_section.value << std::setw(10) << fcx(sp).cross_section.error << std::endl;
+    //std::cout << std::setw(10) << sp.energy << std::setw(15) << p.energy << std::setw(10) << fcx(sp).cross_section.value << std::setw(10) << fcx(sp).cross_section.error << std::endl;
   }
 }
 
-void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for bhabha process: " << std::endl;
+inline void read_bhabha_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for bhabha process: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.bb; } );
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
 }
-void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for gamma gamma process: " << std::endl;
+inline void read_gg_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for gamma gamma process: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.gg; } );
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
 }
 
-void read_mumu_or_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for mumu or pipi: " << std::endl;
+inline void read_mumu_or_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for mumu or pipi: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
 }
 
-void read_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for mumu or pipi: " << std::endl;
+inline void read_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for mumu or pipi: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
@@ -523,8 +523,8 @@ void read_pipi_cross_section(std::string filename, std::vector<ScanPoint_t> & P)
   }
 }
 
-void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for hadrons: " << std::endl;
+inline void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for hadrons: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
@@ -532,8 +532,8 @@ void read_hadron_cross_section(std::string filename, std::vector<ScanPoint_t> & 
     //p.tt.cross_section*=22./31.; 
   }
 }
-void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
-  std::cout << "Cross section for tau: " << std::endl;
+inline void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) {
+  std::cout << "Reading cross section for tau: " << std::endl;
   read_cross_section(filename, P, [](ScanPoint_t & sp) -> DataSample_t & { return sp.tt; } );
   for(auto & p : P) {
     //there is no cross section for pi+pi- channel in Babayaga generator
@@ -542,7 +542,7 @@ void read_tau_cross_section(std::string filename, std::vector<ScanPoint_t> & P) 
   }
 }
 
-void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_t> & G) {
+inline void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_t> & G) {
   std::ifstream ifs(filename);
   if(!ifs) { 
     std::cerr << "Unable to open file with cross section\n";
@@ -562,11 +562,11 @@ void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_
   ifs.ignore(4096,'\n');
   char buf[65353];
   sprintf(buf, "%10s %15s %15s  %15s %15s   %15s %15s   %15s %15s\n", "W,GeV", "eeee, nb", "error", "eeuu, nb", "error", "eepipi, nb", "error", "eeKK, nb", "error");
-  std::cout << buf;
+  //std::cout << buf;
   while( ifs >> E.value  >> ee.value >> ee.error >> uu.value >> uu.error >> pipi.value >> pipi.error >> KK.value >> KK.error ) {
     E.error=0;
     sprintf(buf, "%10.6f %15.6f %15.6f  %15.6f %15.6f   %15.6f %15.6f   %15.6f %15.6f\n", E.value, ee.value, ee.error, uu.value, uu.error, pipi.value, pipi.error, KK.value, KK.error);
-    std::cout << buf;
+    //std::cout << buf;
     for( auto & [ channel, data ] : G ) {
       set_cross_section(G["ee"], E, ee);
       set_cross_section(G["uu"], E, uu);
@@ -576,7 +576,7 @@ void read_galuga_cross_section(std::string filename, std::map<std::string, Scan_
   }
 }
 
-void read_galuga_cross_section(std::string filename, std::map<std::string, ScanRef_t> & G) {
+inline void read_galuga_cross_section(std::string filename, std::map<std::string, ScanRef_t> & G) {
   std::ifstream ifs(filename);
   if(!ifs) { 
     std::cerr << "Unable to open file with cross section\n";
@@ -596,11 +596,11 @@ void read_galuga_cross_section(std::string filename, std::map<std::string, ScanR
   ifs.ignore(4096,'\n');
   char buf[65353];
   sprintf(buf, "%10s %15s %15s  %15s %15s   %15s %15s   %15s %15s\n", "W,GeV", "eeee, nb", "error", "eeuu, nb", "error", "eepipi, nb", "error", "eeKK, nb", "error");
-  std::cout << buf;
+  //std::cout << buf;
   while( ifs >> E.value  >> ee.value >> ee.error >> uu.value >> uu.error >> pipi.value >> pipi.error >> KK.value >> KK.error ) {
     E.error=0;
     sprintf(buf, "%10.6f %15.6f %15.6f  %15.6f %15.6f   %15.6f %15.6f   %15.6f %15.6f\n", E.value, ee.value, ee.error, uu.value, uu.error, pipi.value, pipi.error, KK.value, KK.error);
-    std::cout << buf;
+    //std::cout << buf;
     //for( auto & [ channel, data ] : G ) {
     set_cross_section(G.find("ee")->second, E, ee);
     /*
@@ -612,7 +612,7 @@ void read_galuga_cross_section(std::string filename, std::map<std::string, ScanR
   }
 }
 
-void read_galuga_cross_section(std::string filename, Scan_t & eeee, Scan_t & eeuu, Scan_t & eepipi, Scan_t & eeKK ) {
+inline void read_galuga_cross_section(std::string filename, Scan_t & eeee, Scan_t & eeuu, Scan_t & eepipi, Scan_t & eeKK ) {
   std::ifstream ifs(filename);
   if(!ifs) { 
     std::cerr << "Unable to open file with cross section\n";

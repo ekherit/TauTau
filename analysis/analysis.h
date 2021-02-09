@@ -333,7 +333,7 @@ struct Analysis
 };
 
 inline void Analysis::Init(void) {
-  std::cout << "Apply common cuts to SEL\n";
+  //std::cout << "Apply common cuts to SEL\n";
   std::vector<ScanRef_t> LUM_MCs = {BB,GG};
 
   std::map<std::string, ScanRef_t> GALUGA = {
@@ -354,7 +354,7 @@ inline void Analysis::Init(void) {
   read_pipi_cross_section(SHAREDIR+"/pipi_cross_section.txt", PIPI);
   read_hadron_cross_section(SHAREDIR+"/hadron_cross_section.txt", HADR);
 
-  std::cout << "Setting  PID" << std::endl;
+  std::cout << "Setting particle identification aliases (PID)" << std::endl;
   set_pid(TAU.signal.data, PID);
   set_pid(TAU.signal.mc, PID);
   for(auto d : BGs)       set_pid(d,PID);
