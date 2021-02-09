@@ -136,14 +136,7 @@ inline Scan_t read_data(std::string data_dir, const Scan_t & cfg, std::string fi
 {
   std::cout << "Reading data directory \"" << data_dir << "\":\n";
   auto fl  = filter_file_list(get_recursive_file_list(data_dir)); //get file list *.root
-  //for(auto & f : fl) std::cout << f << std::endl;
   auto ml  = combine(fl,PointDiscriminatorByRunList(&cfg)); //combine files into points
-  //for(auto & m : ml) 
-  //{
-  //  std::cout << m.first << ": ";
-  //  for(auto & f: m.second) std::cout << f<<" "; 
-  //  std::cout << std::endl;
-  //}
   Scan_t scan;
   scan.reserve(cfg.size());
   for(auto & point : cfg ) 
@@ -369,12 +362,13 @@ inline std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={},
 }
 
 
-std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+inline std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
   if(cfg.empty()) return P;
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
   std::regex file_re(regexpr); //regular expression to filter files
+  //std::regex take_re(R"(^(\D\d+).+.root$)");
   std::regex take_re(R"(^(\D\d+).+.root$)");
   std::smatch file_match;
   std::smatch take_match; 
@@ -383,9 +377,11 @@ std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, lon
     std::string file_name(file->GetName());
     if(std::regex_match (file_name,file_match,file_re)) { //take only *.root files
       if(std::regex_match(file_name,take_match,take_re)) { //take special file
+        for( auto & a : cfg) { std::cout << a.title <<  " take_match = " << take_match[1] << "  " <<  file_name << std::endl;}
         auto it = std::find_if(cfg.begin(), cfg.end(), [&take_match](const auto & a) { return take_match[1] == a.title; });
         if ( it != cfg.end() )  {
           auto & sp = *it;
+          std::cout << sp.title << std::endl;
           P.push_back(sp);
           auto & p = P.back();
           P.back().type = dirname;
@@ -402,6 +398,7 @@ std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, lon
           p.tt.N0mc = N0mc;
           p.gg.N0mc = N0mc;
           p.bb.N0mc = N0mc;
+          p.file_list.push_back(file_name);
         }
       }
     }
@@ -412,10 +409,17 @@ std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, lon
         return sp1.energy < sp2.energy;
         });
 
+  for(auto & p : P) {
+      std::cout << p.title << " : ";
+      for(auto & f: p.file_list) {
+          std::cout << f << ", ";
+      }
+      std::cout << std::endl;
+  };
   return P;
 }
 
-std::vector<ScanPoint_t> read_mc_mhlum(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+inline std::vector<ScanPoint_t> read_mc_mhlum(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
 {
   std::vector<ScanPoint_t> P;
   if(cfg.empty()) return P;
