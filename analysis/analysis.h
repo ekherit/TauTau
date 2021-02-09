@@ -216,7 +216,7 @@ struct Analysis
       std::string bb_sel,
       std::string mh_sel,
       const std::vector<ParticleID_t> & pid, 
-      std::string common_cut,
+      std::vector<std::string> common_cut,
       const  std::vector< std::tuple<std::string, std::string > > & sel
       ) : 
     WORKDIR{workdir},
@@ -228,6 +228,46 @@ struct Analysis
     SEL(make_selections(pid,common_cut, sel) ) 
     {
       Init();
+      std::cout << "Runtable: " << std::endl;
+      print(JPSI_RUNTABLE);
+      print(TAU_RUNTABLE);
+      print(PSIP_RUNTABLE);
+      std::cout << "GG_SEL = " << GG_SEL << "\n";
+      std::cout << "BB_SEL = " << BB_SEL << "\n";
+      std::cout << "MH_SEL = " << MH_SEL << "\n";
+      std::cout << "TAU_SEL:  \n"; 
+      //this lambda remove surrounding ( ) 
+      auto nake = [](std::string_view a) -> std::string_view {
+          size_t b=0;
+          size_t e=a.size();
+          for(auto it = a.begin(); it!=a.end();++it) {
+              if(*it==' ' || *it=='(') ++b;
+              else break;
+          }
+          for(auto it = a.rbegin(); it!=a.rend();++it) {
+              if(*it==' ' || *it==')') --e;
+              else  break;
+          }
+          return a.substr(b,e-b);
+      };
+      auto shift = [](int N=1) {
+          std::string s;
+          for(int i=0;i!=N;++i) {
+              s+="     ";
+          };
+          return s;
+      };
+      std::cout << shift(1) << "Common tau-tau cuts:\n";
+      for(auto & s : common_cut) {
+          std::cout << shift(2) << '\"'<<s << "\"\n";
+      }
+      std::cout << shift(1) << "Channel specific cuts:\n";
+      for(auto & s: sel) {
+          std::cout << shift(3) << std::get<0>(s) <<  "\n";
+          for(auto item : split(std::get<1>(s))) {
+          std::cout << shift(4) << "\"" << nake(item) << "\"\n";
+          }
+      };
     };
 
 

@@ -184,12 +184,12 @@ inline void print(const std::vector<ScanPoint_t> & SPL, Projs... ps)
         sp.luminosity.error
         );
     sp.print_column(ps...);
-    std::cout << ibn::format(" %20s", get_run_formula(sp.run_list).c_str());
+    std::cout << ibn::format("     %-s", get_run_formula(sp.run_list).c_str());
     std::cout << "\n";
   }
 }
 
-SelectionResult_t  fold(const std::vector<SelectionResult_t>  & SR, std::string name = "all")
+inline SelectionResult_t  fold(const std::vector<SelectionResult_t>  & SR, std::string name = "all")
 {
   SelectionResult_t result;
   result.title = name;
@@ -229,21 +229,22 @@ SelectionResult_t  fold(const std::vector<SelectionResult_t>  & SR, std::string 
   return result;
 };
 
-SelectionResult_t  fold(std::vector<std::vector<SelectionResult_t>> & SR, std::string name = "all")
+inline SelectionResult_t  fold(std::vector<std::vector<SelectionResult_t>> & SR, std::string name = "all")
 {
   std::vector<SelectionResult_t> VSR;
   for(const auto & vsr : SR) VSR.push_back(fold(vsr));
   return fold(VSR);
 };
 
-SelectionResult_t  fold(const std::vector<SelectionResult_t>  & s1, const std::vector<SelectionResult_t>  & s2)
+inline SelectionResult_t  fold(const std::vector<SelectionResult_t>  & s1, const std::vector<SelectionResult_t>  & s2)
 {
   std::vector<SelectionResult_t> VSR;
   VSR.push_back(fold(s1));
   VSR.push_back(fold(s2));
   return fold(VSR);
 };
-void print(const SelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
+
+inline void print(const SelectionResult_t & sr, int opt=1 , int first_column_width=10, int last_column_width=5, int  column_width= 8, int vline_width=6)
 {
   int N = sr.size(); //number of points
   int hline_width = first_column_width + last_column_width + vline_width + N*column_width+3;
@@ -309,7 +310,7 @@ void print_smth(const std::vector<Item> pts, PrintConfig_t cfg, Ftitle ftitle, F
   std::cout << std::endl;
 };
 
-void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg)
+inline void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg)
 {
   print_smth(pts, cfg, [](){ return "CHNL/PNT"; }, [](auto & p) { return p.name; }, [](auto & s) { return "TOTAL"; } );
 };
@@ -359,7 +360,7 @@ void print_head(const std::vector<PointSelectionResult_t> pts, PrintConfig_t cfg
 //};
 
 template<typename Fdata, typename Ftotal>
-void print_smth(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
+inline void print_smth(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg, Fdata fd, Ftotal ft)
 {
   if(SR.empty()) return;
   auto hline = [&SR, &cfg](std::string s="─") { cfg.hline(SR[0].size(),s); };
@@ -424,7 +425,7 @@ void print_smth(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg, Fdat
 //};
 
 
-void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+inline void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   std::cout << "In print_efficiency " << std::endl;
   if(SR.empty()) return;
@@ -466,7 +467,7 @@ void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg
   hline("━");
 };
 
-void print_effcor(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+inline void print_effcor(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
 {
   if(SR.empty()) return;
   std::string format_str = " %+5.4f ± %5.4f ";

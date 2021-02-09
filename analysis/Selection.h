@@ -116,13 +116,15 @@ struct Selection_t {
 };
 
 
-inline std::vector<Selection_t> make_selections(std::vector<ParticleID_t> pid, std::string common_cut, std::vector< std::tuple < std::string, std::string > >  channels ) {
+inline std::vector<Selection_t> make_selections(std::vector<ParticleID_t> pid, std::vector<std::string> common_cuts, std::vector< std::tuple < std::string, std::string > >  channels ) {
   std::vector<Selection_t> result;
+  std::string common_cut;
+  for(auto & s : common_cuts) common_cut = common_cut && s;
   for(const auto & [name, cut] : channels ) {
     Selection_t s;
     s.title = name;
     s.pid = pid;
-    s.cut = common_cut &&   cut;
+    s.cut = common_cut && cut;
     result.push_back(s);
   }
   return result;

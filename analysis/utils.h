@@ -294,7 +294,18 @@ inline std::tuple<const std::string_view, const std::string_view> head_tail2(con
   };
 }
 
-inline std::vector<std::string_view> split(const std::string & str,const char * delim = "&&") {
+//inline std::vector<std::string_view> split(const std::string & str,const char * delim = "&&") {
+//  std::vector<std::string_view> result;
+//  std::string_view tail(str);
+//  do {
+//    auto  [s,t] = head_tail2(tail, delim);
+//    result.push_back(s);
+//    tail = t;
+//  } while(!tail.empty());
+//  return result;
+//};
+
+inline std::vector<std::string_view> split(std::string_view str,const char * delim = "&&") {
   std::vector<std::string_view> result;
   std::string_view tail(str);
   do {
@@ -414,7 +425,7 @@ inline std::string initial_common_part(const std::string & a, const std::string 
   return s;
 }
 
-std::string and_fold(const std::vector<std::string> & v) {
+inline std::string and_fold(const std::vector<std::string> & v) {
   if(v.size()==0) return "";
   std::string s = "("+v[0]+")";
   for(size_t i=1;i!=v.size(); ++i) {
@@ -449,7 +460,7 @@ inline std::string common_cut(const std::string & a, const std::string & b) {
 }
 
 
-inline std::string differece_cut(const std::string & a, const std::string & b) {
+inline std::string difference_cut(const std::string & a, const std::string & b) {
   auto prepare = [](const auto & v ) -> std::vector<std::string> {
     auto  va = split(v, "&&");
     std::vector<std::string> sa;
