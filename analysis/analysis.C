@@ -73,7 +73,7 @@ Analysis test(
     //WORKDIR
     "./",
     //runtable
-    "all_scan_points_ems32.txt",
+    "all_scan_points_ems3.txt",
     //GG selection
     "",
     //BB selection
