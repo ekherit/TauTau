@@ -361,61 +361,75 @@ inline std::vector<ScanPoint_t> read_mc(std::string  dirname=".", Scan_t cfg={},
   return P;
 }
 
-
-inline std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string regexpr=R"(.+\.root)")
+inline std::list<std::string> get_file_list(std::string dirname, std::string filter=R"(.+\.root)") 
 {
-  std::vector<ScanPoint_t> P;
-  if(cfg.empty()) return P;
+  //make complete file list:
   TSystemDirectory dir(dirname.c_str(), dirname.c_str());
-  std::regex file_re(regexpr); //regular expression to filter files
-  //std::regex take_re(R"(^(\D\d+).+.root$)");
-  std::regex take_re(R"(^(\D\d+).+.root$)");
+  std::list<std::string> file_list;
   std::smatch file_match;
-  std::smatch take_match; 
-  int point=0;
+  std::regex file_re(filter); //regular expression to filter files
   for(auto  file: * dir.GetListOfFiles()) { //looop over all files in derectory
     std::string file_name(file->GetName());
     if(std::regex_match (file_name,file_match,file_re)) { //take only *.root files
-      if(std::regex_match(file_name,take_match,take_re)) { //take special file
-        //for( auto & a : cfg) { std::cout << a.title <<  " take_match = " << take_match[1] << "  " <<  file_name << std::endl;}
-        auto it = std::find_if(cfg.begin(), cfg.end(), [&take_match](const auto & a) { return take_match[1] == a.title; });
-        if ( it != cfg.end() )  {
-          auto & sp = *it;
-          //std::cout << sp.title << std::endl;
-          P.push_back(sp);
-          auto & p = P.back();
-          P.back().type = dirname;
+        file_list.push_back(file_name);
+    }
+  }
+  return file_list;
+};
+
+
+inline std::vector<ScanPoint_t> read_mc_mh(std::string  dirname=".", Scan_t cfg={}, long N0mc=1e6, std::string group_by=R"(^(\D\d+).+.root$)")
+{
+  std::vector<ScanPoint_t> P;
+  if(cfg.empty()) return P;
+  //std::regex take_re(R"(^(\D\d+).+.root$)");
+  std::regex take_re(group_by);
+  std::smatch take_match; 
+  int point=0;
+
+  std::list<std::string> all_file_list = get_file_list(dirname);
+
+  //prepare points with file list filled
+  for( auto & c : cfg) {
+      std::list<std::string> flist;
+      for(auto & file_name : all_file_list ) {
+          if(std::regex_match(file_name, take_match, take_re)) { //extract point title from file name
+              if(take_match[1]==c.title) { //use point title to group files
+                  flist.push_back(file_name);
+              }
+          }
+      }
+      if(flist.empty()) continue;
+      P.push_back(c);
+      P.back().file_list = flist;
+  }
+
+  //now create the TChain for each point
+  
+  for(auto & p : P) {
           p.title = dirname+p.title;
           p.title = sub(p.title,R"(mc/)","");
           p.title = sub(p.title,R"(T)","");
           p.luminosity = -p.luminosity; //this is simulation
-          p.tt.tree.reset(get_chain("data",("data"+p.title).c_str(), "signal", (dirname+"/"+file_name).c_str()));
-          //p.gg.tree.reset(get_chain("gg",("gg"+p.title).c_str(), "gg lum", (dirname+"/"+file_name).c_str()));
-          //p.bb.tree.reset(get_chain("bb",("bb"+p.title).c_str(), "bb lum", (dirname+"/"+file_name).c_str()));
+          p.tt.tree  = std::make_shared<TChain>("data", ("data"+p.title).c_str());
+          for(auto & file_name : p.file_list) {
+              dynamic_pointer_cast<TChain>(p.tt.tree)->AddFile((dirname+"/"+file_name).c_str());
+              //p.tt.tree.reset(get_chain("data",, "signal", (dirname+"/"+file_name).c_str()));
+          }
           p.tt.energy = p.energy;
           p.gg.energy = p.energy;
           p.bb.energy = p.energy;
           p.tt.N0mc = N0mc;
           p.gg.N0mc = N0mc;
           p.bb.N0mc = N0mc;
-          p.file_list.push_back(file_name);
-        }
-      }
-    }
-  }
+
+  };
+
   //sort by energy
   std::sort(P.begin(),P.end(),
       [](auto & sp1, auto &sp2) {
         return sp1.energy < sp2.energy;
         });
-
-  //for(auto & p : P) {
-  //    std::cout << p.title << " : ";
-  //    for(auto & f: p.file_list) {
-  //        std::cout << f << ", ";
-  //    }
-  //    std::cout << std::endl;
-  //};
   return P;
 }
 

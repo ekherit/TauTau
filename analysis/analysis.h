@@ -347,6 +347,7 @@ struct Analysis
     std::cout << "Selecting multihadronic events" << std::endl;
     auto res =   select(&ScanPoint_t::tt,  P.signal.data,  MH_SEL);
     auto mcres = select(&ScanPoint_t::tt,  P.signal.mc,    MH_SEL);
+    print(mcres);
     set_effcor( &ScanPoint_t::tt, mcres,0.0);  //set correction to efficiency
     copy_efficiency( &ScanPoint_t::tt, mcres, res);
     print(res);
