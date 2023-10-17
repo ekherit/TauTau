@@ -31,9 +31,12 @@
 
 #include <typeinfo>
 
+#include <fmt/core.h>
+
 #include "time.h"
 #include "stdlib.h"
 
+#include <TStyle.h>
 
 #include "../ibn/valer.h"
 #include "../ibn/indexer.h"
@@ -47,6 +50,7 @@
 #include "RunTable.h"
 #include "Read.h"
 #include "Print.h"
+#include "Draw.h"
 
 #include "utils.h"
 
@@ -118,8 +122,10 @@ struct Analysis
 {
   const std::string WORKDIR="./";
   const std::string SHAREDIR="/home/nikolaev/tauscan/TauTau/share/";
-  double EMS_ENERGY_SHIFT = -0.0201182;
-  ibn::valer<double> TAU_SPREAD = {1.2299, 0.034};
+  // double EMS_ENERGY_SHIFT = -0.0201182;
+  // ibn::valer<double> TAU_SPREAD = {1.2299, 0.034};
+  double EMS_ENERGY_SHIFT = -0.02138719;
+  ibn::valer<double> TAU_SPREAD = {1.22760117, 0.034};
 
   std::string TAUFIT = "taufit --minos --pdgshift --lum=default  --free-energy --free-luminosity --free-effcor --free-spread --draw-tau-mass-precision=4  --draw-diff ";
 
@@ -342,12 +348,15 @@ struct Analysis
     print(P.signal.data);
   }
 
-  Scan_t  res(Process_t & P) {
+  Scan_t  res(Process_t & P, std::string extra_cut = "") {
     measure_luminosity(P);
     std::cout << "Selecting multihadronic events" << std::endl;
-    auto res =   select(&ScanPoint_t::tt,  P.signal.data,  MH_SEL);
-    auto mcres = select(&ScanPoint_t::tt,  P.signal.mc,    MH_SEL);
+    auto res =   select(&ScanPoint_t::tt,  P.signal.data,  MH_SEL && extra_cut);
+	std::cout << "In res function : type res: " << typeid(res).name() << std::endl;
+    auto mcres = select(&ScanPoint_t::tt,  P.signal.mc,    MH_SEL && extra_cut);
     print(mcres);
+	//fmt::print("Efficiency:\n");
+	//print_efficiency(mcres);
     set_effcor( &ScanPoint_t::tt, mcres,0.0);  //set correction to efficiency
     copy_efficiency( &ScanPoint_t::tt, mcres, res);
     print(res);
@@ -560,7 +569,7 @@ inline void Analysis::save(const Scan_t & sr, std::string  filename, std::string
 {
   std::cout << "Saving  to file: " << filename << std::endl;
   std::stringstream os;
-  os << ibn::mformat("15.6", "#", "L,nb^-1","dL,nb^-1","W,MeV", "dW,MeV","Sw,MeV","dSw,MeV","Nsig","Nbb","Ngg","effcor");
+  os << ibn::mformat("15.6", "#", "L,nb^-1","dL,nb^-1","W,MeV", "dW,MeV","Sw,MeV","dSw,MeV","Nsig","Nbb","Ngg","cor" "error", "eps", "error");
   os << "\n";
   auto lum = [&default_lum](const ScanPoint_t & sp) -> ibn::valer<double> {
     if(default_lum == "bb" || default_lum=="ee") { return sp.bb.luminosity; }
@@ -579,7 +588,8 @@ inline void Analysis::save(const Scan_t & sr, std::string  filename, std::string
         p.tt.N,
         p.bb.N,        
         p.gg.N,
-        p.tt.effcor.value, p.tt.effcor.error);
+        p.tt.effcor.value, p.tt.effcor.error, 
+		p.tt.efficiency.value, p.tt.efficiency.error);
     os << "\n";
   }
   std::cout << os.str();
@@ -598,4 +608,287 @@ inline void Analysis::fit(std::string  filename, std::string title, std::string 
   system(command.c_str());
 }
 
+#include <TF1.h>
+inline void draw_mhadr_efficiency( Analysis & A, std::string cut="") {
+    auto jpsi = A.res(A.JPSI, cut);
+    double eps_jpsi{0};
+    for(const auto & p : jpsi) {
+        eps_jpsi+=p.tt.efficiency.value;
+    };
+    eps_jpsi/=jpsi.size();
+    auto gj = draw_efficiency(jpsi);
 
+
+    TF1 * f_eps_jpsi = new TF1("f_eps_jpsi","[0]*(1 + (x-3.096)*0.01*1000*[1])");
+    f_eps_jpsi->SetParameter(0,eps_jpsi);
+    f_eps_jpsi->SetParameter(1,0);
+
+    gStyle->SetOptFit();
+    gj->Fit("f_eps_jpsi");
+
+    auto psi  =  A.res(A.PSI, cut);
+    double eps_psi{0};
+    for(const auto & p : psi) {
+        eps_psi+=p.tt.efficiency.value;
+    };
+    eps_psi/=psi.size();
+
+    auto gp = draw_efficiency(psi);
+
+    TF1 * f_eps_psi = new TF1("f_eps_psi","[0]*(1 + (x-3.686)*0.01*1000*[1])");
+    f_eps_psi->SetParameter(0,eps_psi);
+    f_eps_psi->SetParameter(1,0);
+    gp->Fit("f_eps_psi");
+};
+
+inline void draw_mhadr_efficiency_vs_pt( Analysis & A, std::string cut="") {
+    auto average_epsilon = [](auto & jpsi) {
+        return std::accumulate(jpsi.begin(), jpsi.end(), 0.0, [](const auto sum, const auto & p2) { return sum + p2.tt.efficiency.value; } ) / jpsi.size();
+    };
+
+    TGraphErrors * g = new TGraphErrors;
+    int i{0};
+    for(double ptmin=0.08; ptmin<0.5; ptmin+=0.01) {
+        std::string ptcut = cut && ("ptmin>"+std::to_string(ptmin));
+        auto res = A.res(A.JPSI, ptcut);
+
+        auto eps_min = std::min_element(res.begin(), res.end(), [](const auto & p1, const auto & p2) { return p1.tt.efficiency.value < p2.tt.efficiency.value;})->tt.efficiency;
+        auto eps_max = std::max_element(res.begin(), res.end(), [](const auto & p1, const auto & p2) { return p1.tt.efficiency.value < p2.tt.efficiency.value;})->tt.efficiency;
+        double eps_average = average_epsilon(res);
+        std::cout << ptcut << "   " << eps_min.value << "  " << eps_max.value << "   " << eps_average << std::endl;
+
+        ibn::valer<double> v = (eps_max-eps_min)/eps_average;
+        g->SetPoint(i, ptmin, v.value);
+        g->SetPointError(i, 0, v.error);
+        ++i;
+    }
+    g->Draw("a*l");
+};
+
+
+template<typename Proj>
+inline std::tuple<TGraphErrors*, TGraphErrors*> mhadr_eps_variate_var( Analysis & A, Proj proj, std::string var, double xmin, double xmax, double dx, std::string cut="" ) {
+    auto average_epsilon = [](auto & jpsi) -> double{
+        return std::accumulate(jpsi.begin(), jpsi.end(), 0.0, [](const auto sum, const auto & p2) { return sum + p2.tt.efficiency.value; } ) / jpsi.size();
+    };
+
+    auto average_energy = [](auto & jpsi) -> double {
+        return std::accumulate(jpsi.begin(), jpsi.end(), 0.0, [](const auto sum, const auto & p2) { return sum + p2.tt.energy.value; } ) / jpsi.size();
+    };
+
+    TGraphErrors * g = new TGraphErrors;
+    TGraphErrors * gminmax = new TGraphErrors;
+    int i{0};
+    auto & RES = std::invoke(proj, A);
+    TF1 f_eps("f_eps","[0]*(1 + (x-[2])*0.01*1000*[1])") ;
+    for(double x=xmin; x<xmax; x+=dx) {
+        std::string lcut = cut && ibn::format("%s%f", var.c_str(), x);
+        auto res = A.res(RES, lcut);
+        //auto graph = draw_efficiency(res);
+        //auto graph = make_efficiency_graph(res);
+        auto graph = make_efficiency_graph(res);
+        auto eps_min = std::min_element(res.begin(), res.end(), [](const auto & p1, const auto & p2) { return p1.tt.efficiency.value < p2.tt.efficiency.value;})->tt.efficiency;
+        auto eps_max = std::max_element(res.begin(), res.end(), [](const auto & p1, const auto & p2) { return p1.tt.efficiency.value < p2.tt.efficiency.value;})->tt.efficiency;
+        double eps_average = average_epsilon(res);
+        std::cout << x << "   " << eps_min.value << "  " << eps_max.value << "   " << eps_average << std::endl;
+        f_eps.SetParameter(0,eps_average);
+        f_eps.SetParameter(1,0);
+        f_eps.SetParameter(2, average_energy(res));
+        f_eps.FixParameter(2, average_energy(res));
+        graph->Fit("f_eps","0");
+        g->SetPoint(i, x, f_eps.GetParameter(1));
+        g->SetPointError(i, 0, f_eps.GetParError(1));
+
+        ibn::valer<double> v = (eps_max-eps_min)/eps_average;
+        gminmax->SetPoint(i, x, v.value*100);
+        gminmax->SetPointError(i, 0, v.error*100);
+        ++i;
+    }
+    return {g, gminmax};
+}
+
+
+template<typename Proj>
+inline void draw_mhadr_efficiency_slope_vs_pt( Analysis & A, Proj proj, std::string cut="", double step=0.01) {
+
+    auto [g_slope, g_minmax] = mhadr_eps_variate_var(A, proj, "ptmin>",0.08,0.5,step,cut);
+
+    TCanvas * c = new TCanvas("draw_mhadr_efficiency_slope_vs_pt", "Efficiency variation vs pt", 1600, 1600);
+    c->Divide(1,2);
+    c->cd(1);
+    g_slope->Draw("a*l");
+    g_slope->GetXaxis()->SetTitle("pt, GeV");
+    g_slope->GetYaxis()->SetTitle("slope, %/MeV");
+
+    c->cd(2);
+    g_minmax->Draw("*la");
+    g_minmax->GetXaxis()->SetTitle("pt, GeV");
+    g_minmax->GetYaxis()->SetTitle("(#varepsilon_{max}-#varepsilon_{min})/#varepsilon_{average}*100%");
+
+};
+
+template<typename Proj>
+inline void draw_mhadr_efficiency_slope_vs_cos( Analysis & A, Proj proj, std::string cut="", double step=0.1) {
+
+    auto [g_slope, g_minmax] = mhadr_eps_variate_var(A, proj, "maxctheta<",0.5,0.93,step,cut);
+
+    TCanvas * c = new TCanvas("draw_mhadr_efficiency_slope_vs_maxcostheta", "Efficiency variation vs maxctheta", 1600, 1600);
+    c->Divide(1,2);
+    c->cd(1);
+    g_slope->Draw("a*l");
+    g_slope->GetXaxis()->SetTitle("|cos(#theta)|, GeV");
+    g_slope->GetYaxis()->SetTitle("slope, %/MeV");
+
+    c->cd(2);
+    g_minmax->Draw("*la");
+    g_minmax->GetXaxis()->SetTitle("|cos(#theta)|, GeV");
+    g_minmax->GetYaxis()->SetTitle("(#varepsilon_{max}-#varepsilon_{min})/#varepsilon_{average}*100%");
+
+    auto [g_slope2, g_minmax2] = mhadr_eps_variate_var(A, proj, "minctheta>",-0.93,-0.5, step,cut);
+
+    TCanvas * c2 = new TCanvas("draw_mhadr_efficiency_slope_vs_mincostheta", "Efficiency variation vs minctheta", 1600, 1600);
+    c2->Divide(1,2);
+    c2->cd(1);
+    g_slope2->Draw("a*l");
+    g_slope2->GetXaxis()->SetTitle("|cos(#theta)|, GeV");
+    g_slope2->GetYaxis()->SetTitle("slope, %/MeV");
+
+    c2->cd(2);
+    g_minmax2->Draw("*la");
+    g_minmax2->GetXaxis()->SetTitle("|cos(#theta)|, GeV");
+    g_minmax2->GetYaxis()->SetTitle("(#varepsilon_{max}-#varepsilon_{min})/#varepsilon_{average}*100%");
+
+};
+
+template<typename Proj>
+inline void draw_mhadr_efficiency_slope_vs_S( Analysis & A, Proj proj, std::string cut="") {
+
+    auto [g_slope, g_minmax] = mhadr_eps_variate_var(A, proj, "S>",0.0,0.3,0.005,cut);
+
+    TCanvas * c = new TCanvas("draw_mhadr_efficiency_slope_vs_S", "Efficiency variation vs S", 1600, 1600);
+    c->Divide(1,2);
+    c->cd(1);
+    g_slope->Draw("a*l");
+    g_slope->GetXaxis()->SetTitle("S, GeV");
+    g_slope->GetYaxis()->SetTitle("slope, %/MeV");
+
+    c->cd(2);
+    g_minmax->Draw("*la");
+    g_minmax->GetXaxis()->SetTitle("S, GeV");
+    g_minmax->GetYaxis()->SetTitle("(#varepsilon_{max}-#varepsilon_{min})/#varepsilon_{average}*100%");
+
+};
+
+inline TCanvas * draw_res(const Scan_t & scan, std::string var, std::string cut="") {
+    auto c = make_canvas("var");
+    //c->Divide(4,2);
+    int i=1;
+    int color=1;
+    TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+    for(auto & sp :scan) {
+        std::string gopt="PLC PMC NORM HIS";
+        if(i!=1) gopt = "PLC PMC NORM same HIS";
+        if(color==10) ++color;
+        //sp.tt.tree->SetMarkerColor(color);
+        //sp.tt.tree->SetLineColor(color);
+        sp.tt.tree->SetLineWidth(3);
+        //c->cd(i+1);
+        sp.tt.tree->Draw(var.c_str(), cut.c_str(), gopt.c_str());
+        auto h = sp.tt.tree->GetHistogram();
+        //h->SetMarkerColor(i+1);
+        //h->SetLineColor(i+1);
+        l->AddEntry(h,("point " + std::to_string(i)).c_str());
+        ++i;
+        ++color;
+        c->Modified();
+        c->Update();
+    };
+    l->Draw();
+    c->Modified();
+    c->Update();
+    return c;
+};
+
+#include <TH2F.h>
+//рисует разницу в гистограммах для разных точек сканирования
+inline TCanvas * draw_res_diff(const Scan_t & scan, std::string var, int Nbin, double xmin, double xmax, std::string cut="") {
+    auto c = make_canvas("var");
+    //c->Divide(4,2);
+    int i=1;
+    TLegend * l = new TLegend(0.8,0.8,1.0,1.0);
+    std::vector<TH1F*> hs;
+    std::vector<int> color;
+    for(auto & sp :scan) {
+        std::string gopt="PLC PMC NORM HIS";
+        if(i!=1) gopt = "PLC PMC NORM same HIS";
+        sp.tt.tree->SetLineWidth(3);
+        //c->cd(i+1);
+        std::string v = ibn::format("%s>>his%d(%d,%f,%f)", var.c_str(), HISTO_INDEX++, Nbin, xmin, xmax);
+        sp.tt.tree->Draw(v.c_str(), cut.c_str(), gopt.c_str());
+        auto h = (TH1F*)sp.tt.tree->GetHistogram();
+        color.push_back(h->GetLineColor());
+        //h->SetMarkerColor(i+1);
+        //h->SetLineColor(i+1);
+        l->AddEntry(h,("point " + std::to_string(i)).c_str());
+        ++i;
+        c->Modified();
+        c->Update();
+        hs.push_back(h);
+    };
+    l->Draw();
+    c->Modified();
+    c->Update();
+
+    auto c2 = make_canvas("var");
+    TH2F * his = new TH2F("haxis","haxis", Nbin, xmin, xmax, Nbin, -0.05, 0.05);
+    his->Draw();
+    int ref_point = hs.size()/2;
+    auto his_ref = (TH1F*) hs[ref_point]->Clone("ref_his");
+    TLegend * l2 = new TLegend(0.8,0.8,1.0,1.0);
+    for(int i=0;i<hs.size();++i) {
+        //if(i==ref_point) continue;
+        auto hh = (TH1F*) hs[i]->Clone(ibn::format("hh%d",HISTO_INDEX).c_str());
+        hh->Add(his_ref,-1);
+        //hh->Divide(his_ref);
+        hh->Draw("same");
+        l2->AddEntry(hh,("point " + std::to_string(i+1)).c_str());
+    }
+    l2->Draw();
+
+    return c;
+};
+
+inline void draw_res(Analysis & A, std::string var, std::string cut) {
+    TCanvas *  c{nullptr};
+    gStyle->SetPalette(kRainBow);
+    c = draw_res(A.JPSI.signal.data,var, cut);
+    c->SetTitle((var + " for data jpsi").c_str());
+    c->Write();
+    c->SaveAs(("mhadr/mh_"+var+"jpsi_data.pdf").c_str());
+    c=draw_res(A.JPSI.signal.mc,  var, cut);
+    c->SetTitle((var + " for mc jpsi").c_str());
+    c->Write();
+    c->SaveAs(("mhadr/mh_"+var+"jpsi_mc.pdf").c_str());
+    c= draw_res(A.PSI.signal.data, var, cut);
+    c->SetTitle((var + " for data psi(2S)").c_str());
+    c->Write();
+    c->SaveAs(("mhadr/mh_"+var+"psi_data.pdf").c_str());
+    c= draw_res(A.PSI.signal.mc,   var, cut);
+    c->SetTitle((var + " for mc   psi(2S)").c_str());
+    c->Write();
+    c->SaveAs(("mhadr/mh_"+var+"psi_mc.pdf").c_str());
+};
+
+#include <TFile.h>
+inline void draw_res( Analysis & A) {
+    TFile f("tmp.root", "RECREATE");
+
+    //draw_res(A, "ptmin","S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2");
+    //draw_res(A, "maxctheta","ptmin>0.2 && S>0.06 && minctheta>-0.8 && Nchc>2");
+    //draw_res(A, "minctheta","ptmin>0.2 && S>0.06 && maxctheta<0.8 && Nchc>2");
+    //draw_res(A, "S","ptmin>0.2 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2");
+    //draw_res(A, "Nchc","ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8");
+    draw_res(A, "Nchgcemc","");
+    //f.Write();
+    f.Close();
+}

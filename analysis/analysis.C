@@ -115,7 +115,11 @@ Analysis test(
     "(acol-TMath::Pi())>-0.04 && abs(cos(theta[0])) < 0.8 && abs(cos(theta[1])) < 0.8 && Ep[0]>0.8 && Ep[1]>0.8 && abs(z[0])<10 && abs(z[1])<10 && vxy[0]<1.0 && vxy[1]<1.0", //bb_sel
     //MH selection
     //"ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2",
-    "ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2 && maxNmuhit==0",
+    //"ptmin>0.2 && S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2 && maxNmuhit==0",
+    //"ptmin>0.2 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2",
+    //"maxctheta<0.8 && minctheta>-0.8 && Nchc>2",
+    //"S>0.06 && maxctheta<0.8 && minctheta>-0.8 && Nchc>2",
+    "",
     //PID
     PID,
     //TauTau selection common cuts
@@ -138,6 +142,8 @@ Analysis test(
         {"eρ",     "Nng==2   && eX && (Mpi0[0] < 0.14 && Mpi0[0]>0.12) && good_emc_time" },
       }
     );
+
+
 
 void analysis(void) {
 };

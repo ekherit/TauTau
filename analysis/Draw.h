@@ -11,11 +11,14 @@
 
 //draw graph extracted with x and y values extracted by proj
 template<typename ProjX, typename ProjY>
-inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy);
+inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy, std::string title="draw");
+
+template<typename ProjX, typename ProjY>
+inline TGraph *  MakeTGraph(const Scan_t & SPL, ProjX projx, ProjY projy, std::string name ="");
 
 
 //draw registration efficiency from tt data sample
-inline TGraph * draw_efficiency(const Scan_t & SR);
+inline TGraph * draw_efficiency(const Scan_t & SR, std::string title="draw_effiency");
 
 //direct or NORM comparison of the scan point. The Nbin, Min and Max is obliged for right normalization
 template<class Proj>
@@ -31,14 +34,14 @@ inline TH1 * SelectHistogram(const DataSample_t & d, std::string var, std::strin
 
 //##################### IMPLEMENTATION #####################################################################
 
-
 //draw graph extracted with x and y values extracted by proj
 template<typename ProjX, typename ProjY>
-inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy)
+inline TGraph *  MakeTGraph(const Scan_t & SPL, ProjX projx, ProjY projy, std::string title)
 {
-  make_canvas("draw");
   TGraphErrors * g = new TGraphErrors;
+  g->SetTitle(title.c_str());
   for(const auto & sp : SPL) {
+      std::cout << sp.name << std::endl;
     auto  X = std::invoke(projx, sp);
     auto  Y = std::invoke(projy, sp);
     double x,y,ex{0},ey{0};
@@ -62,14 +65,78 @@ inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy)
     g->SetPointError(n,ex,ey);
   }
   g->SetMarkerStyle(21);
+  //g->Draw("ap");
+  return g;
+}
+
+#include <TH1F.h>
+//draw graph extracted with x and y values extracted by proj
+template<typename ProjX>
+inline TH1 *  MakeTH1(const Scan_t & SPL, ProjX projx, std::string title, int Nbin, double xmin, double xmax)
+{
+  TH1 * h = new TH1F(title.c_str(), title.c_str(), Nbin, xmin,xmax);
+  for(const auto & sp : SPL) {
+    auto  X = std::invoke(projx, sp);
+    double x{0},ex{0};
+    if constexpr (  std::is_same_v< ibn::valer<double>, decltype(X)> )  {
+      x=X.value;
+      ex=X.error;
+    } else if constexpr (  std::is_arithmetic_v<std::remove_cv_t<decltype(X)> > ) {
+      x=X;
+      ex=0;
+    }    
+    h->Fill(x);
+  }
+  return h;
+}
+
+//draw graph extracted with x and y values extracted by proj
+template<typename ProjX, typename ProjY>
+inline TGraph *  draw(const Scan_t & SPL, ProjX projx, ProjY projy, std::string title)
+{
+  make_canvas(title);
+  /*
+  TGraphErrors * g = new TGraphErrors;
+  for(const auto & sp : SPL) {
+      std::cout << sp.name << std::endl;
+    auto  X = std::invoke(projx, sp);
+    auto  Y = std::invoke(projy, sp);
+    double x,y,ex{0},ey{0};
+    if constexpr (  std::is_same_v< ibn::valer<double>, decltype(X)> )  {
+      x=X.value;
+      ex=X.error;
+    } else if constexpr (  std::is_arithmetic_v<std::remove_cv_t<decltype(X)> > ) {
+      x=X;
+      ex=0;
+    }    
+
+    if constexpr (  std::is_same_v< ibn::valer<double>, decltype(Y)> )  {
+      y=Y.value;
+      ey=Y.error;
+    } else if constexpr (  std::is_arithmetic_v<std::remove_cv_t<decltype(Y)> > ) {
+      y=Y;
+      ey=0;
+    }    
+    int n = g->GetN();
+    g->SetPoint(n, x,y);
+    g->SetPointError(n,ex,ey);
+  }
+  g->SetMarkerStyle(21);
+  */
+  TGraph * g = MakeTGraph(SPL,projx, projy, title);
   g->Draw("ap");
   return g;
 }
 
 
 //draw registration efficiency from tt data sample
-inline TGraph * draw_efficiency(const Scan_t & SR) {
-  return draw(SR, [](const auto & sp) { return sp.energy; }, [](const auto & sp) { return sp.tt.efficiency; });
+inline TGraph * draw_efficiency(const Scan_t & SR, std::string title) {
+    return draw(SR, [](const auto & sp) { return sp.energy; }, [](const auto & sp) { return sp.tt.efficiency; }, title);
+}
+
+//draw registration efficiency from tt data sample
+inline TGraph * make_efficiency_graph(const Scan_t & SR, std::string title="efficiency_graph") {
+    return MakeTGraph(SR, [](const auto & sp) { return sp.energy; }, [](const auto & sp) { return sp.tt.efficiency; }, title);
 }
 
 
@@ -207,4 +274,6 @@ inline std::tuple<TH1*,TH1*> cmp(const Scan_t & SP1, const Scan_t & SP2, Proj pr
 
   return {h1,h2};
 };
+
+
 #endif

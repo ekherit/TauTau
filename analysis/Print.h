@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <regex>
 #include <list>
 
@@ -103,13 +104,13 @@ class printer
   const std::string  & head(void)  const { return Head; }
 };
 
-std::ostream & operator<<(std::ostream & os, printer & p)
+inline std::ostream & operator<<(std::ostream & os, printer & p)
 {
   p.print(os);
   return os;
 };
 
-std::string get_run_formula(const std::list<int> & runs)
+inline std::string get_run_formula(const std::list<int> & runs)
 {
   if(runs.empty()) return "";
   std::string formula;
@@ -285,7 +286,7 @@ inline void print(const SelectionResult_t & sr, int opt=1 , int first_column_wid
 
 
 
-PrintConfig_t PCFG;
+inline PrintConfig_t PCFG;
 
 template < typename Item, typename Ftitle , typename Fdata, typename Ftotal>
 void print_smth(const std::vector<Item> pts, PrintConfig_t cfg, Ftitle ftitle, Fdata fdata, Ftotal ftotal)
@@ -425,7 +426,7 @@ inline void print_smth(const std::vector<SelectionResult_t> SR, PrintConfig_t cf
 //};
 
 
-inline void print_efficiency(const std::vector<SelectionResult_t> SR, PrintConfig_t cfg = PCFG)
+inline void print_efficiency(const std::vector<SelectionResult_t> &  SR, PrintConfig_t cfg = PCFG)
 {
   std::cout << "In print_efficiency " << std::endl;
   if(SR.empty()) return;
@@ -900,7 +901,7 @@ inline std::string print_tex(const std::vector<SelectionResult_t> & SR,std::stri
   return os.str();
 };
 
-void make_tex(std::string latex, std::string filename = "scan.tex")
+inline void make_tex(std::string latex, std::string filename = "scan.tex")
 {
   std::ofstream ofs(filename);
   ofs << latex;
